@@ -39,7 +39,10 @@ const CheckInStep2 = () => {
     );
   }
 
-  const handleContinue = () => {
+  const handleContinue = (e?: React.FormEvent) => {
+    // Prevent default if event is provided
+    if (e) e.preventDefault();
+    
     if (!accepted) {
       toast({
         title: "Bitte bestätigen Sie die Besucherrichtlinien",
@@ -102,7 +105,7 @@ const CheckInStep2 = () => {
             </div>
             
             <div className="pt-6 flex justify-end">
-              <NavButton to="#" position="right" onClick={handleContinue}>
+              <NavButton to="#" position="right" onClick={() => handleContinue()}>
                 Weiter
               </NavButton>
             </div>

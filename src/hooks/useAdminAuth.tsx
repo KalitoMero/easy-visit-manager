@@ -9,7 +9,7 @@ interface AdminAuthState {
 }
 
 // In a real application, you would use a more secure method for storing and verifying passwords
-const ADMIN_PASSWORD = "admin123"; // Default password - would be hashed in a real app
+const ADMIN_PASSWORD = "2034"; // Updated password
 
 export const useAdminAuth = create<AdminAuthState>()(
   persist(
