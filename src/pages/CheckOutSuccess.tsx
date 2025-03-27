@@ -17,10 +17,10 @@ const CheckOutSuccess = () => {
           <CardContent className="space-y-8">
             <div className="py-12">
               <p className="text-2xl mb-4">
-                Vielen Dank für Ihren Besuch bei Firma Leuka.
+                Danke für Ihren Besuch bei der Leuka GmbH.
               </p>
               <p className="text-2xl text-primary">
-                Gute Heimfahrt!
+                Wir wünschen Ihnen eine gute Heimreise!
               </p>
             </div>
             
