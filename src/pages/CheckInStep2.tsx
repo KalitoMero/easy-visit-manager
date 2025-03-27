@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import NavButton from '@/components/NavButton';
 import HomeButton from '@/components/HomeButton';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
@@ -102,9 +103,12 @@ const CheckInStep2 = () => {
             </div>
             
             <div className="pt-6 flex justify-end">
-              <NavButton to="#" position="right" onClick={handleContinue}>
+              <Button 
+                onClick={handleContinue}
+                className="px-8 py-6 text-lg transition-all duration-300 hover:scale-105"
+              >
                 Weiter
-              </NavButton>
+              </Button>
             </div>
           </CardContent>
         </Card>
