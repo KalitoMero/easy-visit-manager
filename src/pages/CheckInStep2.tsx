@@ -39,10 +39,7 @@ const CheckInStep2 = () => {
     );
   }
 
-  const handleContinue = (e?: React.FormEvent) => {
-    // Prevent default if event is provided
-    if (e) e.preventDefault();
-    
+  const handleContinue = () => {
     if (!accepted) {
       toast({
         title: "Bitte bestätigen Sie die Besucherrichtlinien",

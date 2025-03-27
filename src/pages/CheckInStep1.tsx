@@ -103,7 +103,7 @@ const CheckInStep1 = () => {
               </div>
               
               <div className="pt-4 flex justify-end">
-                <NavButton type="submit" position="right">
+                <NavButton to="#" type="submit" position="right">
                   Weiter
                 </NavButton>
               </div>
