@@ -73,6 +73,7 @@ const CheckOut = () => {
                 placeholder="z.B. 101"
                 type="number"
                 autoFocus
+                autoComplete="off"
               />
             </div>
             

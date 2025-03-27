@@ -73,6 +73,7 @@ const CheckInStep1 = () => {
                   className="h-14 text-lg bg-white/80 backdrop-blur-sm"
                   placeholder="Ihr vollständiger Name"
                   autoFocus
+                  autoComplete="off"
                 />
               </div>
               
@@ -86,6 +87,7 @@ const CheckInStep1 = () => {
                   onChange={(e) => setCompany(e.target.value)}
                   className="h-14 text-lg bg-white/80 backdrop-blur-sm"
                   placeholder="Ihre Firma"
+                  autoComplete="off"
                 />
               </div>
               
@@ -99,6 +101,7 @@ const CheckInStep1 = () => {
                   onChange={(e) => setContact(e.target.value)}
                   className="h-14 text-lg bg-white/80 backdrop-blur-sm"
                   placeholder="Ihr Ansprechpartner"
+                  autoComplete="off"
                 />
               </div>
               
