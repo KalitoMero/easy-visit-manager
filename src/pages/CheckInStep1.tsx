@@ -13,17 +13,35 @@ const CheckInStep1 = () => {
   const [name, setName] = useState('');
   const [company, setCompany] = useState('');
   const [contact, setContact] = useState('');
-  const { toast } = useToast();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const addVisitor = useVisitorStore(state => state.addVisitor);
-
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name.trim() || !company.trim() || !contact.trim()) {
+    if (!name.trim()) {
       toast({
-        title: "Bitte alle Felder ausfüllen",
-        description: "Name, Firma und Ansprechpartner sind erforderlich",
+        title: "Name fehlt",
+        description: "Bitte geben Sie Ihren Namen ein",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!company.trim()) {
+      toast({
+        title: "Firma fehlt",
+        description: "Bitte geben Sie Ihre Firma ein",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!contact.trim()) {
+      toast({
+        title: "Ansprechpartner fehlt",
+        description: "Bitte geben Sie Ihren Ansprechpartner ein",
         variant: "destructive",
       });
       return;
@@ -44,50 +62,48 @@ const CheckInStep1 = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="name" className="text-lg block mb-2">
-                    Name
-                  </Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="h-14 text-lg bg-white/80 backdrop-blur-sm"
-                    placeholder="Vor- und Nachname"
-                    autoFocus
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="company" className="text-lg block mb-2">
-                    Firma
-                  </Label>
-                  <Input
-                    id="company"
-                    value={company}
-                    onChange={(e) => setCompany(e.target.value)}
-                    className="h-14 text-lg bg-white/80 backdrop-blur-sm"
-                    placeholder="Ihre Firma"
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="contact" className="text-lg block mb-2">
-                    Ansprechpartner
-                  </Label>
-                  <Input
-                    id="contact"
-                    value={contact}
-                    onChange={(e) => setContact(e.target.value)}
-                    className="h-14 text-lg bg-white/80 backdrop-blur-sm"
-                    placeholder="Name des Ansprechpartners"
-                  />
-                </div>
+              <div>
+                <Label htmlFor="name" className="text-lg block mb-2">
+                  Name
+                </Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="h-14 text-lg bg-white/80 backdrop-blur-sm"
+                  placeholder="Ihr vollständiger Name"
+                  autoFocus
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="company" className="text-lg block mb-2">
+                  Firma
+                </Label>
+                <Input
+                  id="company"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  className="h-14 text-lg bg-white/80 backdrop-blur-sm"
+                  placeholder="Ihre Firma"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="contact" className="text-lg block mb-2">
+                  Ansprechpartner
+                </Label>
+                <Input
+                  id="contact"
+                  value={contact}
+                  onChange={(e) => setContact(e.target.value)}
+                  className="h-14 text-lg bg-white/80 backdrop-blur-sm"
+                  placeholder="Ihr Ansprechpartner"
+                />
               </div>
               
               <div className="pt-4 flex justify-end">
-                <NavButton to="#" position="right" onClick={handleSubmit}>
+                <NavButton type="submit" position="right">
                   Weiter
                 </NavButton>
               </div>

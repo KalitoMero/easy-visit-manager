@@ -11,6 +11,7 @@ interface NavButtonProps {
   variant?: 'default' | 'outline' | 'secondary' | 'ghost' | 'link' | 'destructive';
   className?: string;
   children: React.ReactNode;
+  type?: "button" | "submit" | "reset";
 }
 
 const NavButton = ({
@@ -20,6 +21,7 @@ const NavButton = ({
   variant = 'default',
   className,
   children,
+  type = "button",
 }: NavButtonProps) => {
   const positionClasses = {
     left: 'mr-auto',
@@ -37,6 +39,7 @@ const NavButton = ({
       )}
       asChild
       onClick={onClick}
+      type={type}
     >
       <Link to={to}>{children}</Link>
     </Button>
