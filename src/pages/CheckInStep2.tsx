@@ -101,7 +101,7 @@ const CheckInStep2 = () => {
             <div className="pt-6 flex justify-end">
               <Button 
                 onClick={handleContinue}
-                className="px-8 py-6 text-lg transition-all duration-300 hover:scale-105"
+                className="px-10 py-6 text-xl scale-150 transform-gpu transition-all duration-300 hover:scale-[1.55]"
               >
                 Weiter
               </Button>

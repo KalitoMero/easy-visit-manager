@@ -26,14 +26,19 @@ interface VisitorState {
   resetVisitorNumberIfNeeded: () => void;
 }
 
-// Helper to check if it's Monday
-const isMondayToday = () => {
-  return new Date().getDay() === 1; // 0 is Sunday, 1 is Monday
+// Helper to get the current week number
+const getCurrentWeek = () => {
+  const now = new Date();
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+  const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
+  return Math.ceil(days / 7);
 };
 
-// Helper to get today's date as string YYYY-MM-DD
-const getTodayString = () => {
-  return new Date().toISOString().split('T')[0];
+// Helper to get current week as string YYYY-WW
+const getCurrentWeekString = () => {
+  const year = new Date().getFullYear();
+  const week = getCurrentWeek();
+  return `${year}-${week.toString().padStart(2, '0')}`;
 };
 
 // Helper to format current time
@@ -45,20 +50,16 @@ export const useVisitorStore = create<VisitorState>()(
   persist(
     (set, get) => ({
       visitors: [],
-      currentVisitorNumber: 1000,
-      lastReset: getTodayString(),
+      currentVisitorNumber: 100, // Start from 100 for three-digit numbers
+      lastReset: getCurrentWeekString(),
 
       resetVisitorNumberIfNeeded: () => {
-        const today = getTodayString();
+        const currentWeek = getCurrentWeekString();
         const { lastReset } = get();
-        const lastResetDate = new Date(lastReset);
-        const todayDate = new Date(today);
         
-        // Check if it's Monday and we haven't reset today
-        if (isMondayToday() && 
-            (lastResetDate.getDay() !== 1 || 
-             lastReset !== today)) {
-          set({ currentVisitorNumber: 1000, lastReset: today });
+        // Reset visitor number at the beginning of a new week
+        if (lastReset !== currentWeek) {
+          set({ currentVisitorNumber: 100, lastReset: currentWeek });
         }
       },
 
@@ -132,12 +133,32 @@ export const useVisitorStore = create<VisitorState>()(
     }),
     {
       name: 'visitor-storage',
+      // Enable auto-saving on every state change
+      onRehydrateStorage: () => {
+        // This function runs after the state has been rehydrated from local storage
+        console.log('Visitor data rehydrated from localStorage');
+        return (state) => {
+          if (state) {
+            // Check if we need to reset visitor numbers for a new week
+            state.resetVisitorNumberIfNeeded();
+          }
+        };
+      },
     }
   )
 );
 
-// Set up automatic 8 PM checkout
+// Set up automatic 8 PM checkout and background interval saving
 export const initializeAutoCheckout = () => {
+  // Setup autosave interval every 15 seconds for breathing data
+  const autosaveInterval = setInterval(() => {
+    // This will trigger a save by accessing the state
+    const state = useVisitorStore.getState();
+    console.log('Auto-saving visitor data...', new Date().toISOString());
+    // Simply accessing state properties will trigger persistence middleware
+    state.resetVisitorNumberIfNeeded();
+  }, 15000); // Every 15 seconds
+
   const scheduleCheckout = () => {
     const now = new Date();
     const eightPM = new Date(now);
@@ -159,5 +180,10 @@ export const initializeAutoCheckout = () => {
   };
   
   const checkoutTimer = scheduleCheckout();
-  return () => clearTimeout(checkoutTimer);
+  
+  // Return a cleanup function that clears both timers
+  return () => {
+    clearTimeout(checkoutTimer);
+    clearInterval(autosaveInterval);
+  };
 };

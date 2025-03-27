@@ -70,7 +70,7 @@ const CheckOut = () => {
                 value={visitorNumber}
                 onChange={(e) => setVisitorNumber(e.target.value)}
                 className="h-14 text-lg text-center bg-white/80 backdrop-blur-sm"
-                placeholder="z.B. 1001"
+                placeholder="z.B. 101"
                 type="number"
                 autoFocus
               />
@@ -79,7 +79,7 @@ const CheckOut = () => {
             <div className="pt-4 flex justify-center">
               <Button 
                 onClick={handleCheckOut}
-                className="px-8 py-6 text-lg transition-all duration-300 hover:scale-105"
+                className="px-10 py-6 text-xl scale-150 transform-gpu transition-all duration-300 hover:scale-[1.55]"
               >
                 Abmelden
               </Button>

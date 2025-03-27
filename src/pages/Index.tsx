@@ -21,7 +21,7 @@ const Index = () => {
           <Card className="w-full max-w-2xl bg-white/50 backdrop-blur-sm">
             <CardContent className="p-8">
               <p className="text-xl leading-relaxed">
-                Bitte nutzen Sie diese Besucheranwendung, um sich selbstständig an- oder abzumelden. 
+                Bitte nutzen Sie diese Besucheranmeldung, um sich selbstständig an- oder abzumelden. 
                 Bei Fragen wenden Sie sich bitte an die Rezeption.
               </p>
             </CardContent>
@@ -33,11 +33,20 @@ const Index = () => {
             Admin
           </NavButton>
           
-          <NavButton to="/checkout" position="center" variant="secondary">
+          <NavButton 
+            to="/checkout" 
+            position="center" 
+            variant="secondary"
+            className="scale-150 transform-gpu px-10 py-7 text-xl"
+          >
             Besuch abmelden
           </NavButton>
           
-          <NavButton to="/checkin/step1" position="right">
+          <NavButton 
+            to="/checkin/step1" 
+            position="right"
+            className="scale-150 transform-gpu px-10 py-7 text-xl"
+          >
             Selbstständig anmelden
           </NavButton>
         </div>

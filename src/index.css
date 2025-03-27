@@ -124,4 +124,11 @@
   .page-transition-exit {
     @apply animate-fade-out animate-slide-out-left;
   }
+  
+  /* Fix for scaled buttons */
+  .transform-gpu {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-font-smoothing: subpixel-antialiased;
+  }
 }
