@@ -37,7 +37,7 @@ const Index = () => {
             to="/checkout" 
             position="center" 
             variant="secondary"
-            className="scale-150 transform-gpu px-10 py-7 text-xl"
+            className="px-10 py-7 text-xl"
           >
             Besuch abmelden
           </NavButton>
@@ -45,7 +45,7 @@ const Index = () => {
           <NavButton 
             to="/checkin/step1" 
             position="right"
-            className="scale-150 transform-gpu px-10 py-7 text-xl"
+            className="px-10 py-7 text-xl"
           >
             Selbstständig anmelden
           </NavButton>

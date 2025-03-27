@@ -79,7 +79,7 @@ const CheckOut = () => {
             <div className="pt-4 flex justify-center">
               <Button 
                 onClick={handleCheckOut}
-                className="px-10 py-6 text-xl scale-150 transform-gpu transition-all duration-300 hover:scale-[1.55]"
+                className="px-10 py-6 text-xl transition-all duration-300 hover:scale-105"
               >
                 Abmelden
               </Button>
