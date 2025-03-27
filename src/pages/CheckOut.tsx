@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import NavButton from '@/components/NavButton';
+import { Button } from '@/components/ui/button';
 import HomeButton from '@/components/HomeButton';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { useToast } from '@/hooks/use-toast';
@@ -77,9 +77,12 @@ const CheckOut = () => {
             </div>
             
             <div className="pt-4 flex justify-center">
-              <NavButton to="#" onClick={handleCheckOut}>
+              <Button 
+                onClick={handleCheckOut}
+                className="px-8 py-6 text-lg transition-all duration-300 hover:scale-105"
+              >
                 Abmelden
-              </NavButton>
+              </Button>
             </div>
           </CardContent>
         </Card>
