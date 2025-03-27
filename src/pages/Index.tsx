@@ -34,20 +34,20 @@ const Index = () => {
           </NavButton>
           
           <NavButton 
+            to="/checkin/step1" 
+            position="center"
+            className="px-10 py-7 text-xl"
+          >
+            Selbstständig anmelden
+          </NavButton>
+          
+          <NavButton 
             to="/checkout" 
-            position="center" 
+            position="right" 
             variant="secondary"
             className="px-10 py-7 text-xl"
           >
             Besuch abmelden
-          </NavButton>
-          
-          <NavButton 
-            to="/checkin/step1" 
-            position="right"
-            className="px-10 py-7 text-xl"
-          >
-            Selbstständig anmelden
           </NavButton>
         </div>
       </div>
