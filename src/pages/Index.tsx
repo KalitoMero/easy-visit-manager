@@ -2,12 +2,19 @@
 import React, { useEffect } from 'react';
 import NavButton from '@/components/NavButton';
 import { Card, CardContent } from '@/components/ui/card';
-import { initializeAutoCheckout } from '@/hooks/useVisitorStore';
+import { initializeAutoCheckout, useVisitorStore } from '@/hooks/useVisitorStore';
 
 const Index = () => {
   useEffect(() => {
     // Set up automatic checkout at 8 PM
     const cleanupAutoCheckout = initializeAutoCheckout();
+    
+    // Try to also perform scheduled checkout if it hasn't been done today
+    // This will help recover from PC shutdown situations
+    setTimeout(() => {
+      useVisitorStore.getState().performScheduledCheckout();
+    }, 2000);
+    
     return () => cleanupAutoCheckout();
   }, []);
 

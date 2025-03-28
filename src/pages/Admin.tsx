@@ -10,6 +10,15 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import NavButton from '@/components/NavButton';
 import HomeButton from '@/components/HomeButton';
 import VisitorCard from '@/components/VisitorCard';
+import { 
+  Table, 
+  TableBody, 
+  TableCaption, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
 import { useVisitorStore, Visitor } from '@/hooks/useVisitorStore';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { usePolicyStore } from '@/hooks/usePolicyStore';
@@ -32,6 +41,7 @@ const Admin = () => {
   const updatePolicyImage = usePolicyStore(state => state.updatePolicyImage);
   
   const [editablePolicyText, setEditablePolicyText] = useState(policyText);
+  const [activeTab, setActiveTab] = useState('active');
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,6 +120,19 @@ const Admin = () => {
   // Filter for inactive visitors (checked out)
   const inactiveVisitors = sortedVisitors.filter(v => v.checkOutTime !== null);
 
+  // Format date helper function
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'Noch anwesend';
+    const date = new Date(dateString);
+    return date.toLocaleString('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="app-container">
@@ -161,7 +184,10 @@ const Admin = () => {
           </Button>
         </div>
         
-        <Tabs defaultValue="active" className="w-full">
+        <Tabs defaultValue="active" className="w-full"
+          value={activeTab}
+          onValueChange={setActiveTab}
+        >
           <TabsList className="w-full mb-6">
             <TabsTrigger value="active" className="flex-1">
               Aktive Besucher ({activeVisitors.length})
@@ -182,9 +208,30 @@ const Admin = () => {
                 </CardContent>
               </Card>
             ) : (
-              activeVisitors.map(visitor => (
-                <VisitorCard key={visitor.id} visitor={visitor} />
-              ))
+              <div className="rounded-md border overflow-hidden shadow-sm">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nr.</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Firma</TableHead>
+                      <TableHead>Ansprechpartner</TableHead>
+                      <TableHead>Check-in</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {activeVisitors.map(visitor => (
+                      <TableRow key={visitor.id}>
+                        <TableCell className="font-medium">{visitor.visitorNumber}</TableCell>
+                        <TableCell>{visitor.name}</TableCell>
+                        <TableCell>{visitor.company}</TableCell>
+                        <TableCell>{visitor.contact}</TableCell>
+                        <TableCell>{formatDate(visitor.checkInTime)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </TabsContent>
           
@@ -196,9 +243,32 @@ const Admin = () => {
                 </CardContent>
               </Card>
             ) : (
-              inactiveVisitors.map(visitor => (
-                <VisitorCard key={visitor.id} visitor={visitor} />
-              ))
+              <div className="rounded-md border overflow-hidden shadow-sm">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nr.</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Firma</TableHead>
+                      <TableHead>Ansprechpartner</TableHead>
+                      <TableHead>Check-in</TableHead>
+                      <TableHead>Check-out</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {inactiveVisitors.map(visitor => (
+                      <TableRow key={visitor.id}>
+                        <TableCell className="font-medium">{visitor.visitorNumber}</TableCell>
+                        <TableCell>{visitor.name}</TableCell>
+                        <TableCell>{visitor.company}</TableCell>
+                        <TableCell>{visitor.contact}</TableCell>
+                        <TableCell>{formatDate(visitor.checkInTime)}</TableCell>
+                        <TableCell>{formatDate(visitor.checkOutTime)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </TabsContent>
 

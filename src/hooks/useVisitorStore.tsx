@@ -17,6 +17,7 @@ interface VisitorState {
   visitors: Visitor[];
   currentVisitorNumber: number;
   lastReset: string;
+  lastAutoCheckout: string; // Neue Eigenschaft für das letzte automatische Abmelden
   
   addVisitor: (name: string, company: string, contact: string) => Visitor;
   acceptPolicy: (id: string) => void;
@@ -24,6 +25,7 @@ interface VisitorState {
   checkOutAllVisitors: () => void;
   getVisitorByNumber: (visitorNumber: number) => Visitor | undefined;
   resetVisitorNumberIfNeeded: () => void;
+  performScheduledCheckout: () => void; // Neue Funktion für den täglichen Checkout
 }
 
 // Helper to get the current week number
@@ -46,12 +48,19 @@ const getCurrentTime = () => {
   return new Date().toISOString();
 };
 
+// Helper to get current date as string YYYY-MM-DD
+const getCurrentDateString = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
+};
+
 export const useVisitorStore = create<VisitorState>()(
   persist(
     (set, get) => ({
       visitors: [],
       currentVisitorNumber: 100, // Start from 100 for three-digit numbers
       lastReset: getCurrentWeekString(),
+      lastAutoCheckout: '', // Startwert
 
       resetVisitorNumberIfNeeded: () => {
         const currentWeek = getCurrentWeekString();
@@ -130,6 +139,23 @@ export const useVisitorStore = create<VisitorState>()(
       getVisitorByNumber: (visitorNumber) => {
         return get().visitors.find(v => v.visitorNumber === visitorNumber);
       },
+
+      // Neue Funktion für die tägliche Abmeldung
+      performScheduledCheckout: () => {
+        const currentDate = getCurrentDateString();
+        const { lastAutoCheckout } = get();
+        
+        // Nur einmal täglich ausführen
+        if (lastAutoCheckout !== currentDate) {
+          // Alle aktiven Besucher abmelden
+          get().checkOutAllVisitors();
+          // Datum des letzten Checkouts aktualisieren
+          set({ lastAutoCheckout: currentDate });
+          console.log('Täglicher automatischer Checkout am', currentDate, 'durchgeführt');
+        } else {
+          console.log('Täglicher Checkout bereits durchgeführt am', lastAutoCheckout);
+        }
+      },
     }),
     {
       name: 'visitor-storage',
@@ -150,6 +176,18 @@ export const useVisitorStore = create<VisitorState>()(
 
 // Set up automatic 8 PM checkout and background interval saving
 export const initializeAutoCheckout = () => {
+  // Sofort prüfen, ob heute bereits ein Auto-Checkout durchgeführt wurde
+  setTimeout(() => {
+    const now = new Date();
+    const eightPM = new Date(now);
+    eightPM.setHours(20, 0, 0, 0);
+    
+    // Wenn es nach 20 Uhr ist, prüfen ob der automatische Checkout bereits durchgeführt wurde
+    if (now >= eightPM) {
+      useVisitorStore.getState().performScheduledCheckout();
+    }
+  }, 1000);
+
   // Setup autosave interval every 15 seconds for breathing data
   const autosaveInterval = setInterval(() => {
     // This will trigger a save by accessing the state
@@ -165,15 +203,17 @@ export const initializeAutoCheckout = () => {
     eightPM.setHours(20, 0, 0, 0);
     
     let timeUntilCheckout;
-    if (now > eightPM) {
+    if (now >= eightPM) {
       // If it's past 8PM, schedule for tomorrow
       eightPM.setDate(eightPM.getDate() + 1);
     }
     
     timeUntilCheckout = eightPM.getTime() - now.getTime();
+    console.log(`Nächster automatischer Checkout in ${Math.round(timeUntilCheckout/1000/60)} Minuten geplant`);
     
     return setTimeout(() => {
-      useVisitorStore.getState().checkOutAllVisitors();
+      console.log('Automatischer Checkout um 20 Uhr wird ausgeführt...');
+      useVisitorStore.getState().performScheduledCheckout();
       // Schedule next checkout
       scheduleCheckout();
     }, timeUntilCheckout);
