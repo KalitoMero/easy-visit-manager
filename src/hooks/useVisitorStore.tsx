@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -28,18 +27,20 @@ interface VisitorState {
   performScheduledCheckout: () => void; // Neue Funktion für den täglichen Checkout
 }
 
-// Helper to get the current week number
-const getCurrentWeek = () => {
-  const now = new Date();
-  const startOfYear = new Date(now.getFullYear(), 0, 1);
-  const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
-  return Math.ceil(days / 7);
+// Helper to get the current week number (ISO week-numbering year)
+const getISOWeek = () => {
+  const date = new Date();
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
 };
 
-// Helper to get current week as string YYYY-WW
+// Helper to get current week as string YYYY-WW (ISO format)
 const getCurrentWeekString = () => {
-  const year = new Date().getFullYear();
-  const week = getCurrentWeek();
+  const date = new Date();
+  const year = date.getUTCFullYear();
+  const week = getISOWeek();
   return `${year}-${week.toString().padStart(2, '0')}`;
 };
 
@@ -68,6 +69,7 @@ export const useVisitorStore = create<VisitorState>()(
         
         // Reset visitor number at the beginning of a new week
         if (lastReset !== currentWeek) {
+          console.log(`Zurücksetzen der Besuchernummer: Neue Woche erkannt (${lastReset} -> ${currentWeek})`);
           set({ currentVisitorNumber: 100, lastReset: currentWeek });
         }
       },
@@ -140,7 +142,6 @@ export const useVisitorStore = create<VisitorState>()(
         return get().visitors.find(v => v.visitorNumber === visitorNumber);
       },
 
-      // Neue Funktion für die tägliche Abmeldung
       performScheduledCheckout: () => {
         const currentDate = getCurrentDateString();
         const { lastAutoCheckout } = get();
