@@ -1,164 +1,187 @@
-
-import { Language } from "@/hooks/useLanguageStore";
-
-// Typdefinition für Übersetzungen
+// Define all translatable keys to ensure type safety
 export type TranslationKey = 
-  // Index Seite
-  | 'welcome'
-  | 'welcomeMessage'
-  | 'selfCheckIn'
-  | 'checkOut'
-  | 'admin'
-  
-  // Check-In Seite
-  | 'visitorRegistration'
-  | 'fullName'
-  | 'company'
-  | 'contact'
+  // Common UI elements
+  | 'checkIn'
+  | 'checkOut' 
   | 'next'
-  
-  // Check-In Seite 2
-  | 'visitorPolicy'
-  | 'acceptPolicy'
-  
-  // Check-In Seite 3
-  | 'registrationSuccessful'
-  | 'yourVisitorNumber'
-  | 'pleaseNote'
-  | 'contactInfo'
+  | 'back'
+  | 'submit'
+  | 'cancel'
+  | 'confirm'
+  | 'errorOccurred'
   | 'backToHome'
+  | 'backToHomeButton'
   
-  // Check-Out Seite
-  | 'visitorCheckOut'
-  | 'enterVisitorNumber'
-  | 'visitorNumberLabel'
-  | 'checkOutButton'
+  // Form fields
+  | 'fullName'
+  | 'name'
+  | 'company'
+  | 'contactPerson'
+  | 'badgeNumber'
+  | 'phoneNumber'
+  | 'email'
+  | 'visitorNumber'
   
-  // Check-Out Success
+  // Form labels & descriptions
+  | 'formTitle'
+  | 'formDescription'
+  | 'enterYourDetails'
+  | 'enterYourBadge'
+  | 'policyAgreement'
+  | 'policyTitle'
+  | 'badgeHelpText'
+  | 'requiredField'
+  | 'checkInCompleteTitle'
+  | 'checkInCompleteMessage'
+  | 'yourVisitorPass'
+  | 'checkOutPrompt'
+  
+  // Validation messages
+  | 'nameRequired'
+  | 'companyRequired'
+  | 'contactRequired'
+  | 'badgeNumberRequired'
+  | 'badgeNumberInvalid'
+  | 'agreementRequired'
+  
+  // Success messages
+  | 'successfullyCheckedIn'
   | 'successfullyCheckedOut'
   | 'thankYou'
   | 'safeJourney'
   
-  // Fehler
-  | 'nameRequired'
-  | 'companyRequired'
-  | 'contactRequired'
-  | 'policyRequired'
-  | 'numberRequired'
-  | 'invalidNumber'
-  | 'checkOutFailed'
-  
-  // NotFound
+  // Error messages
+  | 'visitorNotFound'
   | 'pageNotFound'
-  | 'backToHomeButton';
+  | 'invalidBadgeError'
+  
+  // Other
+  | 'welcomeMessage';
 
-// Übersetzungsdaten
-export const translations: Record<Language, Record<TranslationKey, string>> = {
+// Define translations
+export const translations = {
   de: {
-    // Index Seite
-    welcome: 'Willkommen bei der Firma Leuka',
-    welcomeMessage: 'Bitte nutzen Sie diese Besucheranmeldung, um sich selbstständig an- oder abzumelden. Bei Fragen wenden Sie sich bitte an die Rezeption.',
-    selfCheckIn: 'Selbstständig anmelden',
-    checkOut: 'Besuch abmelden',
-    admin: 'Admin',
-    
-    // Check-In Seite
-    visitorRegistration: 'Besucheranmeldung',
-    fullName: 'Ihr vollständiger Name',
-    company: 'Ihre Firma',
-    contact: 'Ihr Ansprechpartner',
+    // Common UI elements
+    checkIn: 'Anmelden',
+    checkOut: 'Abmelden',
     next: 'Weiter',
-    
-    // Check-In Seite 2
-    visitorPolicy: 'Besucherrichtlinie',
-    acceptPolicy: 'Ich habe die Besucherrichtlinie gelesen und akzeptiere sie',
-    
-    // Check-In Seite 3
-    registrationSuccessful: 'Anmeldung erfolgreich',
-    yourVisitorNumber: 'Ihre Besuchernummer lautet:',
-    pleaseNote: 'Bitte notieren Sie diese Nummer, um sich später abmelden zu können.',
-    contactInfo: 'Ihr Ansprechpartner',
+    back: 'Zurück',
+    submit: 'Absenden',
+    cancel: 'Abbrechen',
+    confirm: 'Bestätigen',
+    errorOccurred: 'Ein Fehler ist aufgetreten',
     backToHome: 'Zurück zur Startseite',
+    backToHomeButton: 'Zurück zur Startseite',
     
-    // Check-Out Seite
-    visitorCheckOut: 'Besucherabmeldung',
-    enterVisitorNumber: 'Bitte geben Sie Ihre Besuchernummer ein, um sich abzumelden.',
-    visitorNumberLabel: 'Besuchernummer',
-    checkOutButton: 'Abmelden',
+    // Form fields
+    fullName: 'Vollständiger Name',
+    name: 'Name',
+    company: 'Firma',
+    contactPerson: 'Ansprechpartner',
+    badgeNumber: 'Besuchernummer',
+    phoneNumber: 'Telefonnummer',
+    email: 'E-Mail',
+    visitorNumber: 'Besuchernummer',
     
-    // Check-Out Success
-    successfullyCheckedOut: 'Erfolgreich abgemeldet',
-    thankYou: 'Danke für Ihren Besuch bei der Leuka GmbH.',
-    safeJourney: 'Wir wünschen Ihnen eine gute Heimreise!',
+    // Form labels & descriptions
+    formTitle: 'Besucheranmeldung',
+    formDescription: 'Bitte füllen Sie alle Felder aus, um sich anzumelden',
+    enterYourDetails: 'Geben Sie Ihre Daten ein',
+    enterYourBadge: 'Geben Sie Ihre Besuchernummer ein',
+    policyAgreement: 'Ich habe die Besucherrichtlinien gelesen und akzeptiere sie',
+    policyTitle: 'Besucherrichtlinien',
+    badgeHelpText: 'Die Besuchernummer finden Sie auf Ihrem Besucherausweis',
+    requiredField: 'Pflichtfeld',
+    checkInCompleteTitle: 'Anmeldung abgeschlossen',
+    checkInCompleteMessage: 'Sie wurden erfolgreich angemeldet',
+    yourVisitorPass: 'Ihr Besucherausweis',
+    checkOutPrompt: 'Geben Sie Ihre Besuchernummer ein, um sich abzumelden',
     
-    // Fehler
+    // Validation messages
     nameRequired: 'Bitte geben Sie Ihren Namen ein',
     companyRequired: 'Bitte geben Sie Ihre Firma ein',
     contactRequired: 'Bitte geben Sie Ihren Ansprechpartner ein',
-    policyRequired: 'Um fortzufahren, müssen Sie die Besucherrichtlinien akzeptieren',
-    numberRequired: 'Die Besuchernummer ist erforderlich',
-    invalidNumber: 'Bitte geben Sie eine gültige Nummer ein',
-    checkOutFailed: 'Die angegebene Besuchernummer wurde nicht gefunden oder ist bereits abgemeldet',
+    badgeNumberRequired: 'Bitte geben Sie Ihre Besuchernummer ein',
+    badgeNumberInvalid: 'Ungültige Besuchernummer',
+    agreementRequired: 'Sie müssen den Richtlinien zustimmen, um fortzufahren',
     
-    // NotFound
-    pageNotFound: 'Die angeforderte Seite wurde nicht gefunden',
-    backToHomeButton: 'Zurück zur Startseite'
+    // Success messages
+    successfullyCheckedIn: 'Erfolgreich angemeldet',
+    successfullyCheckedOut: 'Erfolgreich abgemeldet',
+    thankYou: 'Vielen Dank für Ihren Besuch',
+    safeJourney: 'Gute Heimreise!',
+    
+    // Error messages
+    visitorNotFound: 'Besucher nicht gefunden',
+    pageNotFound: 'Seite nicht gefunden',
+    invalidBadgeError: 'Ungültige Besuchernummer',
+    
+    // Other
+    welcomeMessage: 'Willkommen bei unserem Besuchermanagementsystem',
   },
   en: {
-    // Index Page
-    welcome: 'Welcome to Leuka Company',
-    welcomeMessage: 'Please use this visitor registration to check in or check out independently. If you have any questions, please contact the reception.',
-    selfCheckIn: 'Self Check-in',
-    checkOut: 'Check-out',
-    admin: 'Admin',
-    
-    // Check-In Page
-    visitorRegistration: 'Visitor Registration',
-    fullName: 'Your full name',
-    company: 'Your company',
-    contact: 'Your contact person',
+    // Common UI elements
+    checkIn: 'Check In',
+    checkOut: 'Check Out',
     next: 'Next',
-    
-    // Check-In Page 2
-    visitorPolicy: 'Visitor Policy',
-    acceptPolicy: 'I have read and accept the visitor policy',
-    
-    // Check-In Page 3
-    registrationSuccessful: 'Registration Successful',
-    yourVisitorNumber: 'Your visitor number is:',
-    pleaseNote: 'Please note this number to check out later.',
-    contactInfo: 'Your contact person',
+    back: 'Back',
+    submit: 'Submit',
+    cancel: 'Cancel',
+    confirm: 'Confirm',
+    errorOccurred: 'An error occurred',
     backToHome: 'Back to Home',
+    backToHomeButton: 'Back to Home',
     
-    // Check-Out Page
-    visitorCheckOut: 'Visitor Check-out',
-    enterVisitorNumber: 'Please enter your visitor number to check out.',
-    visitorNumberLabel: 'Visitor number',
-    checkOutButton: 'Check out',
+    // Form fields
+    fullName: 'Full Name',
+    name: 'Name',
+    company: 'Company',
+    contactPerson: 'Contact Person',
+    badgeNumber: 'Visitor Number',
+    phoneNumber: 'Phone Number',
+    email: 'Email',
+    visitorNumber: 'Visitor Number',
     
-    // Check-Out Success
-    successfullyCheckedOut: 'Successfully Checked Out',
-    thankYou: 'Thank you for your visit to Leuka GmbH.',
-    safeJourney: 'We wish you a safe journey home!',
+    // Form labels & descriptions
+    formTitle: 'Visitor Registration',
+    formDescription: 'Please fill in all fields to register',
+    enterYourDetails: 'Enter your details',
+    enterYourBadge: 'Enter your visitor number',
+    policyAgreement: 'I have read and accept the visitor policy',
+    policyTitle: 'Visitor Policy',
+    badgeHelpText: 'You can find the visitor number on your visitor badge',
+    requiredField: 'Required field',
+    checkInCompleteTitle: 'Check-in Complete',
+    checkInCompleteMessage: 'You have been successfully registered',
+    yourVisitorPass: 'Your Visitor Pass',
+    checkOutPrompt: 'Enter your visitor number to check out',
     
-    // Errors
+    // Validation messages
     nameRequired: 'Please enter your name',
     companyRequired: 'Please enter your company',
     contactRequired: 'Please enter your contact person',
-    policyRequired: 'To continue, you must accept the visitor policy',
-    numberRequired: 'Visitor number is required',
-    invalidNumber: 'Please enter a valid number',
-    checkOutFailed: 'The specified visitor number was not found or is already checked out',
+    badgeNumberRequired: 'Please enter your visitor number',
+    badgeNumberInvalid: 'Invalid visitor number',
+    agreementRequired: 'You must agree to the policy to proceed',
     
-    // NotFound
-    pageNotFound: 'The requested page was not found',
-    backToHomeButton: 'Back to Home'
+    // Success messages
+    successfullyCheckedIn: 'Successfully Checked In',
+    successfullyCheckedOut: 'Successfully Checked Out',
+    thankYou: 'Thank you for your visit',
+    safeJourney: 'Have a safe journey!',
+    
+    // Error messages
+    visitorNotFound: 'Visitor not found',
+    pageNotFound: 'Page not found',
+    invalidBadgeError: 'Invalid visitor number',
+    
+    // Other
+    welcomeMessage: 'Welcome to our Visitor Management System',
   }
 };
 
-// Hook für Übersetzungen
-export const useTranslation = (language: Language) => {
+export function useTranslation(language: 'de' | 'en') {
   return (key: TranslationKey): string => {
-    return translations[language][key];
+    return translations[language][key] || key;
   };
-};
+}

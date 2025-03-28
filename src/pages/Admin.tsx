@@ -24,7 +24,7 @@ const formatTime = (isoString: string, language: Language) => {
 
 const Admin = () => {
   // Admin authentication handling
-  const { authenticated, login, logout, loading } = useAdminAuth();
+  const { isAuthenticated, login, logout, loading } = useAdminAuth();
   const [password, setPassword] = useState("");
   const { toast } = useToast();
 
@@ -54,12 +54,12 @@ const Admin = () => {
 
   // Initialize policy text fields when component mounts or authentication changes
   useEffect(() => {
-    if (authenticated) {
+    if (isAuthenticated) {
       setGermanPolicyText(policyText.de);
       setEnglishPolicyText(policyText.en);
       setImageUrl(policyImageUrl || "");
     }
-  }, [authenticated, policyText, policyImageUrl]);
+  }, [isAuthenticated, policyText, policyImageUrl]);
 
   const handleSavePolicy = () => {
     updatePolicyText(germanPolicyText, 'de');
@@ -95,7 +95,7 @@ const Admin = () => {
     );
   }
 
-  if (!authenticated) {
+  if (!isAuthenticated) {
     return (
       <div className="app-container">
         <HomeButton />
