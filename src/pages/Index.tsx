@@ -33,12 +33,14 @@ const Index = () => {
         
         <div className="flex-1 flex flex-col items-center justify-center text-center mb-12 mt-8">
           <h1 className="text-4xl font-bold mb-6 tracking-tight">
-            {t('welcome')}
+            {language === 'de' ? 'Willkommen bei Leuka' : 'Welcome to Leuka'}
           </h1>
           <Card className="w-full max-w-2xl bg-white/50 backdrop-blur-sm">
             <CardContent className="p-8">
               <p className="text-xl leading-relaxed">
-                {t('welcomeMessage')}
+                {language === 'de' 
+                  ? 'Wir freuen uns über Ihren Besuch. Sie können sich entweder hier am Tablet selber anmelden oder auf die Rezeption zugehen. Viel Erfolg bei Ihrem Besuch!'
+                  : 'We are glad about your visit. You can either register yourself here on the tablet or approach the reception. We wish you success during your visit!'}
               </p>
             </CardContent>
           </Card>
@@ -72,4 +74,3 @@ const Index = () => {
 };
 
 export default Index;
-
