@@ -31,6 +31,11 @@ const Admin = () => {
 
   // Visitor data
   const visitors = useVisitorStore((state) => state.visitors);
+  
+  // Debugging - log visitors to check if they're being loaded
+  useEffect(() => {
+    console.log("Loaded visitors in Admin:", visitors);
+  }, [visitors]);
 
   // Sort visitors: active first, then by check-in time (newest first)
   const sortedVisitors = [...visitors].sort((a, b) => {

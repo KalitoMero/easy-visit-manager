@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -16,7 +17,7 @@ interface VisitorState {
   visitors: Visitor[];
   currentVisitorNumber: number;
   lastReset: string;
-  lastAutoCheckout: string; // Neue Eigenschaft für das letzte automatische Abmelden
+  lastAutoCheckout: string;
   
   addVisitor: (name: string, company: string, contact: string) => Visitor;
   acceptPolicy: (id: string) => void;
@@ -24,7 +25,7 @@ interface VisitorState {
   checkOutAllVisitors: () => void;
   getVisitorByNumber: (visitorNumber: number) => Visitor | undefined;
   resetVisitorNumberIfNeeded: () => void;
-  performScheduledCheckout: () => void; // Neue Funktion für den täglichen Checkout
+  performScheduledCheckout: () => void;
 }
 
 // Helper to get the current week number (ISO week-numbering year)
@@ -61,7 +62,7 @@ export const useVisitorStore = create<VisitorState>()(
       visitors: [],
       currentVisitorNumber: 100, // Start from 100 for three-digit numbers
       lastReset: getCurrentWeekString(),
-      lastAutoCheckout: '', // Startwert
+      lastAutoCheckout: '',
 
       resetVisitorNumberIfNeeded: () => {
         const currentWeek = getCurrentWeekString();
@@ -95,6 +96,9 @@ export const useVisitorStore = create<VisitorState>()(
           currentVisitorNumber: currentVisitorNumber + 1,
         });
         
+        console.log("Added new visitor:", newVisitor);
+        console.log("Current visitors:", [...visitors, newVisitor]);
+        
         return newVisitor;
       },
       
@@ -116,26 +120,32 @@ export const useVisitorStore = create<VisitorState>()(
         
         if (visitorIndex === -1) return false;
         
-        set(state => ({
-          visitors: state.visitors.map((visitor, idx) => 
+        set(state => {
+          const updatedVisitors = state.visitors.map((visitor, idx) => 
             idx === visitorIndex 
               ? { ...visitor, checkOutTime: getCurrentTime() } 
               : visitor
-          ),
-        }));
+          );
+          console.log("Checked out visitor:", visitorNumber);
+          console.log("Updated visitors:", updatedVisitors);
+          return { visitors: updatedVisitors };
+        });
         
         return true;
       },
       
       checkOutAllVisitors: () => {
         const currentTime = getCurrentTime();
-        set(state => ({
-          visitors: state.visitors.map(visitor => 
+        set(state => {
+          const updatedVisitors = state.visitors.map(visitor => 
             visitor.checkOutTime === null 
               ? { ...visitor, checkOutTime: currentTime } 
               : visitor
-          ),
-        }));
+          );
+          console.log("Checked out all visitors");
+          console.log("Updated visitors:", updatedVisitors);
+          return { visitors: updatedVisitors };
+        });
       },
       
       getVisitorByNumber: (visitorNumber) => {
@@ -160,14 +170,18 @@ export const useVisitorStore = create<VisitorState>()(
     }),
     {
       name: 'visitor-storage',
-      // Enable auto-saving on every state change
+      // Ensure data is properly saved to localStorage
+      version: 1, // Add version for future migrations if needed
+      
       onRehydrateStorage: () => {
-        // This function runs after the state has been rehydrated from local storage
-        console.log('Visitor data rehydrated from localStorage');
+        console.log("Rehydrating visitor data from localStorage...");
         return (state) => {
           if (state) {
-            // Check if we need to reset visitor numbers for a new week
+            console.log("Visitor data rehydrated:", state.visitors);
+            // Reset visitor numbers for a new week if needed
             state.resetVisitorNumberIfNeeded();
+          } else {
+            console.warn("Failed to rehydrate visitor data");
           }
         };
       },
@@ -189,11 +203,12 @@ export const initializeAutoCheckout = () => {
     }
   }, 1000);
 
-  // Setup autosave interval every 15 seconds for breathing data
+  // Setup autosave interval every 15 seconds 
   const autosaveInterval = setInterval(() => {
     // This will trigger a save by accessing the state
     const state = useVisitorStore.getState();
     console.log('Auto-saving visitor data...', new Date().toISOString());
+    console.log('Current visitors:', state.visitors);
     // Simply accessing state properties will trigger persistence middleware
     state.resetVisitorNumberIfNeeded();
   }, 15000); // Every 15 seconds

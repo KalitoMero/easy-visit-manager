@@ -10,8 +10,12 @@ import { useTranslation } from '@/locale/translations';
 const Index = () => {
   const { language } = useLanguageStore();
   const t = useTranslation(language);
+  const visitors = useVisitorStore((state) => state.visitors);
 
   useEffect(() => {
+    // Log visitors on initial load
+    console.log("Initial visitor data:", visitors);
+    
     // Set up automatic checkout at 8 PM
     const cleanupAutoCheckout = initializeAutoCheckout();
     
@@ -22,7 +26,7 @@ const Index = () => {
     }, 2000);
     
     return () => cleanupAutoCheckout();
-  }, []);
+  }, [visitors]);
 
   return (
     <div className="app-container">
