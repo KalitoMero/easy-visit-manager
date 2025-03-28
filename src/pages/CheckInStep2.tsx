@@ -11,6 +11,8 @@ import HomeButton from '@/components/HomeButton';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { usePolicyStore } from '@/hooks/usePolicyStore';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguageStore } from '@/hooks/useLanguageStore';
+import { useTranslation } from '@/locale/translations';
 
 const CheckInStep2 = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,8 +22,11 @@ const CheckInStep2 = () => {
   const acceptPolicy = useVisitorStore(state => state.acceptPolicy);
   const visitors = useVisitorStore(state => state.visitors);
   
+  const { language } = useLanguageStore();
+  const t = useTranslation(language);
+  
   // Get policy text and image from the store
-  const policyText = usePolicyStore(state => state.policyText);
+  const policyText = usePolicyStore(state => state.getPolicyText(language));
   const policyImageUrl = usePolicyStore(state => state.policyImageUrl);
   
   // Find the current visitor
@@ -36,7 +41,7 @@ const CheckInStep2 = () => {
             <CardContent className="p-8 text-center">
               <p className="text-xl">Besucher nicht gefunden. Bitte starten Sie erneut.</p>
               <NavButton to="/" className="mt-4">
-                Zurück zur Startseite
+                {t('backToHome')}
               </NavButton>
             </CardContent>
           </Card>
@@ -48,8 +53,8 @@ const CheckInStep2 = () => {
   const handleContinue = () => {
     if (!accepted) {
       toast({
-        title: "Bitte bestätigen Sie die Besucherrichtlinien",
-        description: "Um fortzufahren, müssen Sie die Besucherrichtlinien akzeptieren",
+        title: t('policyRequired'),
+        description: t('policyRequired'),
         variant: "destructive",
       });
       return;
@@ -66,7 +71,7 @@ const CheckInStep2 = () => {
       <div className="page-container">
         <Card className="border-0 shadow-none bg-transparent">
           <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-bold">Besucherrichtlinie</CardTitle>
+            <CardTitle className="text-3xl font-bold">{t('visitorPolicy')}</CardTitle>
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[350px] rounded-md border p-4 bg-white/80 backdrop-blur-sm">
@@ -76,7 +81,7 @@ const CheckInStep2 = () => {
                   <div className="mb-6 flex justify-center">
                     <img 
                       src={policyImageUrl} 
-                      alt="Besucherrichtlinie" 
+                      alt={t('visitorPolicy')} 
                       className="max-w-full rounded-md max-h-64"
                     />
                   </div>
@@ -94,7 +99,7 @@ const CheckInStep2 = () => {
                 onCheckedChange={(checked) => setAccepted(checked as boolean)}
               />
               <Label htmlFor="accept" className="text-lg font-medium">
-                Ich habe die Besucherrichtlinie gelesen und akzeptiere sie
+                {t('acceptPolicy')}
               </Label>
             </div>
             
@@ -103,7 +108,7 @@ const CheckInStep2 = () => {
                 onClick={handleContinue}
                 className="px-10 py-6 text-xl scale-150 transform-gpu transition-all duration-300 hover:scale-[1.55]"
               >
-                Weiter
+                {t('next')}
               </Button>
             </div>
           </CardContent>

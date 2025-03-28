@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import HomeButton from '@/components/HomeButton';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguageStore } from '@/hooks/useLanguageStore';
+import { useTranslation } from '@/locale/translations';
 
 const CheckInStep1 = () => {
   const [name, setName] = useState('');
@@ -17,13 +19,16 @@ const CheckInStep1 = () => {
   const { toast } = useToast();
   const addVisitor = useVisitorStore(state => state.addVisitor);
   
+  const { language } = useLanguageStore();
+  const t = useTranslation(language);
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!name.trim()) {
       toast({
-        title: "Name fehlt",
-        description: "Bitte geben Sie Ihren Namen ein",
+        title: t('nameRequired'),
+        description: t('nameRequired'),
         variant: "destructive",
       });
       return;
@@ -31,8 +36,8 @@ const CheckInStep1 = () => {
     
     if (!company.trim()) {
       toast({
-        title: "Firma fehlt",
-        description: "Bitte geben Sie Ihre Firma ein",
+        title: t('companyRequired'),
+        description: t('companyRequired'),
         variant: "destructive",
       });
       return;
@@ -40,8 +45,8 @@ const CheckInStep1 = () => {
     
     if (!contact.trim()) {
       toast({
-        title: "Ansprechpartner fehlt",
-        description: "Bitte geben Sie Ihren Ansprechpartner ein",
+        title: t('contactRequired'),
+        description: t('contactRequired'),
         variant: "destructive",
       });
       return;
@@ -58,20 +63,20 @@ const CheckInStep1 = () => {
       <div className="page-container">
         <Card className="border-0 shadow-none bg-transparent">
           <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-bold">Besucheranmeldung</CardTitle>
+            <CardTitle className="text-3xl font-bold">{t('visitorRegistration')}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <Label htmlFor="name" className="text-lg block mb-2">
-                  Name
+                  {t('name')}
                 </Label>
                 <Input
                   id="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="h-14 text-lg bg-white/80 backdrop-blur-sm"
-                  placeholder="Ihr vollständiger Name"
+                  placeholder={t('fullName')}
                   autoFocus
                   autoComplete="off"
                 />
@@ -79,35 +84,35 @@ const CheckInStep1 = () => {
               
               <div>
                 <Label htmlFor="company" className="text-lg block mb-2">
-                  Firma
+                  {t('company')}
                 </Label>
                 <Input
                   id="company"
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
                   className="h-14 text-lg bg-white/80 backdrop-blur-sm"
-                  placeholder="Ihre Firma"
+                  placeholder={t('company')}
                   autoComplete="off"
                 />
               </div>
               
               <div>
                 <Label htmlFor="contact" className="text-lg block mb-2">
-                  Ansprechpartner
+                  {t('contact')}
                 </Label>
                 <Input
                   id="contact"
                   value={contact}
                   onChange={(e) => setContact(e.target.value)}
                   className="h-14 text-lg bg-white/80 backdrop-blur-sm"
-                  placeholder="Ihr Ansprechpartner"
+                  placeholder={t('contact')}
                   autoComplete="off"
                 />
               </div>
               
               <div className="pt-4 flex justify-end">
                 <Button type="submit" className="px-8 py-6 text-lg transition-all duration-300 hover:scale-105">
-                  Weiter
+                  {t('next')}
                 </Button>
               </div>
             </form>

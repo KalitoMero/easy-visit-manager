@@ -5,11 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import NavButton from '@/components/NavButton';
 import HomeButton from '@/components/HomeButton';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
+import { useLanguageStore } from '@/hooks/useLanguageStore';
+import { useTranslation } from '@/locale/translations';
 
 const CheckInStep3 = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const visitors = useVisitorStore(state => state.visitors);
+  
+  const { language } = useLanguageStore();
+  const t = useTranslation(language);
   
   // Find the current visitor
   const visitor = visitors.find(v => v.id === id);
@@ -31,30 +36,30 @@ const CheckInStep3 = () => {
       <div className="page-container">
         <Card className="border-0 shadow-none bg-transparent text-center">
           <CardHeader>
-            <CardTitle className="text-3xl font-bold">Anmeldung erfolgreich</CardTitle>
+            <CardTitle className="text-3xl font-bold">{t('registrationSuccessful')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="py-8">
               <p className="text-xl mb-8">
-                Ihre Besuchernummer lautet:
+                {t('yourVisitorNumber')}
               </p>
               <div className="text-7xl font-bold text-primary py-4">
                 {visitor.visitorNumber}
               </div>
               <p className="text-xl mt-8">
-                Bitte notieren Sie diese Nummer, um sich später abmelden zu können.
+                {t('pleaseNote')}
               </p>
             </div>
             
             <Card className="bg-primary/10 border-primary/30 p-4">
               <p className="text-lg">
-                Ihr Ansprechpartner <strong>{visitor.contact}</strong> wurde über Ihre Ankunft informiert.
+                {t('contactInfo')} <strong>{visitor.contact}</strong> {language === 'de' ? 'wurde über Ihre Ankunft informiert' : 'has been informed of your arrival'}.
               </p>
             </Card>
             
             <div className="pt-6">
               <NavButton to="/" position="center">
-                Zurück zur Startseite
+                {t('backToHome')}
               </NavButton>
             </div>
           </CardContent>

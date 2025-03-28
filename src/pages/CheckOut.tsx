@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import HomeButton from '@/components/HomeButton';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguageStore } from '@/hooks/useLanguageStore';
+import { useTranslation } from '@/locale/translations';
 
 const CheckOut = () => {
   const [visitorNumber, setVisitorNumber] = useState('');
@@ -15,11 +17,14 @@ const CheckOut = () => {
   const { toast } = useToast();
   const checkOutVisitor = useVisitorStore(state => state.checkOutVisitor);
   
+  const { language } = useLanguageStore();
+  const t = useTranslation(language);
+  
   const handleCheckOut = () => {
     if (!visitorNumber) {
       toast({
-        title: "Bitte geben Sie Ihre Besuchernummer ein",
-        description: "Die Besuchernummer ist erforderlich",
+        title: t('numberRequired'),
+        description: t('numberRequired'),
         variant: "destructive",
       });
       return;
@@ -28,8 +33,8 @@ const CheckOut = () => {
     const number = parseInt(visitorNumber);
     if (isNaN(number)) {
       toast({
-        title: "Ungültige Besuchernummer",
-        description: "Bitte geben Sie eine gültige Nummer ein",
+        title: t('invalidNumber'),
+        description: t('invalidNumber'),
         variant: "destructive",
       });
       return;
@@ -40,8 +45,8 @@ const CheckOut = () => {
       navigate('/checkout/success');
     } else {
       toast({
-        title: "Abmeldung fehlgeschlagen",
-        description: "Die angegebene Besuchernummer wurde nicht gefunden oder ist bereits abgemeldet",
+        title: t('checkOutFailed'),
+        description: t('checkOutFailed'),
         variant: "destructive",
       });
     }
@@ -54,23 +59,23 @@ const CheckOut = () => {
       <div className="page-container">
         <Card className="border-0 shadow-none bg-transparent">
           <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-bold">Besucherabmeldung</CardTitle>
+            <CardTitle className="text-3xl font-bold">{t('visitorCheckOut')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-8">
             <p className="text-xl text-center">
-              Bitte geben Sie Ihre Besuchernummer ein, um sich abzumelden.
+              {t('enterVisitorNumber')}
             </p>
             
             <div className="max-w-md mx-auto">
               <Label htmlFor="visitorNumber" className="text-lg block mb-2">
-                Besuchernummer
+                {t('visitorNumberLabel')}
               </Label>
               <Input
                 id="visitorNumber"
                 value={visitorNumber}
                 onChange={(e) => setVisitorNumber(e.target.value)}
                 className="h-14 text-lg text-center bg-white/80 backdrop-blur-sm"
-                placeholder="z.B. 101"
+                placeholder={language === 'de' ? 'z.B. 101' : 'e.g. 101'}
                 type="number"
                 autoFocus
                 autoComplete="off"
@@ -82,7 +87,7 @@ const CheckOut = () => {
                 onClick={handleCheckOut}
                 className="px-10 py-6 text-xl transition-all duration-300 hover:scale-105"
               >
-                Abmelden
+                {t('checkOutButton')}
               </Button>
             </div>
           </CardContent>

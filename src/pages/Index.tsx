@@ -3,8 +3,14 @@ import React, { useEffect } from 'react';
 import NavButton from '@/components/NavButton';
 import { Card, CardContent } from '@/components/ui/card';
 import { initializeAutoCheckout, useVisitorStore } from '@/hooks/useVisitorStore';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useLanguageStore } from '@/hooks/useLanguageStore';
+import { useTranslation } from '@/locale/translations';
 
 const Index = () => {
+  const { language } = useLanguageStore();
+  const t = useTranslation(language);
+
   useEffect(() => {
     // Set up automatic checkout at 8 PM
     const cleanupAutoCheckout = initializeAutoCheckout();
@@ -20,16 +26,19 @@ const Index = () => {
 
   return (
     <div className="app-container">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher />
+      </div>
+      
       <div className="page-container min-h-[600px]">
         <div className="flex-1 flex flex-col items-center justify-center text-center mb-12 mt-8">
           <h1 className="text-4xl font-bold mb-6 tracking-tight">
-            Willkommen bei der Firma Leuka
+            {t('welcome')}
           </h1>
           <Card className="w-full max-w-2xl bg-white/50 backdrop-blur-sm">
             <CardContent className="p-8">
               <p className="text-xl leading-relaxed">
-                Bitte nutzen Sie diese Besucheranmeldung, um sich selbstständig an- oder abzumelden. 
-                Bei Fragen wenden Sie sich bitte an die Rezeption.
+                {t('welcomeMessage')}
               </p>
             </CardContent>
           </Card>
@@ -37,7 +46,7 @@ const Index = () => {
 
         <div className="w-full flex justify-between items-center gap-4 mb-6">
           <NavButton to="/admin" position="left" variant="outline">
-            Admin
+            {t('admin')}
           </NavButton>
           
           <NavButton 
@@ -45,7 +54,7 @@ const Index = () => {
             position="center"
             className="px-10 py-7 text-xl"
           >
-            Selbstständig anmelden
+            {t('selfCheckIn')}
           </NavButton>
           
           <NavButton 
@@ -54,7 +63,7 @@ const Index = () => {
             variant="secondary"
             className="px-10 py-7 text-xl"
           >
-            Besuch abmelden
+            {t('checkOut')}
           </NavButton>
         </div>
       </div>
