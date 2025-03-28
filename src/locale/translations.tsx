@@ -11,6 +11,9 @@ export type TranslationKey =
   | 'errorOccurred'
   | 'backToHome'
   | 'backToHomeButton'
+  | 'admin'
+  | 'welcome'
+  | 'selfCheckIn'
   
   // Form fields
   | 'fullName'
@@ -21,6 +24,7 @@ export type TranslationKey =
   | 'phoneNumber'
   | 'email'
   | 'visitorNumber'
+  | 'contact'
   
   // Form labels & descriptions
   | 'formTitle'
@@ -35,6 +39,21 @@ export type TranslationKey =
   | 'checkInCompleteMessage'
   | 'yourVisitorPass'
   | 'checkOutPrompt'
+  | 'visitorRegistration'
+  | 'visitorPolicy'
+  | 'acceptPolicy'
+  | 'policyRequired'
+  | 'registrationSuccessful'
+  | 'yourVisitorNumber'
+  | 'pleaseNote'
+  | 'contactInfo'
+  | 'visitorCheckOut'
+  | 'enterVisitorNumber'
+  | 'visitorNumberLabel'
+  | 'checkOutButton'
+  | 'numberRequired'
+  | 'invalidNumber' 
+  | 'checkOutFailed'
   
   // Validation messages
   | 'nameRequired'
@@ -72,6 +91,9 @@ export const translations = {
     errorOccurred: 'Ein Fehler ist aufgetreten',
     backToHome: 'Zurück zur Startseite',
     backToHomeButton: 'Zurück zur Startseite',
+    admin: 'Administration',
+    welcome: 'Willkommen',
+    selfCheckIn: 'Selbstanmeldung',
     
     // Form fields
     fullName: 'Vollständiger Name',
@@ -82,6 +104,7 @@ export const translations = {
     phoneNumber: 'Telefonnummer',
     email: 'E-Mail',
     visitorNumber: 'Besuchernummer',
+    contact: 'Ansprechpartner',
     
     // Form labels & descriptions
     formTitle: 'Besucheranmeldung',
@@ -96,6 +119,21 @@ export const translations = {
     checkInCompleteMessage: 'Sie wurden erfolgreich angemeldet',
     yourVisitorPass: 'Ihr Besucherausweis',
     checkOutPrompt: 'Geben Sie Ihre Besuchernummer ein, um sich abzumelden',
+    visitorRegistration: 'Besucheranmeldung',
+    visitorPolicy: 'Besucherrichtlinien',
+    acceptPolicy: 'Ich akzeptiere die Besucherrichtlinien',
+    policyRequired: 'Sie müssen die Besucherrichtlinien akzeptieren',
+    registrationSuccessful: 'Anmeldung erfolgreich',
+    yourVisitorNumber: 'Ihre Besuchernummer',
+    pleaseNote: 'Bitte notieren Sie sich diese Nummer',
+    contactInfo: 'Ihr Ansprechpartner',
+    visitorCheckOut: 'Besucher-Abmeldung',
+    enterVisitorNumber: 'Geben Sie Ihre Besuchernummer ein, um sich abzumelden',
+    visitorNumberLabel: 'Besuchernummer',
+    checkOutButton: 'Jetzt abmelden',
+    numberRequired: 'Bitte geben Sie Ihre Besuchernummer ein',
+    invalidNumber: 'Ungültige Besuchernummer',
+    checkOutFailed: 'Abmeldung fehlgeschlagen',
     
     // Validation messages
     nameRequired: 'Bitte geben Sie Ihren Namen ein',
@@ -131,6 +169,9 @@ export const translations = {
     errorOccurred: 'An error occurred',
     backToHome: 'Back to Home',
     backToHomeButton: 'Back to Home',
+    admin: 'Administration',
+    welcome: 'Welcome',
+    selfCheckIn: 'Self Check-In',
     
     // Form fields
     fullName: 'Full Name',
@@ -141,6 +182,7 @@ export const translations = {
     phoneNumber: 'Phone Number',
     email: 'Email',
     visitorNumber: 'Visitor Number',
+    contact: 'Contact Person',
     
     // Form labels & descriptions
     formTitle: 'Visitor Registration',
@@ -155,6 +197,21 @@ export const translations = {
     checkInCompleteMessage: 'You have been successfully registered',
     yourVisitorPass: 'Your Visitor Pass',
     checkOutPrompt: 'Enter your visitor number to check out',
+    visitorRegistration: 'Visitor Registration',
+    visitorPolicy: 'Visitor Policy',
+    acceptPolicy: 'I accept the visitor policy',
+    policyRequired: 'You must accept the visitor policy',
+    registrationSuccessful: 'Registration Successful',
+    yourVisitorNumber: 'Your Visitor Number',
+    pleaseNote: 'Please note this number',
+    contactInfo: 'Your contact person',
+    visitorCheckOut: 'Visitor Check-Out',
+    enterVisitorNumber: 'Enter your visitor number to check out',
+    visitorNumberLabel: 'Visitor Number',
+    checkOutButton: 'Check out now',
+    numberRequired: 'Please enter your visitor number',
+    invalidNumber: 'Invalid visitor number',
+    checkOutFailed: 'Check-out failed',
     
     // Validation messages
     nameRequired: 'Please enter your name',

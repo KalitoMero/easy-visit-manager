@@ -26,11 +26,11 @@ const Index = () => {
 
   return (
     <div className="app-container">
-      <div className="absolute top-4 right-4">
-        <LanguageSwitcher />
-      </div>
-      
       <div className="page-container min-h-[600px]">
+        <div className="absolute top-4 right-4">
+          <LanguageSwitcher />
+        </div>
+        
         <div className="flex-1 flex flex-col items-center justify-center text-center mb-12 mt-8">
           <h1 className="text-4xl font-bold mb-6 tracking-tight">
             {t('welcome')}
@@ -72,3 +72,4 @@ const Index = () => {
 };
 
 export default Index;
+

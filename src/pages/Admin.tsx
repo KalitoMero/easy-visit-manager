@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +18,7 @@ import { useLanguageStore, Language } from '@/hooks/useLanguageStore';
 const formatTime = (isoString: string, language: Language) => {
   if (!isoString) return "-";
   const locale = language === 'de' ? de : enUS;
-  return format(new Date(isoString), language === 'de' ? 'dd.MM.yyyy HH:mm' : 'MM/dd/yyyy h:mm a', { locale });
+  return format(new Date(isoString), 'dd.MM.yyyy HH:mm', { locale });
 };
 
 const Admin = () => {
