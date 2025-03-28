@@ -39,7 +39,7 @@ const CheckInStep2 = () => {
         <div className="page-container">
           <Card>
             <CardContent className="p-8 text-center">
-              <p className="text-xl">Besucher nicht gefunden. Bitte starten Sie erneut.</p>
+              <p className="text-xl">{t('visitorNotFound')}</p>
               <NavButton to="/" className="mt-4">
                 {t('backToHome')}
               </NavButton>
@@ -87,8 +87,8 @@ const CheckInStep2 = () => {
                   </div>
                 )}
                 
-                {/* Policy text with HTML support */}
-                <div dangerouslySetInnerHTML={{ __html: policyText }} />
+                {/* Policy text without HTML rendering - displayed as plain text with line breaks preserved */}
+                <div className="whitespace-pre-wrap">{policyText}</div>
               </div>
             </ScrollArea>
             
