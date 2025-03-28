@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,11 +24,9 @@ const CheckInStep2 = () => {
   const { language } = useLanguageStore();
   const t = useTranslation(language);
   
-  // Get policy text and image from the store
   const policyText = usePolicyStore(state => state.getPolicyText(language));
   const policyImageUrl = usePolicyStore(state => state.policyImageUrl);
   
-  // Find the current visitor
   const visitor = visitors.find(v => v.id === id);
   
   if (!visitor) {
@@ -76,7 +73,6 @@ const CheckInStep2 = () => {
           <CardContent>
             <ScrollArea className="h-[350px] rounded-md border p-4 bg-white/80 backdrop-blur-sm">
               <div className="p-4 text-lg">
-                {/* Policy image if available */}
                 {policyImageUrl && (
                   <div className="mb-6 flex justify-center">
                     <img 
@@ -87,7 +83,6 @@ const CheckInStep2 = () => {
                   </div>
                 )}
                 
-                {/* Policy text without HTML rendering - displayed as plain text with line breaks preserved */}
                 <div className="whitespace-pre-wrap">{policyText}</div>
               </div>
             </ScrollArea>
@@ -106,7 +101,7 @@ const CheckInStep2 = () => {
             <div className="pt-6 flex justify-end">
               <Button 
                 onClick={handleContinue}
-                className="px-10 py-6 text-xl scale-150 transform-gpu transition-all duration-300 hover:scale-[1.55]"
+                className="px-8 py-6 text-lg transition-all duration-300 hover:scale-105"
               >
                 {t('next')}
               </Button>
