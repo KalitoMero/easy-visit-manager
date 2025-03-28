@@ -3,7 +3,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import HomeButton from "@/components/HomeButton";
@@ -14,6 +13,7 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { format } from 'date-fns';
 import { de, enUS } from 'date-fns/locale';
 import { useLanguageStore, Language } from '@/hooks/useLanguageStore';
+import ImageUploader from "@/components/ImageUploader";
 
 const formatTime = (isoString: string, language: Language) => {
   if (!isoString) return "-";
@@ -48,7 +48,7 @@ const Admin = () => {
   const { policyText, policyImageUrl, updatePolicyText, updatePolicyImage } = usePolicyStore();
   const [germanPolicyText, setGermanPolicyText] = useState("");
   const [englishPolicyText, setEnglishPolicyText] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const { language } = useLanguageStore();
 
   // Initialize policy text fields when component mounts or authentication changes
@@ -56,14 +56,18 @@ const Admin = () => {
     if (isAuthenticated) {
       setGermanPolicyText(policyText.de);
       setEnglishPolicyText(policyText.en);
-      setImageUrl(policyImageUrl || "");
+      setUploadedImage(policyImageUrl || null);
     }
   }, [isAuthenticated, policyText, policyImageUrl]);
+
+  const handleImageSelect = (imageBase64: string) => {
+    setUploadedImage(imageBase64);
+  };
 
   const handleSavePolicy = () => {
     updatePolicyText(germanPolicyText, 'de');
     updatePolicyText(englishPolicyText, 'en');
-    updatePolicyImage(imageUrl || null);
+    updatePolicyImage(uploadedImage);
     
     toast({
       title: "Einstellungen gespeichert",
@@ -228,12 +232,10 @@ const Admin = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
-                  <Label htmlFor="imageUrl">Bild URL (optional)</Label>
-                  <Input
-                    id="imageUrl"
-                    placeholder="https://example.com/image.jpg"
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
+                  <Label htmlFor="policyImage">Bild (optional)</Label>
+                  <ImageUploader 
+                    onImageSelect={handleImageSelect} 
+                    currentImage={uploadedImage}
                   />
                   <p className="text-sm text-muted-foreground mt-1">
                     Bild wird oberhalb der Richtlinien angezeigt
@@ -250,7 +252,7 @@ const Admin = () => {
                     className="min-h-[300px] font-mono text-sm"
                   />
                   <p className="text-sm text-muted-foreground mt-1">
-                    HTML-Formatierung möglich (z.B. &lt;h3&gt;, &lt;p&gt;, &lt;ol&gt;, &lt;li&gt;)
+                    Textformatierung wird genau so übernommen wie eingegeben
                   </p>
                 </div>
 
@@ -264,7 +266,7 @@ const Admin = () => {
                     className="min-h-[300px] font-mono text-sm"
                   />
                   <p className="text-sm text-muted-foreground mt-1">
-                    HTML formatting is possible (e.g. &lt;h3&gt;, &lt;p&gt;, &lt;ol&gt;, &lt;li&gt;)
+                    Text formatting is preserved exactly as entered
                   </p>
                 </div>
                 
