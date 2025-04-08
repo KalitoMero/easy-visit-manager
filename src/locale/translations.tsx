@@ -25,6 +25,8 @@ export type TranslationKey =
   | 'email'
   | 'visitorNumber'
   | 'contact'
+  | 'additionalVisitor'
+  | 'addVisitor'
   
   // Form labels & descriptions
   | 'formTitle'
@@ -105,6 +107,8 @@ export const translations = {
     email: 'E-Mail',
     visitorNumber: 'Besuchernummer',
     contact: 'Ansprechpartner',
+    additionalVisitor: 'Weiterer Gast',
+    addVisitor: 'Weiteren Gast hinzufügen',
     
     // Form labels & descriptions
     formTitle: 'Besucheranmeldung',
@@ -183,6 +187,8 @@ export const translations = {
     email: 'Email',
     visitorNumber: 'Visitor Number',
     contact: 'Contact Person',
+    additionalVisitor: 'Additional Visitor',
+    addVisitor: 'Add Visitor',
     
     // Form labels & descriptions
     formTitle: 'Visitor Registration',
