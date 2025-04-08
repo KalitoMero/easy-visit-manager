@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import HomeButton from "@/components/HomeButton";
+import AdminHomeButton from "@/components/AdminHomeButton";
 import { usePolicyStore } from "@/hooks/usePolicyStore";
 import { useVisitorStore } from "@/hooks/useVisitorStore";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
@@ -161,7 +161,7 @@ const Admin = () => {
   if (loading) {
     return (
       <div className="app-container">
-        <HomeButton />
+        <AdminHomeButton />
         <div className="page-container max-w-2xl">
           <Card>
             <CardContent className="pt-6">
@@ -178,7 +178,7 @@ const Admin = () => {
   if (!isAuthenticated) {
     return (
       <div className="app-container">
-        <HomeButton />
+        <AdminHomeButton />
         <div className="page-container max-w-md">
           <Card>
             <CardHeader>
@@ -210,7 +210,7 @@ const Admin = () => {
 
   return (
     <div className="app-container">
-      <HomeButton />
+      <AdminHomeButton />
       
       <div className="page-container">
         <div className="flex justify-between items-center mb-6">
