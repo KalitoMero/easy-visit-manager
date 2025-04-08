@@ -22,16 +22,31 @@ export const useAdminAuth = create<AdminAuthState>()(
         const isCorrect = password === ADMIN_PASSWORD;
         if (isCorrect) {
           set({ isAuthenticated: true });
+          console.log("Admin logged in successfully");
         }
         return isCorrect;
       },
       
       logout: () => {
         set({ isAuthenticated: false });
+        console.log("Admin logged out");
       },
     }),
     {
       name: 'admin-auth-storage',
+      // Improve persistence by storing in localStorage and loading synchronously
+      storage: {
+        getItem: (name) => {
+          const str = localStorage.getItem(name);
+          return str ? JSON.parse(str) : null;
+        },
+        setItem: (name, value) => {
+          localStorage.setItem(name, JSON.stringify(value));
+        },
+        removeItem: (name) => {
+          localStorage.removeItem(name);
+        },
+      },
     }
   )
 );

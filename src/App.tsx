@@ -13,7 +13,14 @@ import CheckOutSuccess from "./pages/CheckOutSuccess";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+// Create a single QueryClient instance for the whole app
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false, // Prevent refetching on focus to improve persistence
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
