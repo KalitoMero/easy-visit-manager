@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +16,8 @@ import { format } from 'date-fns';
 import { de, enUS } from 'date-fns/locale';
 import { useLanguageStore, Language } from '@/hooks/useLanguageStore';
 import ImageUploader from "@/components/ImageUploader";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 
 const formatTime = (isoString: string, language: Language) => {
   if (!isoString) return "-";
@@ -43,10 +46,27 @@ const Admin = () => {
   const { toast } = useToast();
 
   const visitors = useVisitorStore((state) => state.visitors);
+  const deletionSchedule = useVisitorStore((state) => state.deletionSchedule);
+  const updateDeletionSchedule = useVisitorStore((state) => state.updateDeletionSchedule);
+  const deleteOldVisitors = useVisitorStore((state) => state.deleteOldVisitors);
+  
+  const [deletionEnabled, setDeletionEnabled] = useState(false);
+  const [deletionDay, setDeletionDay] = useState("0");
+  const [deletionHour, setDeletionHour] = useState("3");
+  const [deletionMinute, setDeletionMinute] = useState("0");
   
   useEffect(() => {
     console.log("Loaded visitors in Admin:", visitors);
   }, [visitors]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      setDeletionEnabled(deletionSchedule.enabled);
+      setDeletionDay(deletionSchedule.dayOfWeek.toString());
+      setDeletionHour(deletionSchedule.hour.toString());
+      setDeletionMinute(deletionSchedule.minute.toString());
+    }
+  }, [isAuthenticated, deletionSchedule]);
 
   const sortedVisitors = [...visitors].sort((a, b) => {
     if (a.checkOutTime === null && b.checkOutTime !== null) return -1;
@@ -87,11 +107,56 @@ const Admin = () => {
     });
   };
 
+  const handleSaveDeletionSchedule = () => {
+    updateDeletionSchedule(
+      deletionEnabled, 
+      parseInt(deletionDay), 
+      parseInt(deletionHour), 
+      parseInt(deletionMinute)
+    );
+    
+    toast({
+      title: "Einstellungen gespeichert",
+      description: "Der Zeitplan für die automatische Löschung wurde aktualisiert.",
+    });
+  };
+
+  const handleManualDeletion = () => {
+    const deletedCount = deleteOldVisitors();
+    
+    toast({
+      title: "Datenlöschung durchgeführt",
+      description: `${deletedCount} abgemeldete Besucher wurden gelöscht.`,
+    });
+  };
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     login(password);
     setPassword("");
   };
+
+  const weekdays = [
+    { value: "0", label: "Sonntag" },
+    { value: "1", label: "Montag" },
+    { value: "2", label: "Dienstag" },
+    { value: "3", label: "Mittwoch" },
+    { value: "4", label: "Donnerstag" },
+    { value: "5", label: "Freitag" },
+    { value: "6", label: "Samstag" },
+  ];
+
+  // Generate hours (0-23)
+  const hours = Array.from({ length: 24 }, (_, i) => ({
+    value: i.toString(),
+    label: i.toString().padStart(2, '0'),
+  }));
+
+  // Generate minutes (0-59)
+  const minutes = Array.from({ length: 60 }, (_, i) => ({
+    value: i.toString(),
+    label: i.toString().padStart(2, '0'),
+  }));
 
   if (loading) {
     return (
@@ -157,6 +222,7 @@ const Admin = () => {
           <TabsList className="mb-4">
             <TabsTrigger value="active">Aktive Besucher</TabsTrigger>
             <TabsTrigger value="inactive">Abgemeldete Besucher</TabsTrigger>
+            <TabsTrigger value="settings">Einstellungen</TabsTrigger>
             <TabsTrigger value="policy">Besucherrichtlinien</TabsTrigger>
           </TabsList>
           
@@ -232,6 +298,107 @@ const Admin = () => {
                     </TableBody>
                   </Table>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="settings">
+            <Card>
+              <CardHeader>
+                <CardTitle>Automatische Datenlöschung</CardTitle>
+                <CardDescription>Konfigurieren Sie, wann abgemeldete Besucherdaten automatisch gelöscht werden sollen</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center space-x-2">
+                  <Switch 
+                    id="deletion-enabled"
+                    checked={deletionEnabled}
+                    onCheckedChange={setDeletionEnabled}
+                  />
+                  <Label htmlFor="deletion-enabled">Automatische Löschung aktivieren</Label>
+                </div>
+                
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="deletion-day">Wochentag</Label>
+                    <Select 
+                      disabled={!deletionEnabled} 
+                      value={deletionDay} 
+                      onValueChange={setDeletionDay}
+                    >
+                      <SelectTrigger id="deletion-day">
+                        <SelectValue placeholder="Wochentag wählen" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {weekdays.map(day => (
+                          <SelectItem key={day.value} value={day.value}>
+                            {day.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="deletion-hour">Stunde</Label>
+                    <Select 
+                      disabled={!deletionEnabled} 
+                      value={deletionHour} 
+                      onValueChange={setDeletionHour}
+                    >
+                      <SelectTrigger id="deletion-hour">
+                        <SelectValue placeholder="Stunde wählen" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {hours.map(hour => (
+                          <SelectItem key={hour.value} value={hour.value}>
+                            {hour.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="deletion-minute">Minute</Label>
+                    <Select 
+                      disabled={!deletionEnabled} 
+                      value={deletionMinute} 
+                      onValueChange={setDeletionMinute}
+                    >
+                      <SelectTrigger id="deletion-minute">
+                        <SelectValue placeholder="Minute wählen" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {minutes.map(minute => (
+                          <SelectItem key={minute.value} value={minute.value}>
+                            {minute.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                {deletionSchedule.lastRun && (
+                  <p className="text-sm text-muted-foreground">
+                    Zuletzt ausgeführt: {formatTime(deletionSchedule.lastRun, language)}
+                  </p>
+                )}
+                
+                <div className="flex justify-between pt-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleManualDeletion} 
+                    disabled={inactiveVisitors.length === 0}
+                  >
+                    Jetzt manuell löschen ({inactiveVisitors.length})
+                  </Button>
+                  
+                  <Button onClick={handleSaveDeletionSchedule}>
+                    Einstellungen speichern
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

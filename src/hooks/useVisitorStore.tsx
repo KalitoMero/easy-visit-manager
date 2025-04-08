@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -19,6 +18,13 @@ interface VisitorState {
   currentVisitorNumber: number;
   lastReset: string;
   lastAutoCheckout: string;
+  deletionSchedule: {
+    enabled: boolean;
+    dayOfWeek: number; // 0-6, 0 is Sunday
+    hour: number; // 0-23
+    minute: number; // 0-59
+    lastRun: string | null;
+  };
   
   addVisitor: (name: string, company: string, contact: string) => Visitor;
   addGroupVisitor: (names: string[], company: string, contact: string) => Visitor;
@@ -28,6 +34,9 @@ interface VisitorState {
   getVisitorByNumber: (visitorNumber: number) => Visitor | undefined;
   resetVisitorNumberIfNeeded: () => void;
   performScheduledCheckout: () => void;
+  updateDeletionSchedule: (enabled: boolean, dayOfWeek: number, hour: number, minute: number) => void;
+  runScheduledDeletion: () => void;
+  deleteOldVisitors: () => number;
 }
 
 // Helper to get the current week number (ISO week-numbering year)
@@ -65,6 +74,13 @@ export const useVisitorStore = create<VisitorState>()(
       currentVisitorNumber: 100, // Start from 100 for three-digit numbers
       lastReset: getCurrentWeekString(),
       lastAutoCheckout: '',
+      deletionSchedule: {
+        enabled: false,
+        dayOfWeek: 0, // Sunday by default
+        hour: 3, // 3 AM by default
+        minute: 0,
+        lastRun: null,
+      },
 
       resetVisitorNumberIfNeeded: () => {
         const currentWeek = getCurrentWeekString();
@@ -200,6 +216,71 @@ export const useVisitorStore = create<VisitorState>()(
           console.log('Täglicher Checkout bereits durchgeführt am', lastAutoCheckout);
         }
       },
+
+      updateDeletionSchedule: (enabled, dayOfWeek, hour, minute) => {
+        set(state => ({
+          deletionSchedule: {
+            ...state.deletionSchedule,
+            enabled,
+            dayOfWeek,
+            hour,
+            minute
+          }
+        }));
+        console.log(`Updated deletion schedule: enabled=${enabled}, day=${dayOfWeek}, time=${hour}:${minute}`);
+      },
+
+      runScheduledDeletion: () => {
+        const { deletionSchedule } = get();
+        if (!deletionSchedule.enabled) return;
+
+        const now = new Date();
+        const currentDay = now.getDay();
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+        
+        // Check if today is the scheduled day
+        if (currentDay === deletionSchedule.dayOfWeek) {
+          // Check if we're past the scheduled time
+          if ((currentHour > deletionSchedule.hour) || 
+              (currentHour === deletionSchedule.hour && currentMinute >= deletionSchedule.minute)) {
+            
+            // Check if we've already run today
+            const lastRunDate = deletionSchedule.lastRun ? new Date(deletionSchedule.lastRun) : null;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (!lastRunDate || lastRunDate < today) {
+              // Time to run the deletion
+              const deletedCount = get().deleteOldVisitors();
+              
+              // Update the last run time
+              set(state => ({
+                deletionSchedule: {
+                  ...state.deletionSchedule,
+                  lastRun: new Date().toISOString()
+                }
+              }));
+              
+              console.log(`Scheduled deletion ran on ${new Date().toISOString()}, deleted ${deletedCount} visitors`);
+            }
+          }
+        }
+      },
+
+      deleteOldVisitors: () => {
+        const { visitors } = get();
+        
+        // Only delete visitors that are checked out
+        const activeVisitors = visitors.filter(v => v.checkOutTime === null);
+        const inactiveVisitors = visitors.filter(v => v.checkOutTime !== null);
+        
+        // Update the store to only keep active visitors
+        set({ visitors: activeVisitors });
+        
+        console.log(`Deleted ${inactiveVisitors.length} checked-out visitors`);
+        return inactiveVisitors.length;
+      },
     }),
     {
       name: 'visitor-storage',
@@ -244,6 +325,9 @@ export const initializeAutoCheckout = () => {
     console.log('Current visitors:', state.visitors);
     // Simply accessing state properties will trigger persistence middleware
     state.resetVisitorNumberIfNeeded();
+    
+    // Check if we should run the scheduled deletion
+    state.runScheduledDeletion();
   }, 15000); // Every 15 seconds
 
   const scheduleCheckout = () => {
