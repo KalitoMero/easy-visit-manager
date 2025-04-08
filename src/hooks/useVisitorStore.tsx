@@ -11,6 +11,7 @@ export interface Visitor {
   checkInTime: string;
   checkOutTime: string | null;
   policyAccepted: boolean;
+  additionalVisitors?: string[]; // For group visitors
 }
 
 interface VisitorState {
@@ -20,6 +21,7 @@ interface VisitorState {
   lastAutoCheckout: string;
   
   addVisitor: (name: string, company: string, contact: string) => Visitor;
+  addGroupVisitor: (names: string[], company: string, contact: string) => Visitor;
   acceptPolicy: (id: string) => void;
   checkOutVisitor: (visitorNumber: number) => boolean;
   checkOutAllVisitors: () => void;
@@ -97,6 +99,37 @@ export const useVisitorStore = create<VisitorState>()(
         });
         
         console.log("Added new visitor:", newVisitor);
+        console.log("Current visitors:", [...visitors, newVisitor]);
+        
+        return newVisitor;
+      },
+
+      addGroupVisitor: (names, company, contact) => {
+        // First reset visitor number if needed
+        get().resetVisitorNumberIfNeeded();
+        
+        const { visitors, currentVisitorNumber } = get();
+        const primaryName = names[0]; // First name is the primary visitor
+        const additionalVisitors = names.slice(1); // Rest are additional visitors
+        
+        const newVisitor: Visitor = {
+          id: crypto.randomUUID(),
+          visitorNumber: currentVisitorNumber,
+          name: primaryName,
+          additionalVisitors: additionalVisitors,
+          company,
+          contact,
+          checkInTime: getCurrentTime(),
+          checkOutTime: null,
+          policyAccepted: false,
+        };
+        
+        set({
+          visitors: [...visitors, newVisitor],
+          currentVisitorNumber: currentVisitorNumber + 1,
+        });
+        
+        console.log("Added new group visitor:", newVisitor);
         console.log("Current visitors:", [...visitors, newVisitor]);
         
         return newVisitor;

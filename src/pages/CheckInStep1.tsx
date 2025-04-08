@@ -10,14 +10,17 @@ import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
 import { useTranslation } from '@/locale/translations';
+import { Plus, X } from 'lucide-react';
 
 const CheckInStep1 = () => {
   const [name, setName] = useState('');
+  const [additionalVisitors, setAdditionalVisitors] = useState<string[]>([]);
   const [company, setCompany] = useState('');
   const [contact, setContact] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
   const addVisitor = useVisitorStore(state => state.addVisitor);
+  const addGroupVisitor = useVisitorStore(state => state.addGroupVisitor);
   
   const { language } = useLanguageStore();
   const t = useTranslation(language);
@@ -52,8 +55,35 @@ const CheckInStep1 = () => {
       return;
     }
     
-    const visitor = addVisitor(name, company, contact);
-    navigate(`/checkin/step2/${visitor.id}`);
+    // Filter out empty names
+    const validAdditionalVisitors = additionalVisitors.filter(v => v.trim());
+    
+    // If there are additional visitors, register as a group
+    if (validAdditionalVisitors.length > 0) {
+      const allNames = [name, ...validAdditionalVisitors];
+      const visitor = addGroupVisitor(allNames, company, contact);
+      navigate(`/checkin/step2/${visitor.id}`);
+    } else {
+      // Register as a single visitor
+      const visitor = addVisitor(name, company, contact);
+      navigate(`/checkin/step2/${visitor.id}`);
+    }
+  };
+
+  const addVisitorField = () => {
+    setAdditionalVisitors([...additionalVisitors, '']);
+  };
+
+  const updateAdditionalVisitor = (index: number, value: string) => {
+    const updated = [...additionalVisitors];
+    updated[index] = value;
+    setAdditionalVisitors(updated);
+  };
+
+  const removeAdditionalVisitor = (index: number) => {
+    const updated = [...additionalVisitors];
+    updated.splice(index, 1);
+    setAdditionalVisitors(updated);
   };
 
   return (
@@ -80,6 +110,45 @@ const CheckInStep1 = () => {
                   autoFocus
                   autoComplete="off"
                 />
+              </div>
+              
+              {/* Additional visitors */}
+              {additionalVisitors.map((visitor, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <Label htmlFor={`additional-visitor-${index}`} className="text-lg block mb-2">
+                      {t('additionalVisitor')} {index + 1}
+                    </Label>
+                    <Input
+                      id={`additional-visitor-${index}`}
+                      value={visitor}
+                      onChange={(e) => updateAdditionalVisitor(index, e.target.value)}
+                      className="h-14 text-lg bg-white/80 backdrop-blur-sm"
+                      placeholder={t('fullName')}
+                      autoComplete="off"
+                    />
+                  </div>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    onClick={() => removeAdditionalVisitor(index)}
+                    className="mt-8"
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+              ))}
+              
+              <div>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={addVisitorField}
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="h-5 w-5" />
+                  {t('addAdditionalVisitor')}
+                </Button>
               </div>
               
               <div>
