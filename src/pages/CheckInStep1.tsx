@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +9,7 @@ import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
 import { useTranslation } from '@/locale/translations';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, ArrowLeft } from 'lucide-react';
 
 const CheckInStep1 = () => {
   const [name, setName] = useState('');
@@ -117,7 +116,7 @@ const CheckInStep1 = () => {
                 <div key={index} className="flex items-center gap-2">
                   <div className="flex-1">
                     <Label htmlFor={`additional-visitor-${index}`} className="text-lg block mb-2">
-                      {t('additionalVisitor')} {index + 1}
+                      {t('additionalVisitor')}
                     </Label>
                     <Input
                       id={`additional-visitor-${index}`}
@@ -147,7 +146,7 @@ const CheckInStep1 = () => {
                   className="flex items-center gap-2"
                 >
                   <Plus className="h-5 w-5" />
-                  {t('addAdditionalVisitor')}
+                  {t('addVisitor')}
                 </Button>
               </div>
               

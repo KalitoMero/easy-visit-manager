@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,42 +22,48 @@ const formatTime = (isoString: string, language: Language) => {
   return format(new Date(isoString), 'dd.MM.yyyy HH:mm', { locale });
 };
 
+const formatVisitorNames = (visitor) => {
+  if (!visitor.additionalVisitors || visitor.additionalVisitors.length === 0) {
+    return visitor.name;
+  }
+  
+  return (
+    <div>
+      <div>{visitor.name} <span className="text-xs text-muted-foreground">(Hauptbesucher)</span></div>
+      {visitor.additionalVisitors.map((additionalName, index) => (
+        <div key={index} className="text-sm pl-3 mt-1">+ {additionalName}</div>
+      ))}
+    </div>
+  );
+};
+
 const Admin = () => {
-  // Admin authentication handling
   const { isAuthenticated, login, logout, loading } = useAdminAuth();
   const [password, setPassword] = useState("");
   const { toast } = useToast();
 
-  // Visitor data
   const visitors = useVisitorStore((state) => state.visitors);
   
-  // Debugging - log visitors to check if they're being loaded
   useEffect(() => {
     console.log("Loaded visitors in Admin:", visitors);
   }, [visitors]);
 
-  // Sort visitors: active first, then by check-in time (newest first)
   const sortedVisitors = [...visitors].sort((a, b) => {
-    // Active visitors first
     if (a.checkOutTime === null && b.checkOutTime !== null) return -1;
     if (a.checkOutTime !== null && b.checkOutTime === null) return 1;
     
-    // Then sort by check-in time (newest first)
     return new Date(b.checkInTime).getTime() - new Date(a.checkInTime).getTime();
   });
 
-  // Filter active and inactive visitors
   const activeVisitors = sortedVisitors.filter(v => v.checkOutTime === null);
   const inactiveVisitors = sortedVisitors.filter(v => v.checkOutTime !== null);
 
-  // Policy management
   const { policyText, policyImageUrl, updatePolicyText, updatePolicyImage } = usePolicyStore();
   const [germanPolicyText, setGermanPolicyText] = useState("");
   const [englishPolicyText, setEnglishPolicyText] = useState("");
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const { language } = useLanguageStore();
 
-  // Initialize policy text fields when component mounts or authentication changes
   useEffect(() => {
     if (isAuthenticated) {
       setGermanPolicyText(policyText.de);
@@ -179,7 +184,7 @@ const Admin = () => {
                       {activeVisitors.map(visitor => (
                         <TableRow key={visitor.id}>
                           <TableCell>{visitor.visitorNumber}</TableCell>
-                          <TableCell>{visitor.name}</TableCell>
+                          <TableCell>{formatVisitorNames(visitor)}</TableCell>
                           <TableCell>{visitor.company}</TableCell>
                           <TableCell>{visitor.contact}</TableCell>
                           <TableCell>{formatTime(visitor.checkInTime, language)}</TableCell>
@@ -217,7 +222,7 @@ const Admin = () => {
                       {inactiveVisitors.map(visitor => (
                         <TableRow key={visitor.id}>
                           <TableCell>{visitor.visitorNumber}</TableCell>
-                          <TableCell>{visitor.name}</TableCell>
+                          <TableCell>{formatVisitorNames(visitor)}</TableCell>
                           <TableCell>{visitor.company}</TableCell>
                           <TableCell>{visitor.contact}</TableCell>
                           <TableCell>{formatTime(visitor.checkInTime, language)}</TableCell>
