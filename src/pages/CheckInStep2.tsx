@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +13,7 @@ import { usePolicyStore } from '@/hooks/usePolicyStore';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
 import { useTranslation } from '@/locale/translations';
+import { ArrowLeft } from 'lucide-react';
 
 const CheckInStep2 = () => {
   const { id } = useParams<{ id: string }>();
@@ -61,6 +63,10 @@ const CheckInStep2 = () => {
     navigate(`/checkin/step3/${visitor.id}`);
   };
 
+  const handleBack = () => {
+    navigate('/checkin/step1');
+  };
+
   return (
     <div className="app-container">
       <HomeButton />
@@ -98,10 +104,20 @@ const CheckInStep2 = () => {
               </Label>
             </div>
             
-            <div className="pt-6 flex justify-end">
+            <div className="pt-6 flex justify-between items-center">
+              <NavButton 
+                to="/checkin/step1" 
+                position="left" 
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft size={16} />
+                {t('back')}
+              </NavButton>
+              
               <Button 
                 onClick={handleContinue}
-                className="px-8 py-6 text-lg transition-all duration-300 hover:scale-105"
+                className="px-8 py-6 text-lg transition-all duration-300 hover:scale-105 ml-auto"
               >
                 {t('next')}
               </Button>
