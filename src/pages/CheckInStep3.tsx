@@ -7,6 +7,7 @@ import HomeButton from '@/components/HomeButton';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
 import { useTranslation } from '@/locale/translations';
+import { ArrowLeft } from 'lucide-react';
 
 const CheckInStep3 = () => {
   const { id } = useParams<{ id: string }>();
@@ -28,6 +29,10 @@ const CheckInStep3 = () => {
   if (!visitor) {
     return null;
   }
+
+  const handleBack = () => {
+    navigate(`/checkin/step2/${visitor.id}`);
+  };
 
   return (
     <div className="app-container">
@@ -57,8 +62,18 @@ const CheckInStep3 = () => {
               </p>
             </Card>
             
-            <div className="pt-6">
-              <NavButton to="/" position="center">
+            <div className="pt-6 flex justify-between items-center">
+              <NavButton 
+                to={`/checkin/step2/${visitor.id}`} 
+                position="left" 
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft size={16} />
+                {t('back')}
+              </NavButton>
+              
+              <NavButton to="/" position="right">
                 {t('backToHome')}
               </NavButton>
             </div>
