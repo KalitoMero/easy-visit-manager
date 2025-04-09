@@ -67,10 +67,6 @@ const CheckInStep2 = () => {
     navigate(`/checkin/step3/${visitor.id}`);
   };
 
-  const handleBack = () => {
-    navigate('/checkin/step1');
-  };
-
   return (
     <div className="app-container">
       <HomeButton />

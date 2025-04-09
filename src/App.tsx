@@ -12,6 +12,7 @@ import CheckOut from "./pages/CheckOut";
 import CheckOutSuccess from "./pages/CheckOutSuccess";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import BadgePrintPreview from "./pages/BadgePrintPreview";
 
 // Create a single QueryClient instance for the whole app
 const queryClient = new QueryClient({
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/checkout" element={<CheckOut />} />
           <Route path="/checkout/success" element={<CheckOutSuccess />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/print-badge/:id" element={<BadgePrintPreview />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

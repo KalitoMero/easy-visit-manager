@@ -1,262 +1,301 @@
-// Define all translatable keys to ensure type safety
+
+import React from 'react';
+
 export type TranslationKey = 
-  // Common UI elements
-  | 'checkIn'
-  | 'checkOut' 
-  | 'next'
+  // General
+  | 'title'
+  | 'welcome'
   | 'back'
-  | 'submit'
+  | 'next'
   | 'cancel'
-  | 'confirm'
-  | 'errorOccurred'
-  | 'backToHome'
-  | 'backToHomeButton'
+  | 'save'
+  | 'delete'
+  | 'edit'
+  | 'close'
+  | 'loading'
+  | 'add'
   | 'admin'
   | 'welcome'
   | 'selfCheckIn'
   | 'acceptAndContinue'
+  | 'print'
+  | 'viewPrintableBadge'
+  | 'badgePrintPreview'
   
   // Form fields
   | 'fullName'
-  | 'name'
-  | 'company'
-  | 'contactPerson'
-  | 'badgeNumber'
-  | 'phoneNumber'
   | 'email'
+  | 'phone'
+  | 'company'
+  | 'message'
+  | 'contactPerson'
+  | 'reason'
   | 'visitorNumber'
-  | 'contact'
-  | 'additionalVisitor'
-  | 'addVisitor'
-  
-  // Form labels & descriptions
-  | 'formTitle'
-  | 'formDescription'
-  | 'enterYourDetails'
-  | 'enterYourBadge'
-  | 'policyAgreement'
-  | 'policyTitle'
-  | 'badgeHelpText'
-  | 'requiredField'
-  | 'checkInCompleteTitle'
-  | 'checkInCompleteMessage'
-  | 'yourVisitorPass'
-  | 'checkOutPrompt'
-  | 'visitorRegistration'
-  | 'visitorPolicy'
-  | 'acceptPolicy'
-  | 'policyRequired'
-  | 'registrationSuccessful'
+  | 'date'
+  | 'time'
+  | 'submit'
+
+  // Registration-related
+  | 'checkIn'
+  | 'checkOut'
+  | 'checkInDetails'
+  | 'checkOutDetails'
   | 'yourVisitorNumber'
-  | 'pleaseNote'
   | 'contactInfo'
-  | 'visitorCheckOut'
-  | 'enterVisitorNumber'
-  | 'visitorNumberLabel'
-  | 'checkOutButton'
-  | 'numberRequired'
-  | 'invalidNumber' 
-  | 'checkOutFailed'
-  
-  // Validation messages
+  | 'pleaseNote'
+  | 'registrationSuccessful'
+  | 'visitorNotFound'
+  | 'requiredField'
+  | 'invalidEmail'
+  | 'invalidPhone'
   | 'nameRequired'
   | 'companyRequired'
   | 'contactRequired'
-  | 'badgeNumberRequired'
-  | 'badgeNumberInvalid'
-  | 'agreementRequired'
-  
-  // Success messages
-  | 'successfullyCheckedIn'
-  | 'successfullyCheckedOut'
-  | 'thankYou'
-  | 'safeJourney'
-  
-  // Error messages
-  | 'visitorNotFound'
-  | 'pageNotFound'
-  | 'invalidBadgeError'
-  
-  // Policy scroll messages
+  | 'visitorNumberRequired'
+  | 'backToHome'
   | 'scrollComplete'
   | 'policyCheckboxEnabled'
   | 'scrollToBottom'
-  
-  // Other
-  | 'welcomeMessage';
 
-// Define translations
-export const translations = {
+  // Policy-related
+  | 'visitorPolicy'
+  | 'acceptPolicy'
+  | 'policyRequired'
+
+  // Visitor management
+  | 'activeVisitors'
+  | 'recentVisitors'
+  | 'visitorHistory'
+  | 'addVisitor'
+  | 'editVisitor'
+  | 'deleteVisitor'
+  | 'deleteVisitorConfirm'
+  | 'noVisitors'
+  | 'visitorDetails'
+  | 'allVisitors'
+  | 'searchVisitor'
+
+  // Success/Error messages
+  | 'operationSuccessful'
+  | 'operationFailed'
+  | 'addedSuccessfully'
+  | 'updatedSuccessfully'
+  | 'deletedSuccessfully'
+  | 'checkInSuccessful'
+  | 'checkOutSuccessful'
+  | 'errorOccurred'
+  | 'tryAgain'
+  
+  // Admin-related
+  | 'dashboard'
+  | 'settings'
+  | 'users'
+  | 'logs'
+  | 'system'
+  | 'login'
+  | 'logout'
+  | 'password'
+  | 'forgotPassword'
+  | 'resetPassword'
+  | 'statistics';
+
+const translations: { [key in 'de' | 'en']: Record<TranslationKey, string> } = {
   de: {
-    // Common UI elements
-    checkIn: 'Anmelden',
-    checkOut: 'Abmelden',
-    next: 'Weiter',
+    title: 'Besucherverwaltungssystem',
+    welcome: 'Willkommen',
     back: 'Zurück',
-    submit: 'Absenden',
+    next: 'Weiter',
     cancel: 'Abbrechen',
-    confirm: 'Bestätigen',
-    errorOccurred: 'Ein Fehler ist aufgetreten',
-    backToHome: 'Zurück zur Startseite',
-    backToHomeButton: 'Zurück zur Startseite',
+    save: 'Speichern',
+    delete: 'Löschen',
+    edit: 'Bearbeiten',
+    close: 'Schließen',
+    loading: 'Laden...',
+    add: 'Hinzufügen',
     admin: 'Administration',
     welcome: 'Willkommen',
     selfCheckIn: 'Selbstanmeldung',
     acceptAndContinue: 'Akzeptieren & Weiter',
+    print: 'Drucken',
+    viewPrintableBadge: 'Besucherausweis anzeigen',
+    badgePrintPreview: 'Druckvorschau Besucherausweis',
     
     // Form fields
     fullName: 'Vollständiger Name',
-    name: 'Name',
-    company: 'Firma',
-    contactPerson: 'Ansprechpartner',
-    badgeNumber: 'Besuchernummer',
-    phoneNumber: 'Telefonnummer',
     email: 'E-Mail',
+    phone: 'Telefon',
+    company: 'Firma',
+    message: 'Nachricht',
+    contactPerson: 'Ansprechpartner',
+    reason: 'Grund des Besuchs',
     visitorNumber: 'Besuchernummer',
-    contact: 'Ansprechpartner',
-    additionalVisitor: 'Weiterer Gast',
-    addVisitor: 'Weiteren Gast hinzufügen',
-    
-    // Form labels & descriptions
-    formTitle: 'Besucheranmeldung',
-    formDescription: 'Bitte füllen Sie alle Felder aus, um sich anzumelden',
-    enterYourDetails: 'Geben Sie Ihre Daten ein',
-    enterYourBadge: 'Geben Sie Ihre Besuchernummer ein',
-    policyAgreement: 'Ich habe die Besucherrichtlinien gelesen und akzeptiere sie',
-    policyTitle: 'Besucherrichtlinien',
-    badgeHelpText: 'Die Besuchernummer finden Sie auf Ihrem Besucherausweis',
-    requiredField: 'Pflichtfeld',
-    checkInCompleteTitle: 'Anmeldung abgeschlossen',
-    checkInCompleteMessage: 'Sie wurden erfolgreich angemeldet',
-    yourVisitorPass: 'Ihr Besucherausweis',
-    checkOutPrompt: 'Geben Sie Ihre Besuchernummer ein, um sich abzumelden',
-    visitorRegistration: 'Besucheranmeldung',
-    visitorPolicy: 'Besucherrichtlinien',
-    acceptPolicy: 'Ich akzeptiere die Besucherrichtlinien',
-    policyRequired: 'Sie müssen die Besucherrichtlinien akzeptieren',
-    registrationSuccessful: 'Anmeldung erfolgreich',
+    date: 'Datum',
+    time: 'Uhrzeit',
+    submit: 'Absenden',
+
+    // Registration-related
+    checkIn: 'Anmelden',
+    checkOut: 'Abmelden',
+    checkInDetails: 'Anmeldedetails',
+    checkOutDetails: 'Abmeldedetails',
     yourVisitorNumber: 'Ihre Besuchernummer',
-    pleaseNote: 'Bitte notieren Sie sich diese Nummer',
     contactInfo: 'Ihr Ansprechpartner',
-    visitorCheckOut: 'Besucher-Abmeldung',
-    enterVisitorNumber: 'Geben Sie Ihre Besuchernummer ein, um sich abzumelden',
-    visitorNumberLabel: 'Besuchernummer',
-    checkOutButton: 'Jetzt abmelden',
-    numberRequired: 'Bitte geben Sie Ihre Besuchernummer ein',
-    invalidNumber: 'Ungültige Besuchernummer',
-    checkOutFailed: 'Abmeldung fehlgeschlagen',
-    
-    // Validation messages
-    nameRequired: 'Bitte geben Sie Ihren Namen ein',
-    companyRequired: 'Bitte geben Sie Ihre Firma ein',
-    contactRequired: 'Bitte geben Sie Ihren Ansprechpartner ein',
-    badgeNumberRequired: 'Bitte geben Sie Ihre Besuchernummer ein',
-    badgeNumberInvalid: 'Ungültige Besuchernummer',
-    agreementRequired: 'Sie müssen den Richtlinien zustimmen, um fortzufahren',
-    
-    // Success messages
-    successfullyCheckedIn: 'Erfolgreich angemeldet',
-    successfullyCheckedOut: 'Erfolgreich abgemeldet',
-    thankYou: 'Vielen Dank für Ihren Besuch',
-    safeJourney: 'Gute Heimreise!',
-    
-    // Error messages
+    pleaseNote: 'Bitte notieren Sie sich Ihre Besuchernummer für den Check-out',
+    registrationSuccessful: 'Anmeldung erfolgreich',
     visitorNotFound: 'Besucher nicht gefunden',
-    pageNotFound: 'Seite nicht gefunden',
-    invalidBadgeError: 'Ungültige Besuchernummer',
-    
-    // Policy scroll messages
+    requiredField: 'Pflichtfeld',
+    invalidEmail: 'Ungültige E-Mail',
+    invalidPhone: 'Ungültige Telefonnummer',
+    nameRequired: 'Name ist erforderlich',
+    companyRequired: 'Firma ist erforderlich',
+    contactRequired: 'Ansprechpartner ist erforderlich',
+    visitorNumberRequired: 'Besuchernummer ist erforderlich',
+    backToHome: 'Zurück zur Startseite',
     scrollComplete: 'Scrollen abgeschlossen',
-    policyCheckboxEnabled: 'Sie können jetzt die Richtlinien akzeptieren',
-    scrollToBottom: 'Bitte scrollen Sie nach unten',
+    policyCheckboxEnabled: 'Sie können nun fortfahren',
+    scrollToBottom: 'Bitte scrollen Sie zum Ende',
+
+    // Policy-related
+    visitorPolicy: 'Besucherrichtlinie',
+    acceptPolicy: 'Ich akzeptiere die Besucherrichtlinie',
+    policyRequired: 'Bitte akzeptieren Sie die Besucherrichtlinie',
+
+    // Visitor management
+    activeVisitors: 'Aktive Besucher',
+    recentVisitors: 'Aktuelle Besucher',
+    visitorHistory: 'Besucherhistorie',
+    addVisitor: 'Besucher hinzufügen',
+    editVisitor: 'Besucher bearbeiten',
+    deleteVisitor: 'Besucher löschen',
+    deleteVisitorConfirm: 'Sind Sie sicher, dass Sie diesen Besucher löschen möchten?',
+    noVisitors: 'Keine Besucher gefunden',
+    visitorDetails: 'Besucherdetails',
+    allVisitors: 'Alle Besucher',
+    searchVisitor: 'Besucher suchen',
+
+    // Success/Error messages
+    operationSuccessful: 'Vorgang erfolgreich',
+    operationFailed: 'Vorgang fehlgeschlagen',
+    addedSuccessfully: 'Erfolgreich hinzugefügt',
+    updatedSuccessfully: 'Erfolgreich aktualisiert',
+    deletedSuccessfully: 'Erfolgreich gelöscht',
+    checkInSuccessful: 'Anmeldung erfolgreich',
+    checkOutSuccessful: 'Abmeldung erfolgreich',
+    errorOccurred: 'Ein Fehler ist aufgetreten',
+    tryAgain: 'Bitte versuchen Sie es erneut',
+    
+    // Admin-related
+    dashboard: 'Dashboard',
+    settings: 'Einstellungen',
+    users: 'Benutzer',
+    logs: 'Protokolle',
+    system: 'System',
+    login: 'Anmelden',
+    logout: 'Abmelden',
+    password: 'Passwort',
+    forgotPassword: 'Passwort vergessen',
+    resetPassword: 'Passwort zurücksetzen',
+    statistics: 'Statistiken',
   },
   en: {
-    // Common UI elements
-    checkIn: 'Check In',
-    checkOut: 'Check Out',
-    next: 'Next',
+    title: 'Visitor Management System',
+    welcome: 'Welcome',
     back: 'Back',
-    submit: 'Submit',
+    next: 'Next',
     cancel: 'Cancel',
-    confirm: 'Confirm',
-    errorOccurred: 'An error occurred',
-    backToHome: 'Back to Home',
-    backToHomeButton: 'Back to Home',
+    save: 'Save',
+    delete: 'Delete',
+    edit: 'Edit',
+    close: 'Close',
+    loading: 'Loading...',
+    add: 'Add',
     admin: 'Administration',
     welcome: 'Welcome',
     selfCheckIn: 'Self Check-In',
     acceptAndContinue: 'Accept & Next',
+    print: 'Print',
+    viewPrintableBadge: 'View Visitor Badge',
+    badgePrintPreview: 'Visitor Badge Preview',
     
     // Form fields
     fullName: 'Full Name',
-    name: 'Name',
-    company: 'Company',
-    contactPerson: 'Contact Person',
-    badgeNumber: 'Visitor Number',
-    phoneNumber: 'Phone Number',
     email: 'Email',
+    phone: 'Phone',
+    company: 'Company',
+    message: 'Message',
+    contactPerson: 'Contact Person',
+    reason: 'Reason for Visit',
     visitorNumber: 'Visitor Number',
-    contact: 'Contact Person',
-    additionalVisitor: 'Additional Visitor',
-    addVisitor: 'Add Visitor',
-    
-    // Form labels & descriptions
-    formTitle: 'Visitor Registration',
-    formDescription: 'Please fill in all fields to register',
-    enterYourDetails: 'Enter your details',
-    enterYourBadge: 'Enter your visitor number',
-    policyAgreement: 'I have read and accept the visitor policy',
-    policyTitle: 'Visitor Policy',
-    badgeHelpText: 'You can find the visitor number on your visitor badge',
+    date: 'Date',
+    time: 'Time',
+    submit: 'Submit',
+
+    // Registration-related
+    checkIn: 'Check In',
+    checkOut: 'Check Out',
+    checkInDetails: 'Check-In Details',
+    checkOutDetails: 'Check-Out Details',
+    yourVisitorNumber: 'Your Visitor Number',
+    contactInfo: 'Your contact person',
+    pleaseNote: 'Please note your visitor number for check-out',
+    registrationSuccessful: 'Registration Successful',
+    visitorNotFound: 'Visitor not found',
     requiredField: 'Required field',
-    checkInCompleteTitle: 'Check-in Complete',
-    checkInCompleteMessage: 'You have been successfully registered',
-    yourVisitorPass: 'Your Visitor Pass',
-    checkOutPrompt: 'Enter your visitor number to check out',
-    visitorRegistration: 'Visitor Registration',
+    invalidEmail: 'Invalid email',
+    invalidPhone: 'Invalid phone number',
+    nameRequired: 'Name is required',
+    companyRequired: 'Company is required',
+    contactRequired: 'Contact person is required',
+    visitorNumberRequired: 'Visitor number is required',
+    backToHome: 'Back to Home',
+    scrollComplete: 'Scroll complete',
+    policyCheckboxEnabled: 'You can now proceed',
+    scrollToBottom: 'Please scroll to the bottom',
+
+    // Policy-related
     visitorPolicy: 'Visitor Policy',
     acceptPolicy: 'I accept the visitor policy',
-    policyRequired: 'You must accept the visitor policy',
-    registrationSuccessful: 'Registration Successful',
-    yourVisitorNumber: 'Your Visitor Number',
-    pleaseNote: 'Please note this number',
-    contactInfo: 'Your contact person',
-    visitorCheckOut: 'Visitor Check-Out',
-    enterVisitorNumber: 'Enter your visitor number to check out',
-    visitorNumberLabel: 'Visitor Number',
-    checkOutButton: 'Check out now',
-    numberRequired: 'Please enter your visitor number',
-    invalidNumber: 'Invalid visitor number',
-    checkOutFailed: 'Check-out failed',
+    policyRequired: 'Please accept the visitor policy',
+
+    // Visitor management
+    activeVisitors: 'Active Visitors',
+    recentVisitors: 'Recent Visitors',
+    visitorHistory: 'Visitor History',
+    addVisitor: 'Add Visitor',
+    editVisitor: 'Edit Visitor',
+    deleteVisitor: 'Delete Visitor',
+    deleteVisitorConfirm: 'Are you sure you want to delete this visitor?',
+    noVisitors: 'No visitors found',
+    visitorDetails: 'Visitor Details',
+    allVisitors: 'All Visitors',
+    searchVisitor: 'Search Visitor',
+
+    // Success/Error messages
+    operationSuccessful: 'Operation successful',
+    operationFailed: 'Operation failed',
+    addedSuccessfully: 'Added successfully',
+    updatedSuccessfully: 'Updated successfully',
+    deletedSuccessfully: 'Deleted successfully',
+    checkInSuccessful: 'Check-in successful',
+    checkOutSuccessful: 'Check-out successful',
+    errorOccurred: 'An error occurred',
+    tryAgain: 'Please try again',
     
-    // Validation messages
-    nameRequired: 'Please enter your name',
-    companyRequired: 'Please enter your company',
-    contactRequired: 'Please enter your contact person',
-    badgeNumberRequired: 'Please enter your visitor number',
-    badgeNumberInvalid: 'Invalid visitor number',
-    agreementRequired: 'You must agree to the policy to proceed',
-    
-    // Success messages
-    successfullyCheckedIn: 'Successfully Checked In',
-    successfullyCheckedOut: 'Successfully Checked Out',
-    thankYou: 'Thank you for your visit',
-    safeJourney: 'Have a safe journey!',
-    
-    // Error messages
-    visitorNotFound: 'Visitor not found',
-    pageNotFound: 'Page not found',
-    invalidBadgeError: 'Invalid visitor number',
-    
-    // Policy scroll messages
-    scrollComplete: 'Scrolling complete',
-    policyCheckboxEnabled: 'You can now accept the policy',
-    scrollToBottom: 'Please scroll to the bottom',
+    // Admin-related
+    dashboard: 'Dashboard',
+    settings: 'Settings',
+    users: 'Users',
+    logs: 'Logs',
+    system: 'System',
+    login: 'Login',
+    logout: 'Logout',
+    password: 'Password',
+    forgotPassword: 'Forgot Password',
+    resetPassword: 'Reset Password',
+    statistics: 'Statistics',
   }
 };
 
-export function useTranslation(language: 'de' | 'en') {
-  return (key: TranslationKey): string => {
-    return translations[language][key] || key;
-  };
-}
+export const useTranslation = (language: 'de' | 'en') => {
+  return (key: TranslationKey) => translations[language][key];
+};
