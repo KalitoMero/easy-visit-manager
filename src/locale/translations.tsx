@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 export type TranslationKey = 
@@ -70,6 +69,7 @@ export type TranslationKey =
   | 'numberRequired'
   | 'invalidNumber'
   | 'checkOutFailed'
+  | 'visitorCheckOut'
 
   // Policy-related
   | 'visitorPolicy'
@@ -182,6 +182,7 @@ const translations: { [key in 'de' | 'en']: Record<TranslationKey, string> } = {
     numberRequired: 'Nummer ist erforderlich',
     invalidNumber: 'Ungültige Nummer',
     checkOutFailed: 'Abmeldung fehlgeschlagen',
+    visitorCheckOut: 'Besucher-Abmeldung',
 
     // Policy-related
     visitorPolicy: 'Besucherrichtlinie',
@@ -293,6 +294,7 @@ const translations: { [key in 'de' | 'en']: Record<TranslationKey, string> } = {
     numberRequired: 'Number is required',
     invalidNumber: 'Invalid number',
     checkOutFailed: 'Check-out failed',
+    visitorCheckOut: 'Visitor Check-Out',
 
     // Policy-related
     visitorPolicy: 'Visitor Policy',
