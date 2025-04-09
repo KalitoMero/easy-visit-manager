@@ -76,6 +76,11 @@ export type TranslationKey =
   | 'pageNotFound'
   | 'invalidBadgeError'
   
+  // Policy scroll messages
+  | 'scrollComplete'
+  | 'policyCheckboxEnabled'
+  | 'scrollToBottom'
+  
   // Other
   | 'welcomeMessage';
 
@@ -158,8 +163,10 @@ export const translations = {
     pageNotFound: 'Seite nicht gefunden',
     invalidBadgeError: 'Ungültige Besuchernummer',
     
-    // Other
-    welcomeMessage: 'Willkommen bei unserem Besuchermanagementsystem',
+    // Policy scroll messages
+    scrollComplete: 'Scrollen abgeschlossen',
+    policyCheckboxEnabled: 'Sie können jetzt die Richtlinien akzeptieren',
+    scrollToBottom: 'Bitte scrollen Sie nach unten',
   },
   en: {
     // Common UI elements
@@ -238,8 +245,10 @@ export const translations = {
     pageNotFound: 'Page not found',
     invalidBadgeError: 'Invalid visitor number',
     
-    // Other
-    welcomeMessage: 'Welcome to our Visitor Management System',
+    // Policy scroll messages
+    scrollComplete: 'Scrolling complete',
+    policyCheckboxEnabled: 'You can now accept the policy',
+    scrollToBottom: 'Please scroll to the bottom',
   }
 };
 
