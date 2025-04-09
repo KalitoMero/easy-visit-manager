@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -166,14 +167,14 @@ const CheckInStep1 = () => {
               
               <div>
                 <Label htmlFor="contact" className="text-lg block mb-2">
-                  {t('contact')}
+                  {t('contactPerson')}
                 </Label>
                 <Input
                   id="contact"
                   value={contact}
                   onChange={(e) => setContact(e.target.value)}
                   className="h-14 text-lg bg-white/80 backdrop-blur-sm"
-                  placeholder={t('contact')}
+                  placeholder={t('contactPerson')}
                   autoComplete="off"
                 />
               </div>

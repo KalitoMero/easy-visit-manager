@@ -15,7 +15,6 @@ export type TranslationKey =
   | 'loading'
   | 'add'
   | 'admin'
-  | 'welcome'
   | 'selfCheckIn'
   | 'acceptAndContinue'
   | 'print'
@@ -34,6 +33,9 @@ export type TranslationKey =
   | 'date'
   | 'time'
   | 'submit'
+  | 'name'
+  | 'additionalVisitor'
+  | 'contact'
 
   // Registration-related
   | 'checkIn'
@@ -56,6 +58,18 @@ export type TranslationKey =
   | 'scrollComplete'
   | 'policyCheckboxEnabled'
   | 'scrollToBottom'
+  | 'visitorRegistration'
+  | 'enterVisitorNumber'
+  | 'visitorNumberLabel'
+  | 'checkOutButton'
+  | 'successfullyCheckedOut'
+  | 'thankYou'
+  | 'safeJourney'
+  | 'pageNotFound'
+  | 'backToHomeButton'
+  | 'numberRequired'
+  | 'invalidNumber'
+  | 'checkOutFailed'
 
   // Policy-related
   | 'visitorPolicy'
@@ -113,7 +127,6 @@ const translations: { [key in 'de' | 'en']: Record<TranslationKey, string> } = {
     loading: 'Laden...',
     add: 'Hinzufügen',
     admin: 'Administration',
-    welcome: 'Willkommen',
     selfCheckIn: 'Selbstanmeldung',
     acceptAndContinue: 'Akzeptieren & Weiter',
     print: 'Drucken',
@@ -132,6 +145,9 @@ const translations: { [key in 'de' | 'en']: Record<TranslationKey, string> } = {
     date: 'Datum',
     time: 'Uhrzeit',
     submit: 'Absenden',
+    name: 'Name',
+    additionalVisitor: 'Zusätzlicher Besucher',
+    contact: 'Ansprechpartner',
 
     // Registration-related
     checkIn: 'Anmelden',
@@ -154,6 +170,18 @@ const translations: { [key in 'de' | 'en']: Record<TranslationKey, string> } = {
     scrollComplete: 'Scrollen abgeschlossen',
     policyCheckboxEnabled: 'Sie können nun fortfahren',
     scrollToBottom: 'Bitte scrollen Sie zum Ende',
+    visitorRegistration: 'Besucheranmeldung',
+    enterVisitorNumber: 'Geben Sie Ihre Besuchernummer ein',
+    visitorNumberLabel: 'Besuchernummer',
+    checkOutButton: 'Abmelden',
+    successfullyCheckedOut: 'Erfolgreich abgemeldet',
+    thankYou: 'Vielen Dank für Ihren Besuch',
+    safeJourney: 'Wir wünschen Ihnen eine gute Heimreise',
+    pageNotFound: 'Seite nicht gefunden',
+    backToHomeButton: 'Zurück zur Startseite',
+    numberRequired: 'Nummer ist erforderlich',
+    invalidNumber: 'Ungültige Nummer',
+    checkOutFailed: 'Abmeldung fehlgeschlagen',
 
     // Policy-related
     visitorPolicy: 'Besucherrichtlinie',
@@ -210,7 +238,6 @@ const translations: { [key in 'de' | 'en']: Record<TranslationKey, string> } = {
     loading: 'Loading...',
     add: 'Add',
     admin: 'Administration',
-    welcome: 'Welcome',
     selfCheckIn: 'Self Check-In',
     acceptAndContinue: 'Accept & Next',
     print: 'Print',
@@ -229,6 +256,9 @@ const translations: { [key in 'de' | 'en']: Record<TranslationKey, string> } = {
     date: 'Date',
     time: 'Time',
     submit: 'Submit',
+    name: 'Name',
+    additionalVisitor: 'Additional Visitor',
+    contact: 'Contact Person',
 
     // Registration-related
     checkIn: 'Check In',
@@ -251,6 +281,18 @@ const translations: { [key in 'de' | 'en']: Record<TranslationKey, string> } = {
     scrollComplete: 'Scroll complete',
     policyCheckboxEnabled: 'You can now proceed',
     scrollToBottom: 'Please scroll to the bottom',
+    visitorRegistration: 'Visitor Registration',
+    enterVisitorNumber: 'Enter your visitor number',
+    visitorNumberLabel: 'Visitor Number',
+    checkOutButton: 'Check Out',
+    successfullyCheckedOut: 'Successfully checked out',
+    thankYou: 'Thank you for your visit',
+    safeJourney: 'We wish you a safe journey',
+    pageNotFound: 'Page not found',
+    backToHomeButton: 'Back to home',
+    numberRequired: 'Number is required',
+    invalidNumber: 'Invalid number',
+    checkOutFailed: 'Check-out failed',
 
     // Policy-related
     visitorPolicy: 'Visitor Policy',

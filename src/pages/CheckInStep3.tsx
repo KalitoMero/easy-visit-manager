@@ -25,13 +25,18 @@ const CheckInStep3 = () => {
     if (!visitor || !visitor.policyAccepted) {
       navigate('/');
     } else {
-      // Auto-print badge when the component mounts
-      // We set a small timeout to ensure the component is fully rendered
-      const timer = setTimeout(() => {
-        navigate(`/print-badge/${visitor.id}`);
-      }, 500);
+      // Automatically prepare badges in the background
+      // For silent printing on page load
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = `/print-badge/${visitor.id}`;
+      document.body.appendChild(iframe);
       
-      return () => clearTimeout(timer);
+      return () => {
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
+      };
     }
   }, [visitor, navigate]);
   
@@ -78,18 +83,8 @@ const CheckInStep3 = () => {
               </Button>
             </div>
             
-            <div className="pt-6 flex justify-between items-center">
-              <NavButton 
-                to={`/checkin/step2/${visitor.id}`} 
-                position="left" 
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft size={16} />
-                {t('back')}
-              </NavButton>
-              
-              <NavButton to="/" position="right">
+            <div className="pt-6 flex justify-center">
+              <NavButton to="/" position="center">
                 {t('backToHome')}
               </NavButton>
             </div>

@@ -63,6 +63,7 @@ const CheckInStep2 = () => {
   }
 
   const handleContinue = () => {
+    // Accept policy and navigate directly to success page
     acceptPolicy(visitor.id);
     navigate(`/checkin/step3/${visitor.id}`);
   };
