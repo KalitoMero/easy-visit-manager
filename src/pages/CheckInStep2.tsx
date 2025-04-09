@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -13,11 +13,13 @@ import { usePolicyStore } from '@/hooks/usePolicyStore';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
 import { useTranslation } from '@/locale/translations';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ArrowDown } from 'lucide-react';
 
 const CheckInStep2 = () => {
   const { id } = useParams<{ id: string }>();
   const [accepted, setAccepted] = useState(false);
+  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const acceptPolicy = useVisitorStore(state => state.acceptPolicy);
@@ -30,6 +32,20 @@ const CheckInStep2 = () => {
   const policyImageUrl = usePolicyStore(state => state.policyImageUrl);
   
   const visitor = visitors.find(v => v.id === id);
+
+  const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
+    const isAtBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 5;
+    
+    if (isAtBottom && !hasScrolledToBottom) {
+      setHasScrolledToBottom(true);
+      toast({
+        title: t('scrollComplete'),
+        description: t('policyCheckboxEnabled'),
+        variant: "default",
+      });
+    }
+  };
   
   if (!visitor) {
     return (
@@ -77,7 +93,11 @@ const CheckInStep2 = () => {
             <CardTitle className="text-3xl font-bold">{t('visitorPolicy')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-[350px] rounded-md border p-4 bg-white/80 backdrop-blur-sm">
+            <ScrollArea 
+              className="h-[350px] rounded-md border p-4 bg-white/80 backdrop-blur-sm"
+              ref={scrollAreaRef}
+              onScrollCapture={handleScroll}
+            >
               <div className="p-4 text-lg">
                 {policyImageUrl && (
                   <div className="mb-6 flex justify-center">
@@ -93,13 +113,25 @@ const CheckInStep2 = () => {
               </div>
             </ScrollArea>
             
+            {!hasScrolledToBottom && (
+              <div className="mt-4 text-center text-muted-foreground animate-pulse flex items-center justify-center gap-2">
+                <ArrowDown size={18} />
+                {t('scrollToBottom')}
+                <ArrowDown size={18} />
+              </div>
+            )}
+            
             <div className="flex items-center space-x-2 mt-6">
               <Checkbox 
                 id="accept" 
                 checked={accepted}
                 onCheckedChange={(checked) => setAccepted(checked as boolean)}
+                disabled={!hasScrolledToBottom}
               />
-              <Label htmlFor="accept" className="text-lg font-medium">
+              <Label 
+                htmlFor="accept" 
+                className={`text-lg font-medium ${!hasScrolledToBottom ? 'text-muted-foreground' : ''}`}
+              >
                 {t('acceptPolicy')}
               </Label>
             </div>
@@ -118,6 +150,7 @@ const CheckInStep2 = () => {
               <Button 
                 onClick={handleContinue}
                 className="px-8 py-6 text-lg transition-all duration-300 hover:scale-105 ml-auto"
+                disabled={!accepted || !hasScrolledToBottom}
               >
                 {t('next')}
               </Button>
