@@ -2,9 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import NavButton from '@/components/NavButton';
 import HomeButton from '@/components/HomeButton';
@@ -17,7 +15,6 @@ import { ArrowLeft, ArrowDown } from 'lucide-react';
 
 const CheckInStep2 = () => {
   const { id } = useParams<{ id: string }>();
-  const [accepted, setAccepted] = useState(false);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -66,15 +63,6 @@ const CheckInStep2 = () => {
   }
 
   const handleContinue = () => {
-    if (!accepted) {
-      toast({
-        title: t('policyRequired'),
-        description: t('policyRequired'),
-        variant: "destructive",
-      });
-      return;
-    }
-    
     acceptPolicy(visitor.id);
     navigate(`/checkin/step3/${visitor.id}`);
   };
@@ -121,21 +109,6 @@ const CheckInStep2 = () => {
               </div>
             )}
             
-            <div className="flex items-center space-x-2 mt-6">
-              <Checkbox 
-                id="accept" 
-                checked={accepted}
-                onCheckedChange={(checked) => setAccepted(checked as boolean)}
-                disabled={!hasScrolledToBottom}
-              />
-              <Label 
-                htmlFor="accept" 
-                className={`text-lg font-medium ${!hasScrolledToBottom ? 'text-muted-foreground' : ''}`}
-              >
-                {t('acceptPolicy')}
-              </Label>
-            </div>
-            
             <div className="pt-6 flex justify-between items-center">
               <NavButton 
                 to="/checkin/step1" 
@@ -150,9 +123,9 @@ const CheckInStep2 = () => {
               <Button 
                 onClick={handleContinue}
                 className="px-8 py-6 text-lg transition-all duration-300 hover:scale-105 ml-auto"
-                disabled={!accepted || !hasScrolledToBottom}
+                disabled={!hasScrolledToBottom}
               >
-                {t('next')}
+                {t('acceptAndContinue')}
               </Button>
             </div>
           </CardContent>

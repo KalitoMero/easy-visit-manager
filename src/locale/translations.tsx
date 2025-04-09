@@ -14,6 +14,7 @@ export type TranslationKey =
   | 'admin'
   | 'welcome'
   | 'selfCheckIn'
+  | 'acceptAndContinue'
   
   // Form fields
   | 'fullName'
@@ -101,6 +102,7 @@ export const translations = {
     admin: 'Administration',
     welcome: 'Willkommen',
     selfCheckIn: 'Selbstanmeldung',
+    acceptAndContinue: 'Akzeptieren & Weiter',
     
     // Form fields
     fullName: 'Vollständiger Name',
@@ -183,6 +185,7 @@ export const translations = {
     admin: 'Administration',
     welcome: 'Welcome',
     selfCheckIn: 'Self Check-In',
+    acceptAndContinue: 'Accept & Next',
     
     // Form fields
     fullName: 'Full Name',
