@@ -13,12 +13,12 @@ export function generateCheckoutEmailUrl(visitorNumber: number): string {
 /**
  * Generates a QR code as a data URL using the qrcode library
  */
-export async function generateQRCodeDataUrl(data: string, size: number = 150): Promise<string> {
+export async function generateQRCodeDataUrl(data: string, size: number = 140): Promise<string> {
   // We're using dynamic import to avoid SSR issues
   const QRCode = await import('qrcode');
   
   try {
-    // Generate QR code as data URL
+    // Generate QR code as data URL with adjusted default size
     const dataUrl = await QRCode.toDataURL(data, {
       width: size,
       margin: 1,

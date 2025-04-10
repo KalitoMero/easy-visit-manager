@@ -23,7 +23,8 @@ const VisitorBadge = ({ visitor, name }: VisitorBadgeProps) => {
     const loadQrCode = async () => {
       setIsLoading(true);
       try {
-        const dataUrl = await generateQRCodeDataUrl(checkoutEmailUrl, 200);
+        // Generate a smaller QR code (140px instead of 200px - 30% smaller)
+        const dataUrl = await generateQRCodeDataUrl(checkoutEmailUrl, 140);
         setQrCodeUrl(dataUrl);
       } catch (error) {
         console.error("Failed to generate QR code:", error);
@@ -56,8 +57,8 @@ const VisitorBadge = ({ visitor, name }: VisitorBadgeProps) => {
         
         <div className="qr-code-container flex flex-col items-center justify-center p-4 ml-4 border border-gray-200 rounded-lg">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center w-40 h-40 bg-gray-100 rounded animate-pulse">
-              <QrCode className="w-16 h-16 text-gray-300" />
+            <div className="flex flex-col items-center justify-center w-28 h-28 bg-gray-100 rounded animate-pulse">
+              <QrCode className="w-12 h-12 text-gray-300" />
             </div>
           ) : qrCodeUrl ? (
             <a 
@@ -68,12 +69,12 @@ const VisitorBadge = ({ visitor, name }: VisitorBadgeProps) => {
               <img 
                 src={qrCodeUrl} 
                 alt={`QR Code for visitor ${visitor.visitorNumber}`} 
-                className="w-40 h-40 object-contain"
+                className="w-28 h-28 object-contain"
               />
             </a>
           ) : (
-            <div className="flex flex-col items-center justify-center w-40 h-40 bg-gray-100 rounded">
-              <QrCode className="w-16 h-16 text-gray-400" />
+            <div className="flex flex-col items-center justify-center w-28 h-28 bg-gray-100 rounded">
+              <QrCode className="w-12 h-12 text-gray-400" />
               <div className="text-sm text-center mt-2 text-gray-500">
                 QR code unavailable
               </div>
