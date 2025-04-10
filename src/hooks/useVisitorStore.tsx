@@ -10,7 +10,11 @@ export interface Visitor {
   checkInTime: string;
   checkOutTime: string | null;
   policyAccepted: boolean;
-  additionalVisitors?: string[]; // For group visitors
+  additionalVisitors?: Array<{
+    id: string;
+    visitorNumber: number;
+    name: string;
+  }>; // Updated structure for additional visitors
 }
 
 interface VisitorState {
@@ -125,14 +129,26 @@ export const useVisitorStore = create<VisitorState>()(
         get().resetVisitorNumberIfNeeded();
         
         const { visitors, currentVisitorNumber } = get();
+        let nextVisitorNumber = currentVisitorNumber;
+        
         const primaryName = names[0]; // First name is the primary visitor
-        const additionalVisitors = names.slice(1); // Rest are additional visitors
+        const additionalNames = names.slice(1); // Rest are additional visitors
+        
+        // Create an array of additional visitors with their own numbers
+        const additionalVisitorsWithNumbers = additionalNames.map(name => {
+          nextVisitorNumber++; // Increment for each additional visitor
+          return {
+            id: crypto.randomUUID(),
+            name,
+            visitorNumber: nextVisitorNumber,
+          };
+        });
         
         const newVisitor: Visitor = {
           id: crypto.randomUUID(),
           visitorNumber: currentVisitorNumber,
           name: primaryName,
-          additionalVisitors: additionalVisitors,
+          additionalVisitors: additionalVisitorsWithNumbers,
           company,
           contact,
           checkInTime: getCurrentTime(),
@@ -140,9 +156,10 @@ export const useVisitorStore = create<VisitorState>()(
           policyAccepted: false,
         };
         
+        // Update the visitor number to be after all assigned numbers
         set({
           visitors: [...visitors, newVisitor],
-          currentVisitorNumber: currentVisitorNumber + 1,
+          currentVisitorNumber: nextVisitorNumber + 1,
         });
         
         console.log("Added new group visitor:", newVisitor);
@@ -198,7 +215,31 @@ export const useVisitorStore = create<VisitorState>()(
       },
       
       getVisitorByNumber: (visitorNumber) => {
-        return get().visitors.find(v => v.visitorNumber === visitorNumber);
+        const visitors = get().visitors;
+        
+        // First check main visitors
+        const mainVisitor = visitors.find(v => v.visitorNumber === visitorNumber);
+        if (mainVisitor) return mainVisitor;
+        
+        // If not found, check additional visitors
+        for (const visitor of visitors) {
+          if (visitor.additionalVisitors) {
+            const additionalVisitor = visitor.additionalVisitors.find(
+              v => v.visitorNumber === visitorNumber
+            );
+            if (additionalVisitor) {
+              // Return a visitor object with the additional visitor's info
+              return {
+                ...visitor,
+                id: additionalVisitor.id,
+                name: additionalVisitor.name,
+                visitorNumber: additionalVisitor.visitorNumber,
+              };
+            }
+          }
+        }
+        
+        return undefined;
       },
 
       performScheduledCheckout: () => {

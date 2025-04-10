@@ -7,16 +7,19 @@ import { QrCode, Mail } from 'lucide-react';
 interface VisitorBadgeProps {
   visitor: Visitor;
   name?: string; // Optional name for group visitors
+  visitorNumber?: number; // Optional visitor number override for additional visitors
 }
 
-const VisitorBadge = ({ visitor, name }: VisitorBadgeProps) => {
+const VisitorBadge = ({ visitor, name, visitorNumber }: VisitorBadgeProps) => {
   // Use the provided name (for group visitors) or the primary visitor name
   const displayName = name || visitor.name;
+  // Use the provided visitor number override or the primary visitor number
+  const displayVisitorNumber = visitorNumber || visitor.visitorNumber;
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   
-  // Generate the checkout email URL directly
-  const checkoutEmailUrl = generateCheckoutEmailUrl(visitor.visitorNumber);
+  // Generate the checkout email URL directly with the correct visitor number
+  const checkoutEmailUrl = generateCheckoutEmailUrl(displayVisitorNumber);
   
   // Load the QR code
   useEffect(() => {
@@ -45,7 +48,7 @@ const VisitorBadge = ({ visitor, name }: VisitorBadgeProps) => {
       <div className="badge-content flex-1 flex justify-between items-center py-4">
         <div className="visitor-info flex-1 flex flex-col justify-center items-center py-4 gap-3">
           <div className="visitor-number text-6xl font-bold text-primary mb-4">
-            {visitor.visitorNumber}
+            {displayVisitorNumber}
           </div>
           <div className="name text-3xl font-bold">
             {displayName}
@@ -68,7 +71,7 @@ const VisitorBadge = ({ visitor, name }: VisitorBadgeProps) => {
             >
               <img 
                 src={qrCodeUrl} 
-                alt={`QR Code for visitor ${visitor.visitorNumber}`} 
+                alt={`QR Code for visitor ${displayVisitorNumber}`} 
                 className="w-28 h-28 object-contain"
               />
             </a>
