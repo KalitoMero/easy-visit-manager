@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { Visitor } from '@/hooks/useVisitorStore';
+import { generateCheckoutEmailUrl, generateQRCodeUrl } from '@/lib/qrCodeUtils';
+import { QrCode } from 'lucide-react';
 
 interface VisitorBadgeProps {
   visitor: Visitor;
@@ -10,6 +12,10 @@ interface VisitorBadgeProps {
 const VisitorBadge = ({ visitor, name }: VisitorBadgeProps) => {
   // Use the provided name (for group visitors) or the primary visitor name
   const displayName = name || visitor.name;
+  
+  // Generate the checkout email URL and QR code URL
+  const checkoutEmailUrl = generateCheckoutEmailUrl(visitor.visitorNumber);
+  const qrCodeUrl = generateQRCodeUrl(checkoutEmailUrl);
 
   return (
     <div className="visitor-badge bg-white border border-gray-300 rounded-md p-6 w-[148mm] h-[105mm] flex flex-col justify-between print:break-after-page">
@@ -17,15 +23,29 @@ const VisitorBadge = ({ visitor, name }: VisitorBadgeProps) => {
         <div className="text-2xl font-bold text-center">VISITOR</div>
       </div>
       
-      <div className="badge-content flex-1 flex flex-col justify-center items-center py-8 gap-3">
-        <div className="visitor-number text-6xl font-bold text-primary mb-4">
-          {visitor.visitorNumber}
+      <div className="badge-content flex-1 flex justify-between items-center py-4">
+        <div className="visitor-info flex-1 flex flex-col justify-center items-center py-4 gap-3">
+          <div className="visitor-number text-6xl font-bold text-primary mb-4">
+            {visitor.visitorNumber}
+          </div>
+          <div className="name text-3xl font-bold">
+            {displayName}
+          </div>
+          <div className="company text-xl">
+            {visitor.company}
+          </div>
         </div>
-        <div className="name text-3xl font-bold">
-          {displayName}
-        </div>
-        <div className="company text-xl">
-          {visitor.company}
+        
+        <div className="qr-code-container flex flex-col items-center justify-center p-2 ml-4">
+          <img 
+            src={qrCodeUrl} 
+            alt="Checkout QR Code" 
+            className="w-32 h-32"
+            title="Scan to checkout"
+          />
+          <div className="text-xs text-center mt-1">
+            Scan for checkout
+          </div>
         </div>
       </div>
       
