@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Visitor } from '@/hooks/useVisitorStore';
 import { generateCheckoutEmailUrl, generateQRCodeUrl } from '@/lib/qrCodeUtils';
 import { QrCode } from 'lucide-react';
@@ -12,10 +12,17 @@ interface VisitorBadgeProps {
 const VisitorBadge = ({ visitor, name }: VisitorBadgeProps) => {
   // Use the provided name (for group visitors) or the primary visitor name
   const displayName = name || visitor.name;
+  const [qrCodeLoaded, setQrCodeLoaded] = useState(false);
   
   // Generate the checkout email URL and QR code URL
   const checkoutEmailUrl = generateCheckoutEmailUrl(visitor.visitorNumber);
-  const qrCodeUrl = generateQRCodeUrl(checkoutEmailUrl);
+  const qrCodeUrl = generateQRCodeUrl(checkoutEmailUrl, 200); // Increase size for better scanning
+
+  // Log to check QR code URL generation
+  useEffect(() => {
+    console.log("Generated QR code URL:", qrCodeUrl);
+    console.log("For email link:", checkoutEmailUrl);
+  }, [qrCodeUrl, checkoutEmailUrl]);
 
   return (
     <div className="visitor-badge bg-white border border-gray-300 rounded-md p-6 w-[148mm] h-[105mm] flex flex-col justify-between print:break-after-page">
@@ -37,15 +44,32 @@ const VisitorBadge = ({ visitor, name }: VisitorBadgeProps) => {
         </div>
         
         <div className="qr-code-container flex flex-col items-center justify-center p-2 ml-4">
-          <img 
-            src={qrCodeUrl} 
-            alt="Checkout QR Code" 
-            className="w-32 h-32"
-            title="Scan to checkout"
-          />
-          <div className="text-xs text-center mt-1">
-            Scan for checkout
-          </div>
+          {qrCodeUrl ? (
+            <>
+              <img 
+                src={qrCodeUrl}
+                alt="Checkout QR Code" 
+                className="w-40 h-40 border border-gray-200 rounded"
+                title="Scan to checkout"
+                onLoad={() => setQrCodeLoaded(true)}
+                onError={(e) => {
+                  console.error("Failed to load QR code image:", e);
+                  setQrCodeLoaded(false);
+                }}
+              />
+              {!qrCodeLoaded && <QrCode className="w-40 h-40 text-gray-300" />}
+              <div className="text-xs text-center mt-2 font-medium">
+                Scan for checkout
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center">
+              <QrCode className="w-40 h-40 text-gray-300" />
+              <div className="text-xs text-center mt-2">
+                QR Code not available
+              </div>
+            </div>
+          )}
         </div>
       </div>
       
