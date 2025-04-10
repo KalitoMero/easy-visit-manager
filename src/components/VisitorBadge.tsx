@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Visitor } from '@/hooks/useVisitorStore';
-import { generateCheckoutEmailUrl, generateQRCodeUrl } from '@/lib/qrCodeUtils';
+import { generateCheckoutEmailUrl, generateQRCodeDataUrl } from '@/lib/qrCodeUtils';
 import { QrCode, Mail } from 'lucide-react';
 
 interface VisitorBadgeProps {
@@ -12,14 +12,27 @@ interface VisitorBadgeProps {
 const VisitorBadge = ({ visitor, name }: VisitorBadgeProps) => {
   // Use the provided name (for group visitors) or the primary visitor name
   const displayName = name || visitor.name;
-  const [qrCodeLoaded, setQrCodeLoaded] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
   
   // Generate the checkout email URL directly
   const checkoutEmailUrl = generateCheckoutEmailUrl(visitor.visitorNumber);
   
-  // Log the email URL for debugging
+  // Load the QR code
   useEffect(() => {
-    console.log("Email checkout URL:", checkoutEmailUrl);
+    const loadQrCode = async () => {
+      setIsLoading(true);
+      try {
+        const dataUrl = await generateQRCodeDataUrl(checkoutEmailUrl, 200);
+        setQrCodeUrl(dataUrl);
+      } catch (error) {
+        console.error("Failed to generate QR code:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadQrCode();
   }, [checkoutEmailUrl]);
 
   return (
@@ -42,20 +55,33 @@ const VisitorBadge = ({ visitor, name }: VisitorBadgeProps) => {
         </div>
         
         <div className="qr-code-container flex flex-col items-center justify-center p-4 ml-4 border border-gray-200 rounded-lg">
-          {/* Direct email link with QR code icon */}
-          <a 
-            href={checkoutEmailUrl} 
-            className="flex flex-col items-center justify-center w-40 h-40 bg-gray-50 rounded"
-            title="Click to open email for checkout"
-          >
-            <QrCode className="w-20 h-20 text-primary mb-2" />
-            <Mail className="w-10 h-10 text-primary" />
-            <div className="text-sm text-center mt-2 font-medium">
-              Visitor #{visitor.visitorNumber}
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center w-40 h-40 bg-gray-100 rounded animate-pulse">
+              <QrCode className="w-16 h-16 text-gray-300" />
             </div>
-          </a>
+          ) : qrCodeUrl ? (
+            <a 
+              href={checkoutEmailUrl} 
+              className="flex flex-col items-center"
+              title="Scan to open email for checkout"
+            >
+              <img 
+                src={qrCodeUrl} 
+                alt={`QR Code for visitor ${visitor.visitorNumber}`} 
+                className="w-40 h-40 object-contain"
+              />
+            </a>
+          ) : (
+            <div className="flex flex-col items-center justify-center w-40 h-40 bg-gray-100 rounded">
+              <QrCode className="w-16 h-16 text-gray-400" />
+              <div className="text-sm text-center mt-2 text-gray-500">
+                QR code unavailable
+              </div>
+            </div>
+          )}
+          
           <div className="text-xs text-center mt-3 max-w-[160px]">
-            <p className="font-bold">Scan or click to checkout</p>
+            <p className="font-bold">Scan to checkout</p>
             <p className="text-muted-foreground mt-1">Opens email to: besucher@leuka.de</p>
           </div>
         </div>
