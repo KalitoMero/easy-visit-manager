@@ -6,6 +6,9 @@ import { initializeAutoCheckout, useVisitorStore } from '@/hooks/useVisitorStore
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
 import { useTranslation } from '@/locale/translations';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Settings } from 'lucide-react';
 
 const Index = () => {
   const { language } = useLanguageStore();
@@ -31,7 +34,19 @@ const Index = () => {
   return (
     <div className="app-container">
       <div className="page-container min-h-[600px]">
-        <div className="absolute top-4 right-4">
+        <div className="absolute top-4 right-4 flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full hover:bg-muted transition-colors"
+            asChild
+            aria-label={t('admin')}
+            title={t('admin')}
+          >
+            <Link to="/admin">
+              <Settings className="h-4 w-4" />
+            </Link>
+          </Button>
           <LanguageSwitcher />
         </div>
         
@@ -51,9 +66,7 @@ const Index = () => {
         </div>
 
         <div className="w-full flex justify-between items-center gap-4 mb-6">
-          <NavButton to="/admin" position="left" variant="outline">
-            {t('admin')}
-          </NavButton>
+          <div className="mr-auto"></div>
           
           <NavButton 
             to="/checkin/step1" 
