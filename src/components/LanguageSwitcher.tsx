@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 const LanguageSwitcher = () => {
   const { language, setLanguage } = useLanguageStore();
 
-  // Changed back to rounded-full from rounded
+  // Flaggen-Styles beibehalten
   const flagStyles = "w-12 h-12 rounded-full border-2 transition-all duration-300 cursor-pointer";
   const activeStyle = "border-primary scale-110 shadow-md";
   const inactiveStyle = "border-muted-foreground opacity-70 hover:opacity-100";
@@ -23,6 +23,7 @@ const LanguageSwitcher = () => {
           aria-label="Deutsch"
           title="Deutsch"
         >
+          {/* Deutsche Flagge beibehalten */}
           <img 
             src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1IDMiPjxwYXRoIGQ9Ik0wLDBoNXYxSDB6IiBmaWxsPSIjMDAwIi8+PHBhdGggZD0iTTAsMWg1djFIMHoiIGZpbGw9IiNmMDAiLz48cGF0aCBkPSJNMCwyaDV2MUgweiIgZmlsbD0iI2ZmY2UwMCIvPjwvc3ZnPg==" 
             alt="Deutsch" 
@@ -42,8 +43,9 @@ const LanguageSwitcher = () => {
           aria-label="English"
           title="English"
         >
+          {/* Vereinfachte englische Flagge mit einfacherem SVG-Code */}
           <img 
-            src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDYwMCI+PHJlY3Qgd2lkdGg9IjEyMDAiIGhlaWdodD0iNjAwIiBmaWxsPSIjMDAyNDdkIi8+PHBhdGggZD0iTTAsMAw2MDAsNDAwTDAsMGwwLDYwMGw2MDAtNDAwbC02MDAsNDAwSjEyMDBWMEwwLDB6IiBmaWxsPSIjQ0YxNDJCIi8+PHBhdGggZD0iTTAsMA0KICAgICAgICAgTDEyMDAsNjAwLDEyMDAsMFoiIGZpbGw9IiNDRjE0MkIiLz48cGF0aCBkPSJNMCw2MDBMMTIwMCwwLDAsMEgwenMiIGZpbGw9IiNDRjE0MkIiLz48cGF0aCBkPSJNMCwwIEwxMjAwLDYwMCBMMTIwMCwwIEwwLDYwMCBMMCwweiIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjEyMCIvPjxwYXRoIGQ9Ik02MDAsMCBMNjAwLDYwMCBNMCwzMDAgTDEyMDAsMzAwIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMjAwIi8+PHBhdGggZD0iTTYwMCwwIEw2MDAsNjAwIE0wLDMwMCBMMTIwMCwzMDAiIHN0cm9rZT0iI0NGMTQyQiIgc3Ryb2tlLXdpZHRoPSIxMjAiLz48L3N2Zz4=" 
+            src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDI0IDUxMiI+PHJlY3Qgd2lkdGg9IjEwMjQiIGhlaWdodD0iNTEyIiBmaWxsPSIjMDEyMTY5Ii8+PHBhdGggZD0iTTAgMGw0MDkgMjU2TC0xIDI1NiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjQwIi8+PHBhdGggZD0iTTEwMjQgMGwtNDA5IDI1NmwxLTEiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSI0MCIvPjxwYXRoIGQ9Ik0wIDUxMmw0MDktMjU2IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iNDAiLz48cGF0aCBkPSJNMTAyNCA1MTJsLTQwOS0yNTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSI0MCIvPjxwYXRoIGQ9Ik01MTIgMCBMNTEyIDUxMiBNMCAyNTYgTDEwMjQgMjU2IiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iODAiIGZpbGw9Im5vbmUiIC8+PHBhdGggZD0iTTUxMiAwIEw1MTIgNTEyIE0wIDI1NiBMMTAyNCAyNTYiIHN0cm9rZT0iI0MwMDEyQiIgc3Ryb2tlLXdpZHRoPSI0MCIgZmlsbD0ibm9uZSIgLz48L3N2Zz4=" 
             alt="English" 
             className="w-full h-full rounded-full object-cover"
           />
