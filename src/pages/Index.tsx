@@ -61,7 +61,7 @@ const Index = () => {
             <CardContent className="p-8">
               <p className="text-xl leading-relaxed">
                 {language === 'de' 
-                  ? 'Wir freuen uns über Ihren Besuch. Sie können sich entweder hier am Tablet selber anmelden oder auf die Rezeption zugehen. Viel Erfolg bei Ihrem Besuch!'
+                  ? 'Wir freuen uns über Ihren Besuch.\n\nSie können sich entweder hier über Touch selber anmelden oder auf die Rezeption zugehen. Viel Erfolg bei Ihrem Besuch!'
                   : 'We are glad about your visit. You can either register yourself here on the tablet or approach the reception. We wish you success during your visit!'}
               </p>
             </CardContent>
