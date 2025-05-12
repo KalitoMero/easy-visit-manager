@@ -2,11 +2,17 @@
 import React, { useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
+import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import VisitorBadge from '@/components/VisitorBadge';
 
 const BadgePrintPreview = () => {
   const { id } = useParams<{ id: string }>();
   const visitors = useVisitorStore(state => state.visitors);
+  const { 
+    enableAutomaticPrinting, 
+    printWithoutDialog, 
+    printDelay 
+  } = usePrinterSettings();
   const printAttemptedRef = useRef(false);
   
   // Find the primary visitor
@@ -14,7 +20,7 @@ const BadgePrintPreview = () => {
   
   useEffect(() => {
     // Vermeidung mehrfacher Druckversuche
-    if (visitor && !printAttemptedRef.current) {
+    if (visitor && !printAttemptedRef.current && enableAutomaticPrinting) {
       printAttemptedRef.current = true;
       
       // Prüfen auf Kiosk-Druck-Modus
@@ -22,21 +28,22 @@ const BadgePrintPreview = () => {
         window.navigator.userAgent.includes('Chrome') || 
         window.navigator.userAgent.includes('Chromium');
       
-      if (isKioskPrintingSupported) {
+      if (printWithoutDialog && isKioskPrintingSupported) {
         console.log('Kiosk-Druck wird initiiert...');
         // Der Browser könnte im Kiosk-Modus sein, versuche direkt zu drucken
         window.print();
       } else {
         // Fallback für den Fall, dass kein Kiosk-Modus aktiv ist
+        // oder der Nutzer möchte den Druckdialog sehen
         console.log('Fallback-Druck mit Verzögerung wird initiiert...');
         const timer = setTimeout(() => {
           window.print();
-        }, 500); // Kurze Verzögerung für das Rendering
+        }, printDelay); // Konfigurierbare Verzögerung für das Rendering
         
         return () => clearTimeout(timer);
       }
     }
-  }, [visitor]);
+  }, [visitor, enableAutomaticPrinting, printWithoutDialog, printDelay]);
   
   if (!visitor) {
     return <div className="p-8 text-center">Visitor not found</div>;

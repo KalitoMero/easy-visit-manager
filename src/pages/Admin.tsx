@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +17,8 @@ import { useLanguageStore, Language } from '@/hooks/useLanguageStore';
 import ImageUploader from "@/components/ImageUploader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { usePrinterSettings } from "@/hooks/usePrinterSettings";
+import { Printer, Settings } from "lucide-react";
 
 const formatTime = (isoString: string, language: Language) => {
   if (!isoString) return "-";
@@ -158,6 +159,36 @@ const Admin = () => {
     label: i.toString().padStart(2, '0'),
   }));
 
+  const { 
+    enableAutomaticPrinting, 
+    printWithoutDialog, 
+    printDelay,
+    setPrintWithoutDialog,
+    setEnableAutomaticPrinting,
+    setPrintDelay
+  } = usePrinterSettings();
+  
+  const handleSavePrinterSettings = () => {
+    toast({
+      title: "Druckereinstellungen gespeichert",
+      description: "Die Einstellungen für den Ausweis-Druck wurden aktualisiert.",
+    });
+  };
+
+  const handleTestPrint = () => {
+    // Öffne einen Testausweis zum Drucken in einem neuen Tab
+    if (visitors.length > 0) {
+      const testVisitorId = visitors[0].id;
+      window.open(`/print-badge/${testVisitorId}`, '_blank');
+    } else {
+      toast({
+        title: "Kein Besucher vorhanden",
+        description: "Es muss mindestens ein Besucher im System sein, um einen Testdruck durchzuführen.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="app-container">
@@ -223,6 +254,7 @@ const Admin = () => {
             <TabsTrigger value="active">Aktive Besucher</TabsTrigger>
             <TabsTrigger value="inactive">Abgemeldete Besucher</TabsTrigger>
             <TabsTrigger value="settings">Einstellungen</TabsTrigger>
+            <TabsTrigger value="printer">Drucker</TabsTrigger>
             <TabsTrigger value="policy">Besucherrichtlinien</TabsTrigger>
           </TabsList>
           
@@ -396,6 +428,86 @@ const Admin = () => {
                   </Button>
                   
                   <Button onClick={handleSaveDeletionSchedule}>
+                    Einstellungen speichern
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="printer">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Printer className="h-5 w-5" />
+                  Drucker-Einstellungen
+                </CardTitle>
+                <CardDescription>
+                  Konfigurieren Sie die Druckeinstellungen für Besucherausweise
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center space-x-2">
+                  <Switch 
+                    id="automatic-printing"
+                    checked={enableAutomaticPrinting}
+                    onCheckedChange={setEnableAutomaticPrinting}
+                  />
+                  <Label htmlFor="automatic-printing">Automatischen Druck aktivieren</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Switch 
+                    id="print-without-dialog"
+                    checked={printWithoutDialog}
+                    onCheckedChange={setPrintWithoutDialog}
+                  />
+                  <Label htmlFor="print-without-dialog">Druckdialog unterdrücken (erfordert Kiosk-Modus)</Label>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="print-delay">Verzögerung vor Druckvorgang (ms)</Label>
+                  <Input
+                    id="print-delay"
+                    type="number"
+                    value={printDelay}
+                    onChange={(e) => setPrintDelay(Number(e.target.value))}
+                    min={0}
+                    max={5000}
+                    step={100}
+                    disabled={!enableAutomaticPrinting}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Kurze Verzögerung, um sicherzustellen, dass der Ausweis vollständig geladen ist, bevor der Druck gestartet wird
+                  </p>
+                </div>
+                
+                <Card className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-900">
+                  <CardContent className="p-4 space-y-2">
+                    <h3 className="text-lg font-medium flex items-center gap-1">
+                      <Settings className="h-4 w-4" /> Kiosk-Modus Anleitung
+                    </h3>
+                    <p className="text-sm">
+                      Für vollständig automatischen Druck ohne Dialog muss Chrome/Chromium mit speziellen Parametern gestartet werden:
+                    </p>
+                    <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded font-mono text-xs overflow-x-auto">
+                      chrome.exe --kiosk-printing
+                    </div>
+                    <p className="text-sm">
+                      Dies aktiviert den Kiosk-Druck-Modus, bei dem Druckaufträge ohne Dialog direkt an den Standarddrucker gesendet werden.
+                    </p>
+                  </CardContent>
+                </Card>
+                
+                <div className="flex justify-between pt-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleTestPrint}
+                  >
+                    <Printer className="mr-1" /> Testdruck
+                  </Button>
+                  
+                  <Button onClick={handleSavePrinterSettings}>
                     Einstellungen speichern
                   </Button>
                 </div>

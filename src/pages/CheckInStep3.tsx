@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +6,7 @@ import NavButton from '@/components/NavButton';
 import HomeButton from '@/components/HomeButton';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
+import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import { useTranslation } from '@/locale/translations';
 import { ArrowLeft, Printer } from 'lucide-react';
 
@@ -14,6 +14,7 @@ const CheckInStep3 = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const visitors = useVisitorStore(state => state.visitors);
+  const { enableAutomaticPrinting } = usePrinterSettings();
   
   const { language } = useLanguageStore();
   const t = useTranslation(language);
@@ -24,7 +25,7 @@ const CheckInStep3 = () => {
   useEffect(() => {
     if (!visitor || !visitor.policyAccepted) {
       navigate('/');
-    } else {
+    } else if (enableAutomaticPrinting) {
       // Automatically prepare badges in the background
       // For silent printing on page load
       const iframe = document.createElement('iframe');
@@ -38,7 +39,7 @@ const CheckInStep3 = () => {
         }
       };
     }
-  }, [visitor, navigate]);
+  }, [visitor, navigate, enableAutomaticPrinting]);
   
   if (!visitor) {
     return null;

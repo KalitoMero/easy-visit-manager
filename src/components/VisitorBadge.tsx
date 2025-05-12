@@ -40,7 +40,7 @@ const VisitorBadge = ({ visitor, name, visitorNumber }: VisitorBadgeProps) => {
   }, [checkoutEmailUrl]);
 
   return (
-    <div className="visitor-badge bg-white border border-gray-300 rounded-md p-6 w-[148mm] h-[105mm] flex flex-col justify-between print:break-after-page print:border-0">
+    <div className="visitor-badge bg-white border border-gray-300 rounded-md p-6 w-[148mm] h-[105mm] flex flex-col justify-between print:break-after-page print:border-0 print:shadow-none">
       <div className="badge-header border-b pb-2">
         <div className="text-2xl font-bold text-center">VISITOR</div>
       </div>
