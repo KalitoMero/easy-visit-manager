@@ -21,7 +21,7 @@ const VisitorBadge = ({ visitor, name, visitorNumber }: VisitorBadgeProps) => {
   // Generate the checkout email URL directly with the correct visitor number
   const checkoutEmailUrl = generateCheckoutEmailUrl(displayVisitorNumber);
   
-  // Load the QR code
+  // Load the QR code immediately to ensure it's ready for printing
   useEffect(() => {
     const loadQrCode = async () => {
       setIsLoading(true);
@@ -40,7 +40,7 @@ const VisitorBadge = ({ visitor, name, visitorNumber }: VisitorBadgeProps) => {
   }, [checkoutEmailUrl]);
 
   return (
-    <div className="visitor-badge bg-white border border-gray-300 rounded-md p-6 w-[148mm] h-[105mm] flex flex-col justify-between print:break-after-page">
+    <div className="visitor-badge bg-white border border-gray-300 rounded-md p-6 w-[148mm] h-[105mm] flex flex-col justify-between print:break-after-page print:border-0">
       <div className="badge-header border-b pb-2">
         <div className="text-2xl font-bold text-center">VISITOR</div>
       </div>
@@ -58,9 +58,9 @@ const VisitorBadge = ({ visitor, name, visitorNumber }: VisitorBadgeProps) => {
           </div>
         </div>
         
-        <div className="qr-code-container flex flex-col items-center justify-center p-4 ml-4 border border-gray-200 rounded-lg">
+        <div className="qr-code-container flex flex-col items-center justify-center p-4 ml-4 border border-gray-200 rounded-lg print:border-0">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center w-28 h-28 bg-gray-100 rounded animate-pulse">
+            <div className="flex flex-col items-center justify-center w-28 h-28 bg-gray-100 rounded animate-pulse print:hidden">
               <QrCode className="w-12 h-12 text-gray-300" />
             </div>
           ) : qrCodeUrl ? (
@@ -76,7 +76,7 @@ const VisitorBadge = ({ visitor, name, visitorNumber }: VisitorBadgeProps) => {
               />
             </a>
           ) : (
-            <div className="flex flex-col items-center justify-center w-28 h-28 bg-gray-100 rounded">
+            <div className="flex flex-col items-center justify-center w-28 h-28 bg-gray-100 rounded print:bg-transparent">
               <QrCode className="w-12 h-12 text-gray-400" />
               <div className="text-sm text-center mt-2 text-gray-500">
                 QR code unavailable
