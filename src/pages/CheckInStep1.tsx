@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
 import { useTranslation } from '@/locale/translations';
 import { Plus, X, ArrowLeft } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const CheckInStep1 = () => {
   const [name, setName] = useState('');
@@ -21,6 +22,7 @@ const CheckInStep1 = () => {
   const { toast } = useToast();
   const addVisitor = useVisitorStore(state => state.addVisitor);
   const addGroupVisitor = useVisitorStore(state => state.addGroupVisitor);
+  const isMobile = useIsMobile();
   
   const { language } = useLanguageStore();
   const t = useTranslation(language);
@@ -108,7 +110,8 @@ const CheckInStep1 = () => {
                   className="h-14 text-lg bg-white/80 backdrop-blur-sm"
                   placeholder={t('fullName')}
                   autoFocus
-                  autoComplete="off"
+                  autoComplete="name"
+                  inputMode="text"
                 />
               </div>
               
@@ -125,7 +128,8 @@ const CheckInStep1 = () => {
                       onChange={(e) => updateAdditionalVisitor(index, e.target.value)}
                       className="h-14 text-lg bg-white/80 backdrop-blur-sm"
                       placeholder={t('fullName')}
-                      autoComplete="off"
+                      autoComplete="name"
+                      inputMode="text"
                     />
                   </div>
                   <Button 
@@ -161,7 +165,8 @@ const CheckInStep1 = () => {
                   onChange={(e) => setCompany(e.target.value)}
                   className="h-14 text-lg bg-white/80 backdrop-blur-sm"
                   placeholder={t('company')}
-                  autoComplete="off"
+                  autoComplete="organization"
+                  inputMode="text"
                 />
               </div>
               
@@ -176,6 +181,7 @@ const CheckInStep1 = () => {
                   className="h-14 text-lg bg-white/80 backdrop-blur-sm"
                   placeholder={t('contactPerson')}
                   autoComplete="off"
+                  inputMode="text"
                 />
               </div>
               
