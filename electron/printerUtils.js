@@ -15,10 +15,16 @@ export async function printToPDF(window, route, settings) {
       
       // Apply custom positioning parameters for both badges
       const printOptions = settings.printOptions || {};
+      
+      // Position and rotation parameters
       const positionParams = `&offsetX=${printOptions.offsetX || 0}&offsetY=${printOptions.offsetY || 0}&rotation=${printOptions.rotation || 0}` +
                             `&secondOffsetX=${printOptions.secondOffsetX || 0}&secondOffsetY=${printOptions.secondOffsetY || 0}&secondRotation=${printOptions.secondRotation || 0}`;
       
-      const printURL = `${baseUrl}#${route}${positionParams}`;
+      // Add layout parameters if available
+      const layoutParams = settings.layoutOptions ? 
+        `&layoutOptions=${encodeURIComponent(JSON.stringify(settings.layoutOptions))}` : '';
+      
+      const printURL = `${baseUrl}#${route}${positionParams}${layoutParams}`;
       
       // Create a new window for printing
       const printWindow = new BrowserWindow({

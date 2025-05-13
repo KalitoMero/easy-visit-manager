@@ -20,6 +20,17 @@ type PrinterSettingsState = {
   secondBadgeOffsetX: number; // Horizontale Verschiebung in mm
   secondBadgeOffsetY: number; // Vertikale Verschiebung in mm
 
+  // Anpassungen des Badge-Layouts
+  badgeLayout: {
+    showContact: boolean;
+    showDateTime: boolean;
+    fontSizeTitle: 'small' | 'medium' | 'large';
+    fontSizeName: 'small' | 'medium' | 'large';
+    fontSizeCompany: 'small' | 'medium' | 'large';
+    qrCodeSize: number; // Größe in Pixeln
+    footerSpacing: number; // Abstand in Pixeln
+  };
+
   // Aktionen
   setEnableAutomaticPrinting: (value: boolean) => void;
   setPrintWithoutDialog: (value: boolean) => void;
@@ -32,6 +43,9 @@ type PrinterSettingsState = {
   setSecondBadgeRotation: (value: 0 | 90 | 180 | 270) => void;
   setSecondBadgeOffsetX: (value: number) => void;
   setSecondBadgeOffsetY: (value: number) => void;
+  
+  // Layout-Anpassungsaktionen
+  setBadgeLayout: (layoutSettings: Partial<PrinterSettingsState['badgeLayout']>) => void;
 };
 
 // Helper function to check if we're running in Electron
@@ -85,6 +99,17 @@ export const usePrinterSettings = create<PrinterSettingsState>()(
       secondBadgeRotation: 0,
       secondBadgeOffsetX: 0,
       secondBadgeOffsetY: 0,
+      
+      // Standard Layout-Einstellungen
+      badgeLayout: {
+        showContact: true,
+        showDateTime: true,
+        fontSizeTitle: 'medium',
+        fontSizeName: 'medium',
+        fontSizeCompany: 'medium',
+        qrCodeSize: 120,
+        footerSpacing: 8,
+      },
 
       // Setter-Funktionen
       setEnableAutomaticPrinting: (value) => set({ enableAutomaticPrinting: value }),
@@ -98,6 +123,14 @@ export const usePrinterSettings = create<PrinterSettingsState>()(
       setSecondBadgeRotation: (value) => set({ secondBadgeRotation: value }),
       setSecondBadgeOffsetX: (value) => set({ secondBadgeOffsetX: value }),
       setSecondBadgeOffsetY: (value) => set({ secondBadgeOffsetY: value }),
+      
+      // Layout-Anpassungen
+      setBadgeLayout: (layoutSettings) => set((state) => ({
+        badgeLayout: {
+          ...state.badgeLayout,
+          ...layoutSettings
+        }
+      })),
     }),
     {
       name: 'printer-settings', // localStorage key

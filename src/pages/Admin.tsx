@@ -18,8 +18,10 @@ import ImageUploader from "@/components/ImageUploader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { usePrinterSettings } from "@/hooks/usePrinterSettings";
-import { Printer, Settings, Move } from "lucide-react";
+import { Printer, Settings, Move, Layout } from "lucide-react";
 import BadgePositionPreview from "@/components/BadgePositionPreview";
+import BadgeLayoutSettings from "@/components/BadgeLayoutSettings";
+import VisitorBadge from "@/components/VisitorBadge";
 
 const formatTime = (isoString: string, language: Language) => {
   if (!isoString) return "-";
@@ -313,6 +315,7 @@ const Admin = () => {
             <TabsTrigger value="inactive">Abgemeldete Besucher</TabsTrigger>
             <TabsTrigger value="settings">Einstellungen</TabsTrigger>
             <TabsTrigger value="printer">Drucker</TabsTrigger>
+            <TabsTrigger value="badge-layout">Ausweis-Layout</TabsTrigger>
             <TabsTrigger value="policy">Besucherrichtlinien</TabsTrigger>
           </TabsList>
           
@@ -540,11 +543,10 @@ const Admin = () => {
                   </p>
                 </div>
                 
-                {/* Hier fügen wir die BadgePositionPreview Komponente ein */}
                 <div className="pt-4 pb-2">
                   <h3 className="text-lg font-semibold">Ausweispositionierung und Rotation</h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Stellen Sie die Position und Drehung des Besucherausweises auf der Druckseite ein
+                    Stellen Sie die Position und Drehung der Besucherausweise auf der Druckseite ein
                   </p>
                   
                   <BadgePositionPreview />
@@ -638,6 +640,45 @@ const Admin = () => {
                   <Button onClick={handleSavePrinterSettings}>
                     Einstellungen speichern
                   </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="badge-layout">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Layout className="h-5 w-5" />
+                  Ausweis-Layout Einstellungen
+                </CardTitle>
+                <CardDescription>
+                  Passen Sie das Layout der Besucherausweise an
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <BadgeLayoutSettings className="md:col-span-1" />
+                  
+                  <div className="md:col-span-1 space-y-4">
+                    <h3 className="text-lg font-semibold">Vorschau</h3>
+                    <div className="border border-dashed border-gray-300 rounded-lg p-4 flex items-center justify-center">
+                      <div className="scale-75 transform-gpu">
+                        <VisitorBadge 
+                          visitor={{
+                            id: 'preview',
+                            name: 'Max Mustermann',
+                            company: 'Beispiel GmbH',
+                            contact: 'Petra Meyer',
+                            visitorNumber: 42,
+                            checkInTime: new Date().toISOString(),
+                            checkOutTime: null,
+                            additionalVisitors: []
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
