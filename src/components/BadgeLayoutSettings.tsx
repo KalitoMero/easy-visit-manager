@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Eye, Layout, Type, QrCode, Spacing } from "lucide-react";
+import { Eye, Layout, Type, QrCode, ArrowDownWideNarrow } from "lucide-react";
 import { cn } from '@/lib/utils';
 
 interface BadgeLayoutSettingsProps {
@@ -115,62 +115,65 @@ const BadgeLayoutSettings: React.FC<BadgeLayoutSettingsProps> = ({ className }) 
             <div className="space-y-3">
               <div className="grid grid-cols-3 gap-2">
                 <Label htmlFor="title-font-size" className="self-center">Titel</Label>
-                <Select 
-                  value={badgeLayout.fontSizeTitle} 
-                  onValueChange={(value) => handleFontSizeChange(value, 'title')}
-                  className="col-span-2"
-                >
-                  <SelectTrigger id="title-font-size">
-                    <SelectValue placeholder="Wählen..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {fontSizeOptions.map((option) => (
-                      <SelectItem key={`title-${option.value}`} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="col-span-2">
+                  <Select 
+                    value={badgeLayout.fontSizeTitle} 
+                    onValueChange={(value) => handleFontSizeChange(value, 'title')}
+                  >
+                    <SelectTrigger id="title-font-size">
+                      <SelectValue placeholder="Wählen..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {fontSizeOptions.map((option) => (
+                        <SelectItem key={`title-${option.value}`} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               
               <div className="grid grid-cols-3 gap-2">
                 <Label htmlFor="name-font-size" className="self-center">Name</Label>
-                <Select 
-                  value={badgeLayout.fontSizeName} 
-                  onValueChange={(value) => handleFontSizeChange(value, 'name')}
-                  className="col-span-2"
-                >
-                  <SelectTrigger id="name-font-size">
-                    <SelectValue placeholder="Wählen..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {fontSizeOptions.map((option) => (
-                      <SelectItem key={`name-${option.value}`} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="col-span-2">
+                  <Select 
+                    value={badgeLayout.fontSizeName} 
+                    onValueChange={(value) => handleFontSizeChange(value, 'name')}
+                  >
+                    <SelectTrigger id="name-font-size">
+                      <SelectValue placeholder="Wählen..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {fontSizeOptions.map((option) => (
+                        <SelectItem key={`name-${option.value}`} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               
               <div className="grid grid-cols-3 gap-2">
                 <Label htmlFor="company-font-size" className="self-center">Firma</Label>
-                <Select 
-                  value={badgeLayout.fontSizeCompany} 
-                  onValueChange={(value) => handleFontSizeChange(value, 'company')}
-                  className="col-span-2"
-                >
-                  <SelectTrigger id="company-font-size">
-                    <SelectValue placeholder="Wählen..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {fontSizeOptions.map((option) => (
-                      <SelectItem key={`company-${option.value}`} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="col-span-2">
+                  <Select 
+                    value={badgeLayout.fontSizeCompany} 
+                    onValueChange={(value) => handleFontSizeChange(value, 'company')}
+                  >
+                    <SelectTrigger id="company-font-size">
+                      <SelectValue placeholder="Wählen..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {fontSizeOptions.map((option) => (
+                        <SelectItem key={`company-${option.value}`} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           </div>
@@ -204,7 +207,7 @@ const BadgeLayoutSettings: React.FC<BadgeLayoutSettingsProps> = ({ className }) 
           {/* Footer Spacing */}
           <div className="space-y-4">
             <h4 className="text-sm font-medium flex items-center gap-2">
-              <Spacing className="h-4 w-4" /> Fußzeilen-Abstand
+              <ArrowDownWideNarrow className="h-4 w-4" /> Fußzeilen-Abstand
             </h4>
             
             <div className="space-y-2">

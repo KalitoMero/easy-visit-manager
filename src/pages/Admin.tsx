@@ -673,7 +673,8 @@ const Admin = () => {
                             visitorNumber: 42,
                             checkInTime: new Date().toISOString(),
                             checkOutTime: null,
-                            additionalVisitors: []
+                            additionalVisitors: [],
+                            policyAccepted: true
                           }}
                         />
                       </div>
