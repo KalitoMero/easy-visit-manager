@@ -37,15 +37,30 @@ export function createMainWindow(isDevelopment) {
   // Load the app
   if (isDevelopment) {
     // In development, load from the dev server
-    mainWindow.loadURL('http://localhost:8080');
+    console.log('Loading app in development mode from dev server...');
+    mainWindow.loadURL('http://localhost:8080').catch((err) => {
+      console.error('Failed to load from dev server, is it running?', err);
+      mainWindow.loadURL(
+        url.format({
+          pathname: path.join(__dirname, 'error.html'),
+          protocol: 'file:',
+          slashes: true,
+        })
+      ).catch(() => {
+        mainWindow.loadURL('data:text/html,<html><body><h2>Error</h2><p>Development server not running. Please start the dev server with "npm run dev" first.</p></body></html>');
+      });
+    });
     mainWindow.webContents.openDevTools();
   } else {
     // In production, check if the dist directory exists
     const distPath = path.join(__dirname, '../dist');
     const indexPath = path.join(distPath, 'index.html');
     
+    console.log('Running in production mode, looking for build at:', indexPath);
+    
     if (fs.existsSync(indexPath)) {
       // If the index.html file exists, load it
+      console.log('Found build files, loading application...');
       mainWindow.loadURL(
         url.format({
           pathname: indexPath,
@@ -54,21 +69,19 @@ export function createMainWindow(isDevelopment) {
         })
       );
     } else {
-      // If the index.html file doesn't exist, try loading from the dev server
-      console.warn('Production build not found, trying development server...');
-      mainWindow.loadURL('http://localhost:8080').catch((err) => {
-        console.error('Failed to load app:', err);
-        // Show an error dialog or load a fallback HTML
-        mainWindow.loadURL(
-          url.format({
-            pathname: path.join(__dirname, 'error.html'),
-            protocol: 'file:',
-            slashes: true,
-          })
-        ).catch(() => {
-          // If error.html doesn't exist, show a basic error in the window
-          mainWindow.loadURL('data:text/html,<html><body><h2>Error</h2><p>Failed to load application. Please build the app with "npm run build" first or start the development server.</p></body></html>');
-        });
+      // If the index.html file doesn't exist, show error message
+      console.error('Production build not found at:', distPath);
+      console.warn('Please run "npm run build" first to create the production build.');
+      
+      mainWindow.loadURL(
+        url.format({
+          pathname: path.join(__dirname, 'error.html'),
+          protocol: 'file:',
+          slashes: true,
+        })
+      ).catch(() => {
+        // If error.html doesn't exist, show a basic error in the window
+        mainWindow.loadURL('data:text/html,<html><body><h2>Error</h2><p>Failed to load application. Please build the app with "npm run build" first or start the development server.</p></body></html>');
       });
     }
   }

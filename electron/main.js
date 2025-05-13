@@ -1,11 +1,13 @@
-
 import { app, ipcMain } from 'electron';
 import { createMainWindow } from './window.js';
 import { setupAppMenu } from './menu.js';
 import { setupIpcHandlers } from './ipc-handlers.js';
 
-// Development flag
-const isDevelopment = process.env.NODE_ENV === 'development';
+// Development flag - check both environment variable and node_modules existence
+const isDevelopment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === undefined;
+
+// Log the environment mode
+console.log(`Starting Electron app in ${isDevelopment ? 'development' : 'production'} mode`);
 
 // Keep a global reference of the window object
 let mainWindow;

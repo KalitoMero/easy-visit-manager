@@ -48,15 +48,16 @@
 <body>
   <div class="error-container">
     <h2>Application Error</h2>
-    <p>The application could not be loaded properly. This usually happens when the build files are missing.</p>
+    <p>Die Anwendung konnte nicht korrekt geladen werden. Dies passiert normalerweise, wenn die Build-Dateien fehlen.</p>
     <div class="steps">
-      <p>Please try one of the following:</p>
+      <p>Bitte versuchen Sie eines der folgenden Verfahren:</p>
       <ol>
-        <li>Run <code>npm run build</code> to create a production build</li>
-        <li>Or start the development server with <code>npm run dev</code></li>
+        <li>Führen Sie <code>npm run build</code> aus, um einen Produktions-Build zu erstellen</li>
+        <li>Oder starten Sie den Entwicklungsserver mit <code>npm run dev</code></li>
+        <li>Starten Sie dann die Electron-App mit <code>cross-env NODE_ENV=development electron .</code></li>
       </ol>
     </div>
-    <p>If the issue persists, please check the console for more detailed error messages.</p>
+    <p>Falls das Problem weiterhin besteht, prüfen Sie bitte die Konsole auf detailliertere Fehlermeldungen.</p>
   </div>
 </body>
 </html>
