@@ -18,7 +18,8 @@ import ImageUploader from "@/components/ImageUploader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { usePrinterSettings } from "@/hooks/usePrinterSettings";
-import { Printer, Settings } from "lucide-react";
+import { Printer, Settings, Move } from "lucide-react";
+import BadgePositionPreview from "@/components/BadgePositionPreview";
 
 const formatTime = (isoString: string, language: Language) => {
   if (!isoString) return "-";

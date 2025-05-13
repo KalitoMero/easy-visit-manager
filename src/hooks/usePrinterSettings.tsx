@@ -9,6 +9,11 @@ type PrinterSettingsState = {
   printDelay: number; // Verzögerung in Millisekunden
   selectedPrinterName: string | null; // Name des ausgewählten Druckers
   printCopies: number; // Anzahl der Kopien
+  
+  // Badge Position und Rotation
+  badgeRotation: 0 | 90 | 180 | 270; // Rotation in Grad (0, 90, 180, 270)
+  badgeOffsetX: number; // Horizontale Verschiebung in mm
+  badgeOffsetY: number; // Vertikale Verschiebung in mm
 
   // Aktionen
   setEnableAutomaticPrinting: (value: boolean) => void;
@@ -16,6 +21,9 @@ type PrinterSettingsState = {
   setPrintDelay: (value: number) => void;
   setSelectedPrinterName: (value: string | null) => void;
   setPrintCopies: (value: number) => void;
+  setBadgeRotation: (value: 0 | 90 | 180 | 270) => void;
+  setBadgeOffsetX: (value: number) => void;
+  setBadgeOffsetY: (value: number) => void;
 };
 
 // Helper function to check if we're running in Electron
@@ -59,13 +67,21 @@ export const usePrinterSettings = create<PrinterSettingsState>()(
       printDelay: 500,
       selectedPrinterName: null,
       printCopies: 1,
+      
+      // Standard Positionierung
+      badgeRotation: 0,
+      badgeOffsetX: 0,
+      badgeOffsetY: 0,
 
       // Setter-Funktionen
       setEnableAutomaticPrinting: (value) => set({ enableAutomaticPrinting: value }),
       setPrintWithoutDialog: (value) => set({ printWithoutDialog: value }),
       setPrintDelay: (value) => set({ printDelay: value }),
       setSelectedPrinterName: (value) => set({ selectedPrinterName: value }),
-      setPrintCopies: (value) => set({ printCopies: value }), // Fixed: Was incorrectly setting 'setPrintCopies' instead of 'printCopies'
+      setPrintCopies: (value) => set({ printCopies: value }),
+      setBadgeRotation: (value) => set({ badgeRotation: value }),
+      setBadgeOffsetX: (value) => set({ badgeOffsetX: value }),
+      setBadgeOffsetY: (value) => set({ badgeOffsetY: value }),
     }),
     {
       name: 'printer-settings', // localStorage key

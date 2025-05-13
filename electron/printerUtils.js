@@ -12,7 +12,12 @@ export async function printToPDF(window, route, settings) {
       // Navigate to the badge print route
       const currentURL = window.webContents.getURL();
       const baseUrl = currentURL.split('#')[0];
-      const printURL = `${baseUrl}#${route}`;
+      
+      // Apply custom positioning parameters if available
+      const positionParams = settings.printOptions ? 
+        `&offsetX=${settings.printOptions.offsetX || 0}&offsetY=${settings.printOptions.offsetY || 0}&rotation=${settings.printOptions.rotation || 0}` : '';
+      
+      const printURL = `${baseUrl}#${route}${positionParams}`;
       
       // Create a new window for printing
       const printWindow = new BrowserWindow({
@@ -37,6 +42,8 @@ export async function printToPDF(window, route, settings) {
               marginType: 'none'
             },
             landscape: false,
+            // Apply custom print options for positioning if provided
+            copies: settings.printCopies || 1,
           };
           
           // Print the badge

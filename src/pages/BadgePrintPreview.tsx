@@ -19,7 +19,10 @@ const BadgePrintPreview = () => {
     printWithoutDialog, 
     printDelay,
     selectedPrinterName,
-    printCopies
+    printCopies,
+    badgeRotation,
+    badgeOffsetX,
+    badgeOffsetY
   } = usePrinterSettings();
   const printAttemptedRef = useRef(false);
   const printTimestamp = useRef(new Date()).current;
@@ -39,7 +42,12 @@ const BadgePrintPreview = () => {
             const result = await window.electronAPI.printBadge({
               id: visitor.id,
               name: visitor.name,
-              printerName: selectedPrinterName
+              printerName: selectedPrinterName,
+              printOptions: {
+                rotation: badgeRotation,
+                offsetX: badgeOffsetX,
+                offsetY: badgeOffsetY
+              }
             });
             
             if (result.success) {
@@ -88,7 +96,7 @@ const BadgePrintPreview = () => {
       
       printBadge();
     }
-  }, [visitor, enableAutomaticPrinting, printWithoutDialog, printDelay, selectedPrinterName, printCopies]);
+  }, [visitor, enableAutomaticPrinting, printWithoutDialog, printDelay, selectedPrinterName, printCopies, badgeRotation, badgeOffsetX, badgeOffsetY]);
   
   if (!visitor) {
     return <div className="p-8 text-center">Visitor not found</div>;
@@ -101,22 +109,27 @@ const BadgePrintPreview = () => {
     <div className="p-4 flex flex-col gap-4 print:p-0">
       {/* Visitor badge container for A6 page */}
       <div className="visitor-badge-container print:block hidden">
-        {/* Top badge - normal orientation */}
-        <VisitorBadge 
-          visitor={visitor} 
-          className="visitor-badge visitor-badge-top" 
-          printTimestamp={printTimestamp}
-        />
-        
-        {/* Fold line */}
-        <div className="fold-line"></div>
-        
-        {/* Bottom badge - rotated 90° */}
-        <VisitorBadge 
-          visitor={visitor} 
-          className="visitor-badge visitor-badge-bottom" 
-          printTimestamp={printTimestamp}
-        />
+        {/* Apply rotation and position to the container */}
+        <div className="badge-position-container" style={{
+          transform: `translate(${badgeOffsetX}mm, ${badgeOffsetY}mm) rotate(${badgeRotation}deg)`,
+        }}>
+          {/* Top badge - normal orientation */}
+          <VisitorBadge 
+            visitor={visitor} 
+            className="visitor-badge visitor-badge-top" 
+            printTimestamp={printTimestamp}
+          />
+          
+          {/* Fold line */}
+          <div className="fold-line"></div>
+          
+          {/* Bottom badge - rotated 90° */}
+          <VisitorBadge 
+            visitor={visitor} 
+            className="visitor-badge visitor-badge-bottom" 
+            printTimestamp={printTimestamp}
+          />
+        </div>
       </div>
       
       {/* Screen preview (not for printing) - shows only regular badges */}
