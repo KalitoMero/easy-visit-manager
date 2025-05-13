@@ -65,7 +65,7 @@ export const usePrinterSettings = create<PrinterSettingsState>()(
       setPrintWithoutDialog: (value) => set({ printWithoutDialog: value }),
       setPrintDelay: (value) => set({ printDelay: value }),
       setSelectedPrinterName: (value) => set({ selectedPrinterName: value }),
-      setPrintCopies: (value) => set({ setPrintCopies: value }),
+      setPrintCopies: (value) => set({ printCopies: value }), // Fixed: Was incorrectly setting 'setPrintCopies' instead of 'printCopies'
     }),
     {
       name: 'printer-settings', // localStorage key
