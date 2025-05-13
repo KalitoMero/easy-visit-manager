@@ -13,6 +13,7 @@ import CheckOutSuccess from "./pages/CheckOutSuccess";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import BadgePrintPreview from "./pages/BadgePrintPreview";
+import React from "react";
 
 // Create a single QueryClient instance for the whole app
 const queryClient = new QueryClient({
@@ -24,25 +25,27 @@ const queryClient = new QueryClient({
 });
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
+  <React.StrictMode>
+    <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/checkin/step1" element={<CheckInStep1 />} />
-          <Route path="/checkin/step2/:id" element={<CheckInStep2 />} />
-          <Route path="/checkin/step3/:id" element={<CheckInStep3 />} />
-          <Route path="/checkout" element={<CheckOut />} />
-          <Route path="/checkout/success" element={<CheckOutSuccess />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/print-badge/:id" element={<BadgePrintPreview />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <TooltipProvider>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/checkin/step1" element={<CheckInStep1 />} />
+            <Route path="/checkin/step2/:id" element={<CheckInStep2 />} />
+            <Route path="/checkin/step3/:id" element={<CheckInStep3 />} />
+            <Route path="/checkout" element={<CheckOut />} />
+            <Route path="/checkout/success" element={<CheckOutSuccess />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/print-badge/:id" element={<BadgePrintPreview />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Toaster />
+          <Sonner />
+        </TooltipProvider>
       </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+    </QueryClientProvider>
+  </React.StrictMode>
 );
 
 export default App;

@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import { Visitor } from '@/hooks/useVisitorStore';
 import { generateCheckoutEmailUrl, generateQRCodeDataUrl } from '@/lib/qrCodeUtils';
 import { QrCode, Mail, Calendar, Clock } from 'lucide-react';
-import { format } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 
 interface VisitorBadgeProps {
