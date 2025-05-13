@@ -1,8 +1,8 @@
 
-const fs = require('fs');
-const { dialog } = require('electron');
-const { printToPDF } = require('./printerUtils');
-const stores = require('./stores');
+import fs from 'fs';
+import { dialog } from 'electron';
+import { printToPDF } from './printerUtils.js';
+import stores from './stores.js';
 
 // IPC handlers for printer operations
 function setupPrinterHandlers(ipcMain, mainWindow) {
@@ -107,12 +107,8 @@ function setupFileOperationHandlers(ipcMain) {
 }
 
 // Setup all IPC handlers
-function setupIpcHandlers(ipcMain, mainWindow) {
+export function setupIpcHandlers(ipcMain, mainWindow) {
   setupPrinterHandlers(ipcMain, mainWindow);
   setupDataStoreHandlers(ipcMain);
   setupFileOperationHandlers(ipcMain);
 }
-
-module.exports = {
-  setupIpcHandlers
-};

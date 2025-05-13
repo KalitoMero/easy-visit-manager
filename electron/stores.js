@@ -1,5 +1,5 @@
 
-const Store = require('electron-store');
+import Store from 'electron-store';
 
 // Initialize stores for app settings
 const printerStore = new Store({ name: 'printer-settings' });
@@ -9,7 +9,7 @@ const adminStore = new Store({ name: 'admin-auth-storage' });
 const languageStore = new Store({ name: 'language-storage' });
 
 // Export all stores
-module.exports = {
+const stores = {
   printerStore,
   visitorStore,
   policyStore,
@@ -34,3 +34,5 @@ module.exports = {
     }
   }
 };
+
+export default stores;

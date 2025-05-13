@@ -1,14 +1,19 @@
 
-const { BrowserWindow, screen } = require('electron');
-const path = require('path');
-const url = require('url');
+import { BrowserWindow, screen } from 'electron';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import url from 'url';
+
+// Get the current file's directory
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Create the main application window
  * @param {boolean} isDevelopment - Whether the app is in development mode
  * @returns {BrowserWindow} The created browser window
  */
-function createMainWindow(isDevelopment) {
+export function createMainWindow(isDevelopment) {
   // Get screen dimensions
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width, height } = primaryDisplay.workAreaSize;
@@ -44,7 +49,3 @@ function createMainWindow(isDevelopment) {
 
   return mainWindow;
 }
-
-module.exports = {
-  createMainWindow
-};

@@ -1,12 +1,12 @@
 
-const { Menu } = require('electron');
+import { Menu } from 'electron';
 
 /**
  * Create and set application menu
  * @param {BrowserWindow} mainWindow - The main application window
  * @param {boolean} isDevelopment - Whether the app is in development mode
  */
-function setupAppMenu(mainWindow, isDevelopment) {
+export function setupAppMenu(mainWindow, isDevelopment) {
   const menuTemplate = [
     {
       label: 'Datei',
@@ -39,7 +39,3 @@ function setupAppMenu(mainWindow, isDevelopment) {
   const menu = Menu.buildFromTemplate(menuTemplate);
   Menu.setApplicationMenu(menu);
 }
-
-module.exports = {
-  setupAppMenu
-};

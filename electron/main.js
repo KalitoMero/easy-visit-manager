@@ -1,7 +1,8 @@
-const { app, ipcMain } = require('electron');
-const { createMainWindow } = require('./window');
-const { setupAppMenu } = require('./menu');
-const { setupIpcHandlers } = require('./ipc-handlers');
+
+import { app, ipcMain } from 'electron';
+import { createMainWindow } from './window.js';
+import { setupAppMenu } from './menu.js';
+import { setupIpcHandlers } from './ipc-handlers.js';
 
 // Development flag
 const isDevelopment = process.env.NODE_ENV === 'development';
