@@ -13,9 +13,10 @@ export async function printToPDF(window, route, settings) {
       const currentURL = window.webContents.getURL();
       const baseUrl = currentURL.split('#')[0];
       
-      // Apply custom positioning parameters if available
-      const positionParams = settings.printOptions ? 
-        `&offsetX=${settings.printOptions.offsetX || 0}&offsetY=${settings.printOptions.offsetY || 0}&rotation=${settings.printOptions.rotation || 0}` : '';
+      // Apply custom positioning parameters for both badges
+      const printOptions = settings.printOptions || {};
+      const positionParams = `&offsetX=${printOptions.offsetX || 0}&offsetY=${printOptions.offsetY || 0}&rotation=${printOptions.rotation || 0}` +
+                            `&secondOffsetX=${printOptions.secondOffsetX || 0}&secondOffsetY=${printOptions.secondOffsetY || 0}&secondRotation=${printOptions.secondRotation || 0}`;
       
       const printURL = `${baseUrl}#${route}${positionParams}`;
       

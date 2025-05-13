@@ -21,9 +21,14 @@ const BadgePrintPreview = () => {
     printDelay,
     selectedPrinterName,
     printCopies,
+    // Erster Ausweis (oben)
     badgeRotation,
     badgeOffsetX,
-    badgeOffsetY
+    badgeOffsetY,
+    // Zweiter Ausweis (unten)
+    secondBadgeRotation,
+    secondBadgeOffsetX,
+    secondBadgeOffsetY
   } = usePrinterSettings();
   const printAttemptedRef = useRef(false);
   const printTimestamp = useRef(new Date()).current;
@@ -45,9 +50,14 @@ const BadgePrintPreview = () => {
               name: visitor.name,
               printerName: selectedPrinterName,
               printOptions: {
+                // Erste Badge-Position
                 rotation: badgeRotation,
                 offsetX: badgeOffsetX,
-                offsetY: badgeOffsetY
+                offsetY: badgeOffsetY,
+                // Zweite Badge-Position
+                secondRotation: secondBadgeRotation,
+                secondOffsetX: secondBadgeOffsetX,
+                secondOffsetY: secondBadgeOffsetY
               }
             });
             
@@ -97,7 +107,9 @@ const BadgePrintPreview = () => {
       
       printBadge();
     }
-  }, [visitor, enableAutomaticPrinting, printWithoutDialog, printDelay, selectedPrinterName, printCopies, badgeRotation, badgeOffsetX, badgeOffsetY]);
+  }, [visitor, enableAutomaticPrinting, printWithoutDialog, printDelay, selectedPrinterName, printCopies, 
+      badgeRotation, badgeOffsetX, badgeOffsetY, 
+      secondBadgeRotation, secondBadgeOffsetX, secondBadgeOffsetY]);
   
   if (!visitor) {
     return (
@@ -120,42 +132,139 @@ const BadgePrintPreview = () => {
       
       {/* Visitor badge container for A6 page */}
       <div className="visitor-badge-container print:block hidden">
-        {/* Apply rotation and position to the container */}
-        <div className="badge-position-container" style={{
-          transform: `translate(${badgeOffsetX}mm, ${badgeOffsetY}mm) rotate(${badgeRotation}deg)`,
+        <div className="a6-paper" style={{ 
+          width: '105mm', 
+          height: '148mm',
+          position: 'relative',
+          overflow: 'hidden'
         }}>
-          {/* Top badge - normal orientation */}
-          <VisitorBadge 
-            visitor={visitor} 
-            className="visitor-badge visitor-badge-top" 
-            printTimestamp={printTimestamp}
-          />
+          {/* Top badge with custom position and rotation */}
+          <div style={{
+            position: 'absolute',
+            top: '0',
+            left: '0',
+            width: '100%',
+            height: '50%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center'
+          }}>
+            <div style={{
+              transform: `translate(${badgeOffsetX}mm, ${badgeOffsetY}mm) rotate(${badgeRotation}deg)`,
+            }}>
+              <VisitorBadge 
+                visitor={visitor} 
+                printTimestamp={printTimestamp}
+              />
+            </div>
+          </div>
           
-          {/* Fold line */}
-          <div className="fold-line"></div>
+          {/* Divider line */}
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '0',
+            width: '100%',
+            borderTop: '1px dashed #ccc'
+          }}></div>
           
-          {/* Bottom badge - rotated 90° */}
-          <VisitorBadge 
-            visitor={visitor} 
-            className="visitor-badge visitor-badge-bottom" 
-            printTimestamp={printTimestamp}
-          />
+          {/* Bottom badge with custom position and rotation */}
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '0',
+            width: '100%',
+            height: '50%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center'
+          }}>
+            <div style={{
+              transform: `translate(${secondBadgeOffsetX}mm, ${secondBadgeOffsetY}mm) rotate(${secondBadgeRotation}deg)`,
+            }}>
+              <VisitorBadge 
+                visitor={visitor} 
+                printTimestamp={printTimestamp}
+              />
+            </div>
+          </div>
         </div>
       </div>
       
       {/* Screen preview (not for printing) - shows only regular badges */}
       <div className="print:hidden">
-        {/* Primary visitor badge */}
-        <div className="mb-4">
-          <VisitorBadge 
-            visitor={visitor} 
-            printTimestamp={printTimestamp}
-          />
+        <div className="mb-8">
+          <h2 className="text-lg font-medium mb-2">Druckvorschau (A6-Format)</h2>
+          <div className="border border-gray-300 rounded-md p-4" style={{ 
+            width: '105mm', 
+            height: '148mm',
+            margin: '0 auto',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            {/* Top badge preview */}
+            <div style={{
+              position: 'absolute',
+              top: '0',
+              left: '0',
+              width: '100%',
+              height: '50%',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center'
+            }}>
+              <div style={{
+                transform: `translate(${badgeOffsetX}mm, ${badgeOffsetY}mm) rotate(${badgeRotation}deg)`,
+                transformOrigin: 'center',
+                transition: 'transform 0.2s ease-in-out',
+                scale: '0.7'
+              }}>
+                <VisitorBadge 
+                  visitor={visitor} 
+                  printTimestamp={printTimestamp}
+                />
+              </div>
+            </div>
+            
+            {/* Middle divider */}
+            <div style={{
+              position: 'absolute',
+              top: '50%',
+              left: '0',
+              width: '100%',
+              borderTop: '1px dashed #ccc'
+            }}></div>
+            
+            {/* Bottom badge preview */}
+            <div style={{
+              position: 'absolute',
+              top: '50%',
+              left: '0',
+              width: '100%',
+              height: '50%',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center'
+            }}>
+              <div style={{
+                transform: `translate(${secondBadgeOffsetX}mm, ${secondBadgeOffsetY}mm) rotate(${secondBadgeRotation}deg)`,
+                transformOrigin: 'center',
+                transition: 'transform 0.2s ease-in-out',
+                scale: '0.7'
+              }}>
+                <VisitorBadge 
+                  visitor={visitor} 
+                  printTimestamp={printTimestamp}
+                />
+              </div>
+            </div>
+          </div>
         </div>
         
-        {/* Additional visitor badges */}
+        {/* Individual badges for additional visitors */}
         {hasAdditionalVisitors && visitor.additionalVisitors?.map((additionalVisitor) => (
           <div key={additionalVisitor.id} className="mb-4">
+            <h3 className="text-md font-medium mb-2">Zusätzlicher Besucher: {additionalVisitor.name}</h3>
             <VisitorBadge 
               visitor={visitor} 
               name={additionalVisitor.name}

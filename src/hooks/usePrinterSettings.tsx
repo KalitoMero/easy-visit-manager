@@ -10,10 +10,15 @@ type PrinterSettingsState = {
   selectedPrinterName: string | null; // Name des ausgewählten Druckers
   printCopies: number; // Anzahl der Kopien
   
-  // Badge Position und Rotation
+  // Badge Position und Rotation (Oberer Ausweis)
   badgeRotation: 0 | 90 | 180 | 270; // Rotation in Grad (0, 90, 180, 270)
   badgeOffsetX: number; // Horizontale Verschiebung in mm
   badgeOffsetY: number; // Vertikale Verschiebung in mm
+
+  // Badge Position und Rotation (Unterer Ausweis)
+  secondBadgeRotation: 0 | 90 | 180 | 270; // Rotation in Grad (0, 90, 180, 270)
+  secondBadgeOffsetX: number; // Horizontale Verschiebung in mm
+  secondBadgeOffsetY: number; // Vertikale Verschiebung in mm
 
   // Aktionen
   setEnableAutomaticPrinting: (value: boolean) => void;
@@ -24,6 +29,9 @@ type PrinterSettingsState = {
   setBadgeRotation: (value: 0 | 90 | 180 | 270) => void;
   setBadgeOffsetX: (value: number) => void;
   setBadgeOffsetY: (value: number) => void;
+  setSecondBadgeRotation: (value: 0 | 90 | 180 | 270) => void;
+  setSecondBadgeOffsetX: (value: number) => void;
+  setSecondBadgeOffsetY: (value: number) => void;
 };
 
 // Helper function to check if we're running in Electron
@@ -68,10 +76,15 @@ export const usePrinterSettings = create<PrinterSettingsState>()(
       selectedPrinterName: null,
       printCopies: 1,
       
-      // Standard Positionierung
+      // Standard Positionierung - Erster Ausweis
       badgeRotation: 0,
       badgeOffsetX: 0,
       badgeOffsetY: 0,
+
+      // Standard Positionierung - Zweiter Ausweis
+      secondBadgeRotation: 0,
+      secondBadgeOffsetX: 0,
+      secondBadgeOffsetY: 0,
 
       // Setter-Funktionen
       setEnableAutomaticPrinting: (value) => set({ enableAutomaticPrinting: value }),
@@ -82,6 +95,9 @@ export const usePrinterSettings = create<PrinterSettingsState>()(
       setBadgeRotation: (value) => set({ badgeRotation: value }),
       setBadgeOffsetX: (value) => set({ badgeOffsetX: value }),
       setBadgeOffsetY: (value) => set({ badgeOffsetY: value }),
+      setSecondBadgeRotation: (value) => set({ secondBadgeRotation: value }),
+      setSecondBadgeOffsetX: (value) => set({ secondBadgeOffsetX: value }),
+      setSecondBadgeOffsetY: (value) => set({ secondBadgeOffsetY: value }),
     }),
     {
       name: 'printer-settings', // localStorage key
