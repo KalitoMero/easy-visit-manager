@@ -3,6 +3,7 @@ import { BrowserWindow, screen } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import url from 'url';
+import fs from 'fs';
 
 // Get the current file's directory
 const __filename = fileURLToPath(import.meta.url);
@@ -35,16 +36,41 @@ export function createMainWindow(isDevelopment) {
 
   // Load the app
   if (isDevelopment) {
+    // In development, load from the dev server
     mainWindow.loadURL('http://localhost:8080');
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadURL(
-      url.format({
-        pathname: path.join(__dirname, '../dist/index.html'),
-        protocol: 'file:',
-        slashes: true,
-      })
-    );
+    // In production, check if the dist directory exists
+    const distPath = path.join(__dirname, '../dist');
+    const indexPath = path.join(distPath, 'index.html');
+    
+    if (fs.existsSync(indexPath)) {
+      // If the index.html file exists, load it
+      mainWindow.loadURL(
+        url.format({
+          pathname: indexPath,
+          protocol: 'file:',
+          slashes: true,
+        })
+      );
+    } else {
+      // If the index.html file doesn't exist, try loading from the dev server
+      console.warn('Production build not found, trying development server...');
+      mainWindow.loadURL('http://localhost:8080').catch((err) => {
+        console.error('Failed to load app:', err);
+        // Show an error dialog or load a fallback HTML
+        mainWindow.loadURL(
+          url.format({
+            pathname: path.join(__dirname, 'error.html'),
+            protocol: 'file:',
+            slashes: true,
+          })
+        ).catch(() => {
+          // If error.html doesn't exist, show a basic error in the window
+          mainWindow.loadURL('data:text/html,<html><body><h2>Error</h2><p>Failed to load application. Please build the app with "npm run build" first or start the development server.</p></body></html>');
+        });
+      });
+    }
   }
 
   return mainWindow;

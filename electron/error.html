@@ -1,0 +1,62 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Application Error</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+      background-color: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+    .error-container {
+      background-color: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      max-width: 500px;
+    }
+    h2 {
+      color: #e53e3e;
+      margin-top: 0;
+    }
+    p {
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .steps {
+      text-align: left;
+    }
+    code {
+      background-color: #f0f0f0;
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="error-container">
+    <h2>Application Error</h2>
+    <p>The application could not be loaded properly. This usually happens when the build files are missing.</p>
+    <div class="steps">
+      <p>Please try one of the following:</p>
+      <ol>
+        <li>Run <code>npm run build</code> to create a production build</li>
+        <li>Or start the development server with <code>npm run dev</code></li>
+      </ol>
+    </div>
+    <p>If the issue persists, please check the console for more detailed error messages.</p>
+  </div>
+</body>
+</html>
