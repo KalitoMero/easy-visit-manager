@@ -105,6 +105,9 @@
     padding: 0;
     position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
   }
   
   .visitor-badge {
@@ -116,9 +119,15 @@
     box-shadow: none !important;
   }
   
+  /* Erste Hälfte - normal */
+  .visitor-badge-top {
+    transform: rotate(0deg);
+  }
+  
+  /* Zweite Hälfte - um 90° gedreht */
   .visitor-badge-bottom {
-    transform: rotate(180deg);
-    transform-origin: center;
+    transform: rotate(90deg);
+    transform-origin: 52.5mm 52.5mm; /* Mitte der unteren Hälfte */
   }
   
   .fold-line {
@@ -144,6 +153,9 @@
   background-color: white;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .badge-fold-line {
@@ -153,3 +165,16 @@
   top: 74mm;
   left: 0;
 }
+
+/* Erste Hälfte - normal */
+.visitor-badge-top {
+  transform: rotate(0deg);
+}
+
+/* Zweite Hälfte - um 90° gedreht im Vorschaumodus */
+.visitor-badge-bottom-preview {
+  transform: rotate(90deg);
+  transform-origin: center;
+  height: 74mm;
+}
+

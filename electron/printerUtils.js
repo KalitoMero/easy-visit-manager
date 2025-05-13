@@ -28,8 +28,19 @@ export async function printToPDF(window, route, settings) {
           // Allow time for rendering
           await new Promise(res => setTimeout(res, 1000));
           
+          // Set A6 paper size settings
+          const printSettings = {
+            ...settings,
+            pageSize: { width: 105000, height: 148000 }, // A6 dimensions in microns
+            printBackground: true,
+            margins: {
+              marginType: 'none'
+            },
+            landscape: false,
+          };
+          
           // Print the badge
-          const result = await printWindow.webContents.print(settings);
+          const result = await printWindow.webContents.print(printSettings);
           
           // Close the print window
           printWindow.close();

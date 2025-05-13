@@ -22,6 +22,7 @@ const BadgePrintPreview = () => {
     printCopies
   } = usePrinterSettings();
   const printAttemptedRef = useRef(false);
+  const printTimestamp = useRef(new Date()).current;
   
   // Find the primary visitor
   const visitor = visitors.find(v => v.id === id);
@@ -100,21 +101,32 @@ const BadgePrintPreview = () => {
     <div className="p-4 flex flex-col gap-4 print:p-0">
       {/* Visitor badge container for A6 page */}
       <div className="visitor-badge-container print:block hidden">
-        {/* Top badge */}
-        <VisitorBadge visitor={visitor} className="visitor-badge" />
+        {/* Top badge - normal orientation */}
+        <VisitorBadge 
+          visitor={visitor} 
+          className="visitor-badge visitor-badge-top" 
+          printTimestamp={printTimestamp}
+        />
         
         {/* Fold line */}
         <div className="fold-line"></div>
         
-        {/* Bottom badge (rotated 180°) */}
-        <VisitorBadge visitor={visitor} className="visitor-badge visitor-badge-bottom" />
+        {/* Bottom badge - rotated 90° */}
+        <VisitorBadge 
+          visitor={visitor} 
+          className="visitor-badge visitor-badge-bottom" 
+          printTimestamp={printTimestamp}
+        />
       </div>
       
       {/* Screen preview (not for printing) - shows only regular badges */}
       <div className="print:hidden">
         {/* Primary visitor badge */}
         <div className="mb-4">
-          <VisitorBadge visitor={visitor} />
+          <VisitorBadge 
+            visitor={visitor} 
+            printTimestamp={printTimestamp}
+          />
         </div>
         
         {/* Additional visitor badges */}
@@ -124,6 +136,7 @@ const BadgePrintPreview = () => {
               visitor={visitor} 
               name={additionalVisitor.name}
               visitorNumber={additionalVisitor.visitorNumber}
+              printTimestamp={printTimestamp}
             />
           </div>
         ))}

@@ -2,16 +2,25 @@
 import React, { useEffect, useState } from 'react';
 import { Visitor } from '@/hooks/useVisitorStore';
 import { generateCheckoutEmailUrl, generateQRCodeDataUrl } from '@/lib/qrCodeUtils';
-import { QrCode, Mail } from 'lucide-react';
+import { QrCode, Mail, Calendar, Clock } from 'lucide-react';
+import { format } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 
 interface VisitorBadgeProps {
   visitor: Visitor;
   name?: string; // Optional name for group visitors
   visitorNumber?: number; // Optional visitor number override for additional visitors
   className?: string; // Optional className for styling
+  printTimestamp?: Date; // Optional timestamp for when the badge was printed
 }
 
-const VisitorBadge = ({ visitor, name, visitorNumber, className = '' }: VisitorBadgeProps) => {
+const VisitorBadge = ({ 
+  visitor, 
+  name, 
+  visitorNumber, 
+  className = '',
+  printTimestamp = new Date() // Default to current time if not provided
+}: VisitorBadgeProps) => {
   // Use the provided name (for group visitors) or the primary visitor name
   const displayName = name || visitor.name;
   // Use the provided visitor number override or the primary visitor number
@@ -21,6 +30,10 @@ const VisitorBadge = ({ visitor, name, visitorNumber, className = '' }: VisitorB
   
   // Generate the checkout email URL directly with the correct visitor number
   const checkoutEmailUrl = generateCheckoutEmailUrl(displayVisitorNumber);
+  
+  // Format the current date and time in Central European Time
+  const formattedDate = formatInTimeZone(printTimestamp, 'Europe/Berlin', 'dd.MM.yyyy');
+  const formattedTime = formatInTimeZone(printTimestamp, 'Europe/Berlin', 'HH:mm');
   
   // Load the QR code immediately to ensure it's ready for printing
   useEffect(() => {
@@ -96,8 +109,15 @@ const VisitorBadge = ({ visitor, name, visitorNumber, className = '' }: VisitorB
         <div className="contact text-sm">
           Contact: <span className="font-medium">{visitor.contact}</span>
         </div>
-        <div className="date text-xs text-muted-foreground">
-          {new Date(visitor.checkInTime).toLocaleDateString()}
+        <div className="datetime flex items-center justify-between text-xs text-muted-foreground mt-1">
+          <div className="date flex items-center gap-1">
+            <Calendar className="w-3 h-3" />
+            <span>{formattedDate}</span>
+          </div>
+          <div className="time flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            <span>{formattedTime} Uhr</span>
+          </div>
         </div>
       </div>
     </div>

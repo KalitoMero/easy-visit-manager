@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import VisitorBadge from './VisitorBadge';
 import { Button } from './ui/button';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { Visitor } from '@/hooks/useVisitorStore';
 import { Printer, Eye, Square, FoldHorizontal } from 'lucide-react';
+import { AspectRatio } from './ui/aspect-ratio';
 
 interface AdminBadgePreviewProps {
   visitor?: Visitor;
@@ -13,6 +14,7 @@ interface AdminBadgePreviewProps {
 const AdminBadgePreview: React.FC<AdminBadgePreviewProps> = ({ visitor }) => {
   const [showPreview, setShowPreview] = useState(false);
   const visitors = useVisitorStore(state => state.visitors);
+  const previewTimestamp = useRef(new Date()).current;
   
   // Wenn kein Besucher übergeben wurde, nehmen wir den ersten aktiven Besucher
   // oder erstellen einen Beispielbesucher für die Vorschau
@@ -23,7 +25,7 @@ const AdminBadgePreview: React.FC<AdminBadgePreviewProps> = ({ visitor }) => {
     company: 'Musterfirma GmbH',
     contact: 'Empfang',
     checkInTime: new Date().toISOString(),
-    checkOutTime: null, // Adding the missing property
+    checkOutTime: null,
     policyAccepted: true
   };
   
@@ -84,18 +86,36 @@ const AdminBadgePreview: React.FC<AdminBadgePreviewProps> = ({ visitor }) => {
           
           <div className="badge-preview-container">
             {/* Top badge */}
-            <VisitorBadge visitor={demoVisitor} className="visitor-badge" />
+            <VisitorBadge 
+              visitor={demoVisitor} 
+              className="visitor-badge visitor-badge-top" 
+              printTimestamp={previewTimestamp}
+            />
             
             {/* Fold line */}
             <div className="badge-fold-line"></div>
             
-            {/* Bottom badge (rotated 180°) */}
-            <VisitorBadge visitor={demoVisitor} className="visitor-badge visitor-badge-bottom" />
+            <div className="visitor-badge-bottom-preview" style={{ position: 'relative', width: '100%' }}>
+              <div style={{ 
+                position: 'absolute', 
+                top: '50%', 
+                left: '50%', 
+                transform: 'translate(-50%, -50%) rotate(90deg)',
+                width: '74mm', 
+                height: '105mm' 
+              }}>
+                <VisitorBadge 
+                  visitor={demoVisitor} 
+                  className="visitor-badge" 
+                  printTimestamp={previewTimestamp}
+                />
+              </div>
+            </div>
           </div>
           
           <p className="mt-4 text-sm text-gray-500 text-center">
             Der Besucherausweis wird auf A6-Papier gedruckt. <br />
-            Er enthält zwei identische Ausweise, die durch Falzen an der gestrichelten Linie beidseitig werden.
+            Er enthält zwei identische Ausweise: oben normal, unten um 90° gedreht für beidseitige Lesbarkeit nach dem Falten.
           </p>
         </div>
       )}
