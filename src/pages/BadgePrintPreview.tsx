@@ -4,6 +4,12 @@ import { useParams } from 'react-router-dom';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import VisitorBadge from '@/components/VisitorBadge';
+import { toast } from "@/hooks/use-toast";
+
+// Helper function to check if we're running in Electron
+const isElectron = () => {
+  return window && window.electronAPI && window.electronAPI.isElectron === true;
+};
 
 const BadgePrintPreview = () => {
   const { id } = useParams<{ id: string }>();
@@ -11,7 +17,8 @@ const BadgePrintPreview = () => {
   const { 
     enableAutomaticPrinting, 
     printWithoutDialog, 
-    printDelay 
+    printDelay,
+    selectedPrinterName
   } = usePrinterSettings();
   const printAttemptedRef = useRef(false);
   
@@ -23,27 +30,63 @@ const BadgePrintPreview = () => {
     if (visitor && !printAttemptedRef.current && enableAutomaticPrinting) {
       printAttemptedRef.current = true;
       
-      // Prüfen auf Kiosk-Druck-Modus
-      const isKioskPrintingSupported = 
-        window.navigator.userAgent.includes('Chrome') || 
-        window.navigator.userAgent.includes('Chromium');
+      const printBadge = async () => {
+        try {
+          // Electron printing
+          if (isElectron()) {
+            const result = await window.electronAPI.printBadge({
+              id: visitor.id,
+              name: visitor.name,
+              printerName: selectedPrinterName
+            });
+            
+            if (result.success) {
+              console.log('Badge printed successfully through Electron');
+            } else {
+              console.error('Electron print failed:', result.message);
+              // Fallback to browser printing
+              setTimeout(() => {
+                window.print();
+              }, printDelay);
+            }
+          } else {
+            // Browser printing
+            const isKioskPrintingSupported = 
+              window.navigator.userAgent.includes('Chrome') || 
+              window.navigator.userAgent.includes('Chromium');
+            
+            if (printWithoutDialog && isKioskPrintingSupported) {
+              console.log('Kiosk-Druck wird initiiert...');
+              window.print();
+            } else {
+              // Fallback für den Fall, dass kein Kiosk-Modus aktiv ist
+              // oder der Nutzer möchte den Druckdialog sehen
+              console.log('Fallback-Druck mit Verzögerung wird initiiert...');
+              const timer = setTimeout(() => {
+                window.print();
+              }, printDelay);
+              
+              return () => clearTimeout(timer);
+            }
+          }
+        } catch (error) {
+          console.error('Print error:', error);
+          toast({
+            title: "Fehler beim Drucken",
+            description: "Der Ausweis konnte nicht automatisch gedruckt werden. Bitte versuchen Sie manuell zu drucken.",
+            variant: "destructive"
+          });
+          
+          // Fallback
+          setTimeout(() => {
+            window.print();
+          }, printDelay);
+        }
+      };
       
-      if (printWithoutDialog && isKioskPrintingSupported) {
-        console.log('Kiosk-Druck wird initiiert...');
-        // Der Browser könnte im Kiosk-Modus sein, versuche direkt zu drucken
-        window.print();
-      } else {
-        // Fallback für den Fall, dass kein Kiosk-Modus aktiv ist
-        // oder der Nutzer möchte den Druckdialog sehen
-        console.log('Fallback-Druck mit Verzögerung wird initiiert...');
-        const timer = setTimeout(() => {
-          window.print();
-        }, printDelay); // Konfigurierbare Verzögerung für das Rendering
-        
-        return () => clearTimeout(timer);
-      }
+      printBadge();
     }
-  }, [visitor, enableAutomaticPrinting, printWithoutDialog, printDelay]);
+  }, [visitor, enableAutomaticPrinting, printWithoutDialog, printDelay, selectedPrinterName]);
   
   if (!visitor) {
     return <div className="p-8 text-center">Visitor not found</div>;

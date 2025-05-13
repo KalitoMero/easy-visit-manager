@@ -175,19 +175,76 @@ const Admin = () => {
     });
   };
 
+  const [availablePrinters, setAvailablePrinters] = useState<any[]>([]);
+  const [isElectron, setIsElectron] = useState(false);
+  
+  // Check if we're running in Electron
+  useEffect(() => {
+    const electron = window.electronAPI && window.electronAPI.isElectron === true;
+    setIsElectron(electron);
+    
+    // Load printer list if in Electron
+    const loadPrinters = async () => {
+      if (electron) {
+        try {
+          const printers = await window.electronAPI!.getPrinters();
+          setAvailablePrinters(printers);
+          console.log('Available printers:', printers);
+        } catch (error) {
+          console.error('Failed to get printers:', error);
+        }
+      }
+    };
+    
+    loadPrinters();
+  }, []);
+
   const handleTestPrint = () => {
-    // Öffne einen Testausweis zum Drucken in einem neuen Tab
-    if (visitors.length > 0) {
-      const testVisitorId = visitors[0].id;
-      window.open(`/print-badge/${testVisitorId}`, '_blank');
+    if (isElectron && window.electronAPI) {
+      // In Electron, use the Electron print API
+      if (visitors.length > 0) {
+        const testVisitorId = visitors[0].id;
+        window.electronAPI.printBadge({
+          id: testVisitorId,
+          name: visitors[0].name
+        }).then(result => {
+          if (result.success) {
+            toast({
+              title: "Testdruck erfolgreich",
+              description: "Der Ausweis wurde erfolgreich gedruckt.",
+            });
+          } else {
+            toast({
+              title: "Testdruck fehlgeschlagen",
+              description: result.message || "Unbekannter Fehler",
+              variant: "destructive",
+            });
+          }
+        });
+      } else {
+        toast({
+          title: "Kein Besucher vorhanden",
+          description: "Es muss mindestens ein Besucher im System sein, um einen Testdruck durchzuführen.",
+          variant: "destructive",
+        });
+      }
     } else {
-      toast({
-        title: "Kein Besucher vorhanden",
-        description: "Es muss mindestens ein Besucher im System sein, um einen Testdruck durchzuführen.",
-        variant: "destructive",
-      });
+      // In browser, use the standard approach
+      if (visitors.length > 0) {
+        const testVisitorId = visitors[0].id;
+        window.open(`/print-badge/${testVisitorId}`, '_blank');
+      } else {
+        toast({
+          title: "Kein Besucher vorhanden",
+          description: "Es muss mindestens ein Besucher im System sein, um einen Testdruck durchzuführen.",
+          variant: "destructive",
+        });
+      }
     }
   };
+
+  const [selectedPrinterName, setSelectedPrinterName] = useState<string>("");
+  const [printCopies, setPrintCopies] = useState(1);
 
   if (loading) {
     return (
@@ -482,22 +539,82 @@ const Admin = () => {
                   </p>
                 </div>
                 
-                <Card className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-900">
-                  <CardContent className="p-4 space-y-2">
-                    <h3 className="text-lg font-medium flex items-center gap-1">
-                      <Settings className="h-4 w-4" /> Kiosk-Modus Anleitung
-                    </h3>
-                    <p className="text-sm">
-                      Für vollständig automatischen Druck ohne Dialog muss Chrome/Chromium mit speziellen Parametern gestartet werden:
+                {isElectron && (
+                  <div className="space-y-2">
+                    <Label htmlFor="printer-selection">Drucker auswählen</Label>
+                    <Select 
+                      value={selectedPrinterName || ""} 
+                      onValueChange={setSelectedPrinterName}
+                      disabled={!enableAutomaticPrinting}
+                    >
+                      <SelectTrigger id="printer-selection">
+                        <SelectValue placeholder="Standard-Drucker verwenden" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Standard-Drucker verwenden</SelectItem>
+                        {availablePrinters.map(printer => (
+                          <SelectItem key={printer.name} value={printer.name}>
+                            {printer.name} {printer.isDefault ? "(Standard)" : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-muted-foreground">
+                      Der gewählte Drucker wird für alle automatischen Druckvorgänge verwendet
                     </p>
-                    <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded font-mono text-xs overflow-x-auto">
-                      chrome.exe --kiosk-printing
-                    </div>
-                    <p className="text-sm">
-                      Dies aktiviert den Kiosk-Druck-Modus, bei dem Druckaufträge ohne Dialog direkt an den Standarddrucker gesendet werden.
+                  </div>
+                )}
+                
+                {isElectron && (
+                  <div className="space-y-2">
+                    <Label htmlFor="print-copies">Anzahl Kopien</Label>
+                    <Input
+                      id="print-copies"
+                      type="number"
+                      value={printCopies}
+                      onChange={(e) => setPrintCopies(Number(e.target.value))}
+                      min={1}
+                      max={10}
+                      disabled={!enableAutomaticPrinting}
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Anzahl der zu druckenden Exemplare pro Ausweis
                     </p>
-                  </CardContent>
-                </Card>
+                  </div>
+                )}
+                
+                {isElectron ? (
+                  <Card className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-900">
+                    <CardContent className="p-4 space-y-2">
+                      <h3 className="text-lg font-medium flex items-center gap-1">
+                        <Settings className="h-4 w-4" /> Electron Desktop App
+                      </h3>
+                      <p className="text-sm">
+                        Diese Anwendung läuft als Electron Desktop App. Dies ermöglicht verbesserte Druckfunktionen und Kiosk-Modus ohne zusätzliche Browser-Flags.
+                      </p>
+                      <p className="text-sm font-medium">
+                        App-Version: {window.electronAPI ? window.electronAPI.getVersion() : '1.0.0'}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-900">
+                    <CardContent className="p-4 space-y-2">
+                      <h3 className="text-lg font-medium flex items-center gap-1">
+                        <Settings className="h-4 w-4" /> Kiosk-Modus Anleitung
+                      </h3>
+                      <p className="text-sm">
+                        Für vollständig automatischen Druck ohne Dialog muss Chrome/Chromium mit speziellen Parametern gestartet werden:
+                      </p>
+                      <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded font-mono text-xs overflow-x-auto">
+                        chrome.exe --kiosk-printing
+                      </div>
+                      <p className="text-sm">
+                        Dies aktiviert den Kiosk-Druck-Modus, bei dem Druckaufträge ohne Dialog direkt an den Standarddrucker gesendet werden.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
                 
                 <div className="flex justify-between pt-4">
                   <Button 
@@ -569,6 +686,62 @@ const Admin = () => {
           </TabsContent>
         </Tabs>
       </div>
+      
+      {isElectron && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Daten-Management</CardTitle>
+            <CardDescription>Exportieren und importieren Sie Besucherdaten</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex justify-between">
+              <Button 
+                variant="outline" 
+                onClick={async () => {
+                  const result = await window.electronAPI!.exportVisitors();
+                  if (result.success) {
+                    toast({
+                      title: "Export erfolgreich",
+                      description: `Daten wurden nach ${result.path} exportiert.`
+                    });
+                  } else {
+                    toast({
+                      title: "Export fehlgeschlagen",
+                      description: result.message,
+                      variant: "destructive"
+                    });
+                  }
+                }}
+              >
+                Besucherdaten exportieren
+              </Button>
+              
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  const result = await window.electronAPI!.importVisitors();
+                  if (result.success) {
+                    toast({
+                      title: "Import erfolgreich",
+                      description: `${result.visitors?.length || 0} Besucher importiert.`
+                    });
+                    // Force reload to update UI
+                    window.location.reload();
+                  } else {
+                    toast({
+                      title: "Import fehlgeschlagen",
+                      description: result.message,
+                      variant: "destructive"
+                    });
+                  }
+                }}
+              >
+                Besucherdaten importieren
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
