@@ -540,6 +540,16 @@ const Admin = () => {
                   </p>
                 </div>
                 
+                {/* Hier fügen wir die BadgePositionPreview Komponente ein */}
+                <div className="pt-4 pb-2">
+                  <h3 className="text-lg font-semibold">Ausweispositionierung und Rotation</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Stellen Sie die Position und Drehung des Besucherausweises auf der Druckseite ein
+                  </p>
+                  
+                  <BadgePositionPreview />
+                </div>
+                
                 {isElectron && (
                   <div className="space-y-2">
                     <Label htmlFor="printer-selection">Drucker auswählen</Label>

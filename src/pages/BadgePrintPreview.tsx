@@ -5,6 +5,7 @@ import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import VisitorBadge from '@/components/VisitorBadge';
 import { toast } from "@/hooks/use-toast";
+import HomeButton from "@/components/HomeButton";
 
 // Helper function to check if we're running in Electron
 const isElectron = () => {
@@ -99,7 +100,12 @@ const BadgePrintPreview = () => {
   }, [visitor, enableAutomaticPrinting, printWithoutDialog, printDelay, selectedPrinterName, printCopies, badgeRotation, badgeOffsetX, badgeOffsetY]);
   
   if (!visitor) {
-    return <div className="p-8 text-center">Visitor not found</div>;
+    return (
+      <div className="p-8 text-center">
+        <HomeButton />
+        <div className="mt-8">Visitor not found</div>
+      </div>
+    );
   }
   
   // Für Gruppenbesucher, erstelle einen Ausweis für jeden Besucher
@@ -107,6 +113,11 @@ const BadgePrintPreview = () => {
   
   return (
     <div className="p-4 flex flex-col gap-4 print:p-0">
+      {/* Add HomeButton for navigation, visible only on screen */}
+      <div className="print:hidden">
+        <HomeButton />
+      </div>
+      
       {/* Visitor badge container for A6 page */}
       <div className="visitor-badge-container print:block hidden">
         {/* Apply rotation and position to the container */}
