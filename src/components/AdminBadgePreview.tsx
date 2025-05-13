@@ -16,13 +16,14 @@ const AdminBadgePreview: React.FC<AdminBadgePreviewProps> = ({ visitor }) => {
   
   // Wenn kein Besucher übergeben wurde, nehmen wir den ersten aktiven Besucher
   // oder erstellen einen Beispielbesucher für die Vorschau
-  const demoVisitor = visitor || visitors.find(v => !v.checkOutTime) || {
+  const demoVisitor: Visitor = visitor || visitors.find(v => !v.checkOutTime) || {
     id: 'demo-visitor',
     visitorNumber: 123,
     name: 'Max Mustermann',
     company: 'Musterfirma GmbH',
     contact: 'Empfang',
     checkInTime: new Date().toISOString(),
+    checkOutTime: null, // Adding the missing property
     policyAccepted: true
   };
   
