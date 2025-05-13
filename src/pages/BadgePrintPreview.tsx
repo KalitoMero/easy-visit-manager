@@ -18,7 +18,8 @@ const BadgePrintPreview = () => {
     enableAutomaticPrinting, 
     printWithoutDialog, 
     printDelay,
-    selectedPrinterName
+    selectedPrinterName,
+    printCopies
   } = usePrinterSettings();
   const printAttemptedRef = useRef(false);
   
@@ -86,7 +87,7 @@ const BadgePrintPreview = () => {
       
       printBadge();
     }
-  }, [visitor, enableAutomaticPrinting, printWithoutDialog, printDelay, selectedPrinterName]);
+  }, [visitor, enableAutomaticPrinting, printWithoutDialog, printDelay, selectedPrinterName, printCopies]);
   
   if (!visitor) {
     return <div className="p-8 text-center">Visitor not found</div>;
@@ -97,18 +98,36 @@ const BadgePrintPreview = () => {
   
   return (
     <div className="p-4 flex flex-col gap-4 print:p-0">
-      {/* Primary visitor badge */}
-      <VisitorBadge visitor={visitor} />
+      {/* Visitor badge container for A6 page */}
+      <div className="visitor-badge-container print:block hidden">
+        {/* Top badge */}
+        <VisitorBadge visitor={visitor} className="visitor-badge" />
+        
+        {/* Fold line */}
+        <div className="fold-line"></div>
+        
+        {/* Bottom badge (rotated 180°) */}
+        <VisitorBadge visitor={visitor} className="visitor-badge visitor-badge-bottom" />
+      </div>
       
-      {/* Additional visitor badges */}
-      {hasAdditionalVisitors && visitor.additionalVisitors?.map((additionalVisitor) => (
-        <VisitorBadge 
-          key={additionalVisitor.id}
-          visitor={visitor} 
-          name={additionalVisitor.name}
-          visitorNumber={additionalVisitor.visitorNumber}
-        />
-      ))}
+      {/* Screen preview (not for printing) - shows only regular badges */}
+      <div className="print:hidden">
+        {/* Primary visitor badge */}
+        <div className="mb-4">
+          <VisitorBadge visitor={visitor} />
+        </div>
+        
+        {/* Additional visitor badges */}
+        {hasAdditionalVisitors && visitor.additionalVisitors?.map((additionalVisitor) => (
+          <div key={additionalVisitor.id} className="mb-4">
+            <VisitorBadge 
+              visitor={visitor} 
+              name={additionalVisitor.name}
+              visitorNumber={additionalVisitor.visitorNumber}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
