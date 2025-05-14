@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -138,6 +137,7 @@ const CheckInStep1: React.FC = () => {
                           placeholder={t('lastName')} 
                           {...field} 
                           className="text-lg h-12" 
+                          autoComplete="off"
                         />
                       </FormControl>
                       <FormMessage />
@@ -158,6 +158,7 @@ const CheckInStep1: React.FC = () => {
                           onChange={(e) => updateAdditionalVisitorName(index, e.target.value)}
                           placeholder={t('lastName')}
                           className="text-lg h-12 flex-1"
+                          autoComplete="off"
                         />
                         <Button 
                           type="button" 
@@ -195,6 +196,7 @@ const CheckInStep1: React.FC = () => {
                           placeholder={t('company')} 
                           {...field} 
                           className="text-lg h-12" 
+                          autoComplete="off"
                         />
                       </FormControl>
                       <FormMessage />
@@ -213,6 +215,7 @@ const CheckInStep1: React.FC = () => {
                           placeholder={t('contact')} 
                           {...field} 
                           className="text-lg h-12" 
+                          autoComplete="off"
                         />
                       </FormControl>
                       <FormMessage />

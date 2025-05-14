@@ -1,4 +1,3 @@
-
 import { useMemo } from 'react';
 import { useLanguageStore, Language } from '@/hooks/useLanguageStore';
 import { create } from 'zustand';
@@ -54,7 +53,7 @@ export type TranslationKey =
   'selfCheckIn' |
   'pageNotFound' |
   'backToHomeButton' |
-  // Adding missing translation keys from errors
+  // Adding newly missing translations
   'scrollComplete' |
   'acceptAndContinue' |
   'registrationSuccessful' |
@@ -103,7 +102,6 @@ export const translations: TranslationStore = {
     addVisitor: 'Besucher hinzufügen',
     removeVisitor: 'Entfernen',
     admin: 'Administration',
-    // Adding the missing translations here
     policyCheckboxEnabled: 'Die Checkbox für die Richtlinien ist nun aktiv',
     visitorNotFound: 'Besucher nicht gefunden',
     visitorPolicy: 'Besucherrichtlinien',
@@ -120,13 +118,12 @@ export const translations: TranslationStore = {
     selfCheckIn: 'Selbstanmeldung',
     pageNotFound: 'Seite nicht gefunden',
     backToHomeButton: 'Zurück zur Startseite',
-    // Adding newly missing translations
     scrollComplete: 'Scrollen abgeschlossen',
     acceptAndContinue: 'Akzeptieren und Fortfahren',
     registrationSuccessful: 'Anmeldung erfolgreich',
     yourVisitorNumber: 'Ihre Besuchernummer',
     pleaseNote: 'Bitte notieren Sie sich diese Nummer',
-    contactInfo: 'Ihr Ansprechpartner',
+    contactInfo: 'Wir informieren Ihren Ansprechpartner',
     viewPrintableBadge: 'Ausweis anzeigen und drucken',
     thankYou: 'Vielen Dank für Ihren Besuch'
   },
@@ -163,7 +160,6 @@ export const translations: TranslationStore = {
     addVisitor: 'Add Visitor',
     removeVisitor: 'Remove',
     admin: 'Administration',
-    // Adding the missing translations here
     policyCheckboxEnabled: 'The policy checkbox is now enabled',
     visitorNotFound: 'Visitor not found',
     visitorPolicy: 'Visitor Policy',
@@ -180,13 +176,12 @@ export const translations: TranslationStore = {
     selfCheckIn: 'Self Check-In',
     pageNotFound: 'Page not found',
     backToHomeButton: 'Back to Home',
-    // Adding newly missing translations
     scrollComplete: 'Scrolling complete',
     acceptAndContinue: 'Accept and Continue',
     registrationSuccessful: 'Registration Successful',
     yourVisitorNumber: 'Your visitor number',
     pleaseNote: 'Please note this number',
-    contactInfo: 'Your contact person',
+    contactInfo: 'We will inform your contact person',
     viewPrintableBadge: 'View and print badge',
     thankYou: 'Thank you for your visit'
   }
@@ -200,4 +195,3 @@ export const useTranslation = (language: Language = 'de') => {
     return translation[key] || `Missing translation for ${key} in ${language}`;
   };
 };
-
