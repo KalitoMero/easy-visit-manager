@@ -70,6 +70,7 @@
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
   body {
     @apply bg-background text-foreground;
@@ -89,13 +90,17 @@
   @page {
     size: A6 portrait;
     margin: 0;
+    padding: 0;
   }
   
   body {
     margin: 0;
     padding: 0;
+    width: 105mm;
+    height: 148mm;
   }
   
+  /* Set exact measurements for visitor badge container */
   .visitor-badge-container {
     width: 105mm;
     height: 148mm;
@@ -105,52 +110,51 @@
     padding: 0;
     position: relative;
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
   }
   
-  .badge-position-container {
+  /* Each badge takes exactly half of the A6 page height */
+  .print-badge {
     width: 100%;
-    height: 100%;
-    position: relative;
-    transform-origin: center center;
-  }
-  
-  .visitor-badge {
-    width: 105mm;
     height: 74mm;
-    padding: 7mm;
+    padding: 5mm;
     box-sizing: border-box;
     margin: 0;
     box-shadow: none !important;
   }
   
-  /* Erste Hälfte - normal */
-  .visitor-badge-top {
-    transform: rotate(0deg);
-  }
-  
-  /* Zweite Hälfte - um 90° gedreht */
-  .visitor-badge-bottom {
-    transform: rotate(90deg);
-    transform-origin: 52.5mm 52.5mm; /* Mitte der unteren Hälfte */
-  }
-  
-  .fold-line {
-    border-top: 1px dashed #999;
-    width: 100%;
-    position: absolute;
-    top: 74mm;
-    left: 0;
-  }
-  
-  .print-hidden {
+  /* Hide elements not needed for printing */
+  .print-hidden, .print\:hidden {
     display: none !important;
+  }
+  
+  /* Typography for printed badges */
+  .visitor-badge .badge-header {
+    text-align: center;
+    margin-bottom: 3mm;
+  }
+  
+  /* Ensure no overflowing text */
+  .visitor-badge .truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  /* QR code container */
+  .visitor-badge .qr-code-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  /* Badge divider line */
+  .badge-divider {
+    border-top: 1px dashed #ccc;
+    width: 100%;
   }
 }
 
-/* Vorschau Styles für die Admin-Ansicht */
+/* Preview Styles for admin view */
 .badge-preview-container {
   width: 105mm;
   height: 148mm;
@@ -162,7 +166,6 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
 }
 
 .badge-fold-line {
@@ -171,18 +174,6 @@
   position: absolute;
   top: 74mm;
   left: 0;
-}
-
-/* Erste Hälfte - normal */
-.visitor-badge-top {
-  transform: rotate(0deg);
-}
-
-/* Zweite Hälfte - um 90° gedreht im Vorschaumodus */
-.visitor-badge-bottom-preview {
-  transform: rotate(90deg);
-  transform-origin: center;
-  height: 74mm;
 }
 
 /* Position preview styles */
@@ -196,9 +187,24 @@
   margin: 0 auto;
 }
 
-.position-preview-badge {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform-origin: center center;
+/* Make sure each badge has a proper height */
+.visitor-badge {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Common styling for badge elements */
+.visitor-badge .badge-header,
+.visitor-badge .badge-content,
+.visitor-badge .badge-footer {
+  width: 100%;
+}
+
+/* Footer should always be at the bottom */
+.visitor-badge .badge-footer {
+  margin-top: auto;
 }

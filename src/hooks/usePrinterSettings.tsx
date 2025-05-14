@@ -29,6 +29,7 @@ type PrinterSettingsState = {
     fontSizeCompany: 'small' | 'medium' | 'large';
     qrCodeSize: number; // Größe in Pixeln
     footerSpacing: number; // Abstand in Pixeln
+    qrCodePosition: 'right' | 'center'; // Position des QR-Codes
   };
 
   // Aktionen
@@ -109,6 +110,7 @@ export const usePrinterSettings = create<PrinterSettingsState>()(
         fontSizeCompany: 'medium',
         qrCodeSize: 120,
         footerSpacing: 8,
+        qrCodePosition: 'right', // Standardposition: rechts
       },
 
       // Setter-Funktionen

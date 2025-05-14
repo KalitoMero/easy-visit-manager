@@ -14,6 +14,7 @@ interface VisitorBadgeProps {
   visitorNumber?: number; // Optional visitor number override for additional visitors
   className?: string; // Optional className for styling
   printTimestamp?: Date; // Optional timestamp for when the badge was printed
+  qrPosition?: 'right' | 'center'; // QR code position option
 }
 
 const VisitorBadge = ({ 
@@ -21,7 +22,8 @@ const VisitorBadge = ({
   name, 
   visitorNumber, 
   className = '',
-  printTimestamp = new Date() // Default to current time if not provided
+  printTimestamp = new Date(), // Default to current time if not provided
+  qrPosition = 'right' // Default to right-aligned QR code
 }: VisitorBadgeProps) => {
   // Use the provided name (for group visitors) or the primary visitor name
   const displayName = name || visitor.name;
@@ -102,30 +104,43 @@ const VisitorBadge = ({
   })();
 
   return (
-    <div className={`visitor-badge bg-white border border-gray-300 rounded-md p-5 flex flex-col ${className}`}>
+    <div className={cn(
+      "visitor-badge bg-white border border-gray-300 rounded-md p-4 flex flex-col box-border",
+      "max-h-[74mm] w-full overflow-hidden print:shadow-none",
+      className
+    )}>
       {/* Badge Header */}
-      <div className="badge-header border-b pb-2">
-        <div className={`font-bold text-center ${titleFontClass}`}>VISITOR</div>
+      <div className="badge-header border-b pb-2 text-center">
+        <div className={`font-bold ${titleFontClass}`}>VISITOR</div>
       </div>
       
       {/* Badge Content - Main area with visitor info and QR code */}
-      <div className="badge-content flex-1 flex justify-between items-center py-3">
+      <div className={cn(
+        "badge-content flex-1 py-3", 
+        qrPosition === 'center' ? "flex flex-col items-center" : "flex justify-between items-center"
+      )}>
         {/* Left column - Visitor information */}
-        <div className="visitor-info flex-1 flex flex-col justify-center items-center py-2 gap-2">
-          <div className="visitor-number text-5xl font-bold text-primary mb-2">
+        <div className={cn(
+          "visitor-info flex flex-col justify-center items-center py-2 gap-2",
+          qrPosition === 'center' ? "mb-4" : "flex-1"
+        )}>
+          <div className="visitor-number text-5xl font-bold text-primary mb-2 text-center">
             {displayVisitorNumber}
           </div>
-          <div className={`name font-bold ${nameFontClass}`}>
+          <div className={`name font-bold ${nameFontClass} truncate max-w-full text-center`}>
             {displayName}
           </div>
-          <div className={`company ${companyFontClass}`}>
+          <div className={`company ${companyFontClass} truncate max-w-full text-center`}>
             {visitor.company}
           </div>
         </div>
         
-        {/* Right column - QR code */}
-        <div className="qr-code-section flex flex-col items-center ml-3">
-          <div className="qr-code-container flex items-center justify-center p-3 border border-gray-200 rounded-lg print:border-0">
+        {/* QR code section */}
+        <div className={cn(
+          "qr-code-section flex flex-col items-center",
+          qrPosition === 'center' ? "" : "ml-3"
+        )}>
+          <div className="qr-code-container flex items-center justify-center p-2 border border-gray-200 rounded-lg print:border-0 bg-white">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center w-24 h-24 bg-gray-100 rounded animate-pulse print:hidden">
                 <QrCode className="w-10 h-10 text-gray-300" />
@@ -161,10 +176,10 @@ const VisitorBadge = ({
       </div>
       
       {/* Badge Footer */}
-      <div className="badge-footer border-t pt-2" style={{ marginTop: `${badgeLayout.footerSpacing}px` }}>
+      <div className="badge-footer border-t pt-2 mt-auto" style={{ marginTop: `${badgeLayout.footerSpacing}px` }}>
         {/* Contact Information */}
         {badgeLayout.showContact && (
-          <div className="contact text-sm">
+          <div className="contact text-sm truncate">
             Contact: <span className="font-medium">{visitor.contact}</span>
           </div>
         )}

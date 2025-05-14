@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Eye, Layout, Type, QrCode, ArrowDownWideNarrow } from "lucide-react";
+import { Eye, Layout, Type, QrCode, ArrowDownWideNarrow, AlignRight, AlignCenter } from "lucide-react";
 import { cn } from '@/lib/utils';
 
 interface BadgeLayoutSettingsProps {
@@ -59,6 +59,11 @@ const BadgeLayoutSettings: React.FC<BadgeLayoutSettingsProps> = ({ className }) 
   const handleFooterSpacingChange = (value: number[]) => {
     setBadgeLayout({ footerSpacing: value[0] });
   };
+  
+  // Handle QR code position changes
+  const handleQRCodePositionChange = (value: string) => {
+    setBadgeLayout({ qrCodePosition: value as 'right' | 'center' });
+  };
 
   // Reset to default settings
   const handleResetDefaults = () => {
@@ -69,7 +74,8 @@ const BadgeLayoutSettings: React.FC<BadgeLayoutSettingsProps> = ({ className }) 
       fontSizeName: 'medium',
       fontSizeCompany: 'medium',
       qrCodeSize: 120,
-      footerSpacing: 8
+      footerSpacing: 8,
+      qrCodePosition: 'right'
     });
   };
 
@@ -175,6 +181,39 @@ const BadgeLayoutSettings: React.FC<BadgeLayoutSettingsProps> = ({ className }) 
                   </Select>
                 </div>
               </div>
+            </div>
+          </div>
+          
+          {/* QR Code Position Section */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium flex items-center gap-2">
+              <Layout className="h-4 w-4" /> QR-Code-Position
+            </h4>
+            
+            <div className="space-y-2">
+              <Select
+                value={badgeLayout.qrCodePosition || 'right'}
+                onValueChange={handleQRCodePositionChange}
+              >
+                <SelectTrigger id="qr-position">
+                  <SelectValue placeholder="Position wählen..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="right" className="flex items-center">
+                    <div className="flex items-center">
+                      <AlignRight className="mr-2 h-4 w-4" /> Rechts (Standard)
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="center" className="flex items-center">
+                    <div className="flex items-center">
+                      <AlignCenter className="mr-2 h-4 w-4" /> Zentriert unter dem Namen
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Positioniert den QR-Code entweder rechts neben dem Namen oder zentriert darunter
+              </p>
             </div>
           </div>
           

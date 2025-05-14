@@ -28,7 +28,9 @@ const BadgePrintPreview = () => {
     // Zweiter Ausweis (unten)
     secondBadgeRotation,
     secondBadgeOffsetX,
-    secondBadgeOffsetY
+    secondBadgeOffsetY,
+    // Badge layout
+    badgeLayout
   } = usePrinterSettings();
   const printAttemptedRef = useRef(false);
   const printTimestamp = useRef(new Date()).current;
@@ -58,7 +60,8 @@ const BadgePrintPreview = () => {
                 secondRotation: secondBadgeRotation,
                 secondOffsetX: secondBadgeOffsetX,
                 secondOffsetY: secondBadgeOffsetY
-              }
+              },
+              layoutOptions: badgeLayout // Pass badge layout options to Electron
             });
             
             if (result.success) {
@@ -109,7 +112,7 @@ const BadgePrintPreview = () => {
     }
   }, [visitor, enableAutomaticPrinting, printWithoutDialog, printDelay, selectedPrinterName, printCopies, 
       badgeRotation, badgeOffsetX, badgeOffsetY, 
-      secondBadgeRotation, secondBadgeOffsetX, secondBadgeOffsetY]);
+      secondBadgeRotation, secondBadgeOffsetX, secondBadgeOffsetY, badgeLayout]);
   
   if (!visitor) {
     return (
@@ -136,7 +139,8 @@ const BadgePrintPreview = () => {
           width: '105mm', 
           height: '148mm',
           position: 'relative',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          boxSizing: 'border-box'
         }}>
           {/* Top badge with custom position and rotation */}
           <div style={{
@@ -144,17 +148,24 @@ const BadgePrintPreview = () => {
             top: '0',
             left: '0',
             width: '100%',
-            height: '50%',
+            height: '74mm', /* Exakt die Hälfte von A6-Höhe */
             display: 'flex',
             justifyContent: 'center',
-            alignItems: 'center'
+            alignItems: 'center',
+            boxSizing: 'border-box',
+            overflow: 'hidden'
           }}>
             <div style={{
               transform: `translate(${badgeOffsetX}mm, ${badgeOffsetY}mm) rotate(${badgeRotation}deg)`,
+              maxWidth: '100%',
+              maxHeight: '74mm',
+              boxSizing: 'border-box'
             }}>
               <VisitorBadge 
                 visitor={visitor} 
                 printTimestamp={printTimestamp}
+                qrPosition={badgeLayout.qrCodePosition || 'right'}
+                className="print-badge"
               />
             </div>
           </div>
@@ -162,7 +173,7 @@ const BadgePrintPreview = () => {
           {/* Divider line */}
           <div style={{
             position: 'absolute',
-            top: '50%',
+            top: '74mm',
             left: '0',
             width: '100%',
             borderTop: '1px dashed #ccc'
@@ -171,20 +182,27 @@ const BadgePrintPreview = () => {
           {/* Bottom badge with custom position and rotation */}
           <div style={{
             position: 'absolute',
-            top: '50%',
+            top: '74mm',
             left: '0',
             width: '100%',
-            height: '50%',
+            height: '74mm', /* Exakt die Hälfte von A6-Höhe */
             display: 'flex',
             justifyContent: 'center',
-            alignItems: 'center'
+            alignItems: 'center',
+            boxSizing: 'border-box',
+            overflow: 'hidden'
           }}>
             <div style={{
               transform: `translate(${secondBadgeOffsetX}mm, ${secondBadgeOffsetY}mm) rotate(${secondBadgeRotation}deg)`,
+              maxWidth: '100%',
+              maxHeight: '74mm',
+              boxSizing: 'border-box'
             }}>
               <VisitorBadge 
                 visitor={visitor} 
                 printTimestamp={printTimestamp}
+                qrPosition={badgeLayout.qrCodePosition || 'right'}
+                className="print-badge"
               />
             </div>
           </div>
@@ -195,12 +213,13 @@ const BadgePrintPreview = () => {
       <div className="print:hidden">
         <div className="mb-8">
           <h2 className="text-lg font-medium mb-2">Druckvorschau (A6-Format)</h2>
-          <div className="border border-gray-300 rounded-md p-4" style={{ 
+          <div className="border border-gray-300 rounded-md p-4 bg-white" style={{ 
             width: '105mm', 
             height: '148mm',
             margin: '0 auto',
             position: 'relative',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            boxSizing: 'border-box'
           }}>
             {/* Top badge preview */}
             <div style={{
@@ -208,20 +227,24 @@ const BadgePrintPreview = () => {
               top: '0',
               left: '0',
               width: '100%',
-              height: '50%',
+              height: '74mm',
               display: 'flex',
               justifyContent: 'center',
-              alignItems: 'center'
+              alignItems: 'center',
+              boxSizing: 'border-box'
             }}>
               <div style={{
                 transform: `translate(${badgeOffsetX}mm, ${badgeOffsetY}mm) rotate(${badgeRotation}deg)`,
                 transformOrigin: 'center',
                 transition: 'transform 0.2s ease-in-out',
-                scale: '0.7'
+                scale: '0.7',
+                maxHeight: '74mm',
+                boxSizing: 'border-box'
               }}>
                 <VisitorBadge 
                   visitor={visitor} 
                   printTimestamp={printTimestamp}
+                  qrPosition={badgeLayout.qrCodePosition || 'right'}
                 />
               </div>
             </div>
@@ -229,7 +252,7 @@ const BadgePrintPreview = () => {
             {/* Middle divider */}
             <div style={{
               position: 'absolute',
-              top: '50%',
+              top: '74mm',
               left: '0',
               width: '100%',
               borderTop: '1px dashed #ccc'
@@ -238,23 +261,27 @@ const BadgePrintPreview = () => {
             {/* Bottom badge preview */}
             <div style={{
               position: 'absolute',
-              top: '50%',
+              top: '74mm',
               left: '0',
               width: '100%',
-              height: '50%',
+              height: '74mm',
               display: 'flex',
               justifyContent: 'center',
-              alignItems: 'center'
+              alignItems: 'center',
+              boxSizing: 'border-box'
             }}>
               <div style={{
                 transform: `translate(${secondBadgeOffsetX}mm, ${secondBadgeOffsetY}mm) rotate(${secondBadgeRotation}deg)`,
                 transformOrigin: 'center',
                 transition: 'transform 0.2s ease-in-out',
-                scale: '0.7'
+                scale: '0.7',
+                maxHeight: '74mm',
+                boxSizing: 'border-box'
               }}>
                 <VisitorBadge 
                   visitor={visitor} 
                   printTimestamp={printTimestamp}
+                  qrPosition={badgeLayout.qrCodePosition || 'right'}
                 />
               </div>
             </div>
@@ -270,6 +297,7 @@ const BadgePrintPreview = () => {
               name={additionalVisitor.name}
               visitorNumber={additionalVisitor.visitorNumber}
               printTimestamp={printTimestamp}
+              qrPosition={badgeLayout.qrCodePosition || 'right'}
             />
           </div>
         ))}

@@ -40,17 +40,19 @@ export async function printToPDF(window, route, settings) {
           // Allow time for rendering
           await new Promise(res => setTimeout(res, 1000));
           
-          // Set A6 paper size settings
+          // Set A6 paper size settings with exact dimensions
           const printSettings = {
             ...settings,
-            pageSize: { width: 105000, height: 148000 }, // A6 dimensions in microns
+            pageSize: { width: 105000, height: 148000 }, // A6 dimensions in microns (105mm x 148mm)
             printBackground: true,
             margins: {
-              marginType: 'none'
+              marginType: 'none' // No margins for exact sizing
             },
-            landscape: false,
-            // Apply custom print options for positioning if provided
+            landscape: false, // Always portrait for A6
             copies: settings.printCopies || 1,
+            silent: settings.silent !== false, // Silent printing by default
+            printSelectionOnly: false,
+            scaleFactor: 100, // 100% scale for exact sizing
           };
           
           // Print the badge
