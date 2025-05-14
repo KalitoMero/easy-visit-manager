@@ -166,9 +166,11 @@ const Admin = () => {
     enableAutomaticPrinting, 
     printWithoutDialog, 
     printDelay,
+    showBrandingOnPrint,
     setPrintWithoutDialog,
     setEnableAutomaticPrinting,
-    setPrintDelay
+    setPrintDelay,
+    setShowBrandingOnPrint
   } = usePrinterSettings();
   
   const handleSavePrinterSettings = () => {
@@ -524,6 +526,15 @@ const Admin = () => {
                     onCheckedChange={setPrintWithoutDialog}
                   />
                   <Label htmlFor="print-without-dialog">Druckdialog unterdrücken (erfordert Kiosk-Modus)</Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch 
+                    id="show-branding-on-print"
+                    checked={showBrandingOnPrint}
+                    onCheckedChange={setShowBrandingOnPrint}
+                  />
+                  <Label htmlFor="show-branding-on-print">Branding auf Ausdruck anzeigen</Label>
                 </div>
                 
                 <div className="space-y-2">

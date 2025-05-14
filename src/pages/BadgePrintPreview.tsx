@@ -21,7 +21,7 @@ const BadgePrintPreview = () => {
     printDelay,
     selectedPrinterName,
     printCopies,
-    // Erster Ausweis (oben)
+    // Besucherausweis-Optionen
     badgeRotation,
     badgeOffsetX,
     badgeOffsetY,
@@ -30,13 +30,84 @@ const BadgePrintPreview = () => {
     secondBadgeOffsetX,
     secondBadgeOffsetY,
     // Badge layout
-    badgeLayout
+    badgeLayout,
+    // Branding-Option
+    showBrandingOnPrint
   } = usePrinterSettings();
   const printAttemptedRef = useRef(false);
   const printTimestamp = useRef(new Date()).current;
   
   // Find the primary visitor
   const visitor = visitors.find(v => v.id === id);
+
+  // Add global print styles to hide elements and control branding
+  useEffect(() => {
+    // Erstelle ein style-Element für die Print-Styles
+    const styleEl = document.createElement('style');
+    styleEl.setAttribute('type', 'text/css');
+    styleEl.textContent = `
+      @media print {
+        /* Verstecke Standard-UI-Elemente beim Drucken */
+        body * {
+          visibility: hidden;
+        }
+        
+        /* Zeige nur die Badge-Container und deren Inhalte an */
+        .visitor-badge-container, .visitor-badge-container * {
+          visibility: visible;
+        }
+
+        /* Container direkt positionieren */
+        .visitor-badge-container {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 105mm;
+          height: 148mm;
+        }
+        
+        /* Kein Rand und kein Hintergrund beim Drucken */
+        .visitor-badge {
+          border: none !important;
+          box-shadow: none !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+
+        /* Lovable/Edit-Branding verstecken */
+        .lovable-badge, 
+        [data-lovable-badge="true"],
+        #lovable-badge-root,
+        [class*="lovable-badge"],
+        [id*="lovable-editor"],
+        [data-testid="badge-root"] {
+          display: none !important;
+          visibility: hidden !important;
+          opacity: 0 !important;
+          height: 0 !important;
+          width: 0 !important;
+          overflow: hidden !important;
+          position: absolute !important;
+          pointer-events: none !important;
+          z-index: -9999 !important;
+        }
+
+        /* Seiteneinstellungen für A6 */
+        @page {
+          size: 105mm 148mm;
+          margin: 0;
+        }
+      }
+    `;
+    
+    // Füge die Styles zum Head hinzu
+    document.head.appendChild(styleEl);
+    
+    // Bereinigungsfunktion zum Entfernen der Styles
+    return () => {
+      document.head.removeChild(styleEl);
+    };
+  }, []);
   
   useEffect(() => {
     // Vermeidung mehrfacher Druckversuche
@@ -61,7 +132,8 @@ const BadgePrintPreview = () => {
                 secondOffsetX: secondBadgeOffsetX,
                 secondOffsetY: secondBadgeOffsetY
               },
-              layoutOptions: badgeLayout // Pass badge layout options to Electron
+              layoutOptions: badgeLayout, // Pass badge layout options to Electron
+              showBranding: showBrandingOnPrint // Neue Branding-Option an Electron übergeben
             });
             
             if (result.success) {
@@ -112,7 +184,7 @@ const BadgePrintPreview = () => {
     }
   }, [visitor, enableAutomaticPrinting, printWithoutDialog, printDelay, selectedPrinterName, printCopies, 
       badgeRotation, badgeOffsetX, badgeOffsetY, 
-      secondBadgeRotation, secondBadgeOffsetX, secondBadgeOffsetY, badgeLayout]);
+      secondBadgeRotation, secondBadgeOffsetX, secondBadgeOffsetY, badgeLayout, showBrandingOnPrint]);
   
   if (!visitor) {
     return (

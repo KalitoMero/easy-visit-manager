@@ -122,7 +122,7 @@ const VisitorBadge = ({
         {/* Left column - Visitor information */}
         <div className={cn(
           "visitor-info flex flex-col justify-center items-center py-2 gap-2",
-          qrPosition === 'center' ? "mb-4" : "flex-1"
+          qrPosition === 'center' ? "mb-4 w-full" : "flex-1"
         )}>
           <div className="visitor-number text-5xl font-bold text-primary mb-2 text-center">
             {displayVisitorNumber}
@@ -138,7 +138,7 @@ const VisitorBadge = ({
         {/* QR code section */}
         <div className={cn(
           "qr-code-section flex flex-col items-center",
-          qrPosition === 'center' ? "" : "ml-3"
+          qrPosition === 'center' ? "w-full" : "ml-3"
         )}>
           <div className="qr-code-container flex items-center justify-center p-2 border border-gray-200 rounded-lg print:border-0 bg-white">
             {isLoading ? (
@@ -179,7 +179,7 @@ const VisitorBadge = ({
       <div className="badge-footer border-t pt-2 mt-auto" style={{ marginTop: `${badgeLayout.footerSpacing}px` }}>
         {/* Contact Information */}
         {badgeLayout.showContact && (
-          <div className="contact text-sm truncate">
+          <div className="contact text-sm truncate w-full">
             Contact: <span className="font-medium">{visitor.contact}</span>
           </div>
         )}

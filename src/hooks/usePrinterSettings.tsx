@@ -9,6 +9,7 @@ type PrinterSettingsState = {
   printDelay: number; // Verzögerung in Millisekunden
   selectedPrinterName: string | null; // Name des ausgewählten Druckers
   printCopies: number; // Anzahl der Kopien
+  showBrandingOnPrint: boolean; // Neue Option: Branding auf Ausdruck anzeigen
   
   // Badge Position und Rotation (Oberer Ausweis)
   badgeRotation: 0 | 90 | 180 | 270; // Rotation in Grad (0, 90, 180, 270)
@@ -38,6 +39,7 @@ type PrinterSettingsState = {
   setPrintDelay: (value: number) => void;
   setSelectedPrinterName: (value: string | null) => void;
   setPrintCopies: (value: number) => void;
+  setShowBrandingOnPrint: (value: boolean) => void; // Neue Aktion: Branding-Einstellung setzen
   setBadgeRotation: (value: 0 | 90 | 180 | 270) => void;
   setBadgeOffsetX: (value: number) => void;
   setBadgeOffsetY: (value: number) => void;
@@ -90,6 +92,7 @@ export const usePrinterSettings = create<PrinterSettingsState>()(
       printDelay: 500,
       selectedPrinterName: null,
       printCopies: 1,
+      showBrandingOnPrint: false, // Neue Option: Standardmäßig kein Branding auf Ausdruck
       
       // Standard Positionierung - Erster Ausweis
       badgeRotation: 0,
@@ -119,6 +122,7 @@ export const usePrinterSettings = create<PrinterSettingsState>()(
       setPrintDelay: (value) => set({ printDelay: value }),
       setSelectedPrinterName: (value) => set({ selectedPrinterName: value }),
       setPrintCopies: (value) => set({ printCopies: value }),
+      setShowBrandingOnPrint: (value) => set({ showBrandingOnPrint: value }), // Neue Setter-Funktion
       setBadgeRotation: (value) => set({ badgeRotation: value }),
       setBadgeOffsetX: (value) => set({ badgeOffsetX: value }),
       setBadgeOffsetY: (value) => set({ badgeOffsetY: value }),
