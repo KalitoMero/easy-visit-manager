@@ -34,7 +34,24 @@ export type TranslationKey =
   'additionalVisitors' |
   'addVisitor' |
   'removeVisitor' |
-  'admin';
+  'admin' |
+  // Adding the missing translation keys below
+  'policyCheckboxEnabled' |
+  'visitorNotFound' |
+  'visitorPolicy' |
+  'scrollToBottom' |
+  'back' |
+  'numberRequired' |
+  'invalidNumber' |
+  'checkOutFailed' |
+  'visitorCheckOut' |
+  'visitorNumberLabel' |
+  'checkOutButton' |
+  'successfullyCheckedOut' |
+  'safeJourney' |
+  'selfCheckIn' |
+  'pageNotFound' |
+  'backToHomeButton';
 
 type TranslationStore = {
   de: Record<TranslationKey, string>;
@@ -74,7 +91,24 @@ const translations: TranslationStore = {
     additionalVisitors: 'Weitere Besucher',
     addVisitor: 'Besucher hinzufügen',
     removeVisitor: 'Entfernen',
-    admin: 'Administration'
+    admin: 'Administration',
+    // Adding the missing translations here
+    policyCheckboxEnabled: 'Die Checkbox für die Richtlinien ist nun aktiv',
+    visitorNotFound: 'Besucher nicht gefunden',
+    visitorPolicy: 'Besucherrichtlinien',
+    scrollToBottom: 'Bitte nach unten scrollen',
+    back: 'Zurück',
+    numberRequired: 'Besuchernummer erforderlich',
+    invalidNumber: 'Ungültige Besuchernummer',
+    checkOutFailed: 'Abmeldung fehlgeschlagen',
+    visitorCheckOut: 'Besucher Abmelden',
+    visitorNumberLabel: 'Besuchernummer',
+    checkOutButton: 'Abmelden',
+    successfullyCheckedOut: 'Erfolgreich abgemeldet',
+    safeJourney: 'Gute Heimreise',
+    selfCheckIn: 'Selbstanmeldung',
+    pageNotFound: 'Seite nicht gefunden',
+    backToHomeButton: 'Zurück zur Startseite'
   },
   en: {
     selfCheckInTitle: 'Visitor Check-In',
@@ -108,7 +142,24 @@ const translations: TranslationStore = {
     additionalVisitors: 'Additional Visitors',
     addVisitor: 'Add Visitor',
     removeVisitor: 'Remove',
-    admin: 'Administration'
+    admin: 'Administration',
+    // Adding the missing translations here
+    policyCheckboxEnabled: 'The policy checkbox is now enabled',
+    visitorNotFound: 'Visitor not found',
+    visitorPolicy: 'Visitor Policy',
+    scrollToBottom: 'Please scroll down',
+    back: 'Back',
+    numberRequired: 'Visitor number required',
+    invalidNumber: 'Invalid visitor number',
+    checkOutFailed: 'Check-out failed',
+    visitorCheckOut: 'Visitor Check-Out',
+    visitorNumberLabel: 'Visitor Number',
+    checkOutButton: 'Check Out',
+    successfullyCheckedOut: 'Successfully Checked Out',
+    safeJourney: 'Safe journey',
+    selfCheckIn: 'Self Check-In',
+    pageNotFound: 'Page not found',
+    backToHomeButton: 'Back to Home'
   }
 };
 
