@@ -122,7 +122,7 @@ export const translations: TranslationStore = {
     acceptAndContinue: 'Akzeptieren und Fortfahren',
     registrationSuccessful: 'Anmeldung erfolgreich',
     yourVisitorNumber: 'Ihre Besuchernummer',
-    pleaseNote: 'Bitte notieren Sie sich diese Nummer',
+    pleaseNote: 'Ihre Besuchernummer lautet:',
     contactInfo: 'Wir informieren Ihren Ansprechpartner',
     viewPrintableBadge: 'Ausweis anzeigen und drucken',
     thankYou: 'Vielen Dank für Ihren Besuch'
@@ -180,7 +180,7 @@ export const translations: TranslationStore = {
     acceptAndContinue: 'Accept and Continue',
     registrationSuccessful: 'Registration Successful',
     yourVisitorNumber: 'Your visitor number',
-    pleaseNote: 'Please note this number',
+    pleaseNote: 'Your visitor number is:',
     contactInfo: 'We will inform your contact person',
     viewPrintableBadge: 'View and print badge',
     thankYou: 'Thank you for your visit'

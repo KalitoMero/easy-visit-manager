@@ -105,19 +105,16 @@ const CheckInStep3 = () => {
           <CardContent className="space-y-6">
             <div className="py-8">
               <p className="text-xl mb-8">
-                {t('yourVisitorNumber')}
+                {t('pleaseNote')}
               </p>
               <div className="text-7xl font-bold text-primary py-4">
                 {visitor.visitorNumber}
               </div>
-              <p className="text-xl mt-8">
-                {t('pleaseNote')}
-              </p>
             </div>
             
             <Card className="bg-primary/10 border-primary/30 p-4">
               <p className="text-lg">
-                {t('contactInfo')} <strong>{visitor.contact}</strong> {language === 'de' ? 'wurde über Ihre Ankunft informiert' : 'has been informed of your arrival'}.
+                {t('contactInfo')} <strong>{visitor.contact}</strong> {language === 'de' ? 'über Ihre Ankunft.' : 'about your arrival.'}
               </p>
             </Card>
             
