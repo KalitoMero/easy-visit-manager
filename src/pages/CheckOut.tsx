@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +15,7 @@ const CheckOut = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const checkOutVisitor = useVisitorStore(state => state.checkOutVisitor);
+  const getVisitorByNumber = useVisitorStore(state => state.getVisitorByNumber);
   
   const { language } = useLanguageStore();
   const t = useTranslation(language);
@@ -40,8 +40,9 @@ const CheckOut = () => {
       return;
     }
     
-    const success = checkOutVisitor(number);
-    if (success) {
+    const visitor = getVisitorByNumber(number);
+    if (visitor) {
+      checkOutVisitor(visitor.id);
       navigate('/checkout/success');
     } else {
       toast({

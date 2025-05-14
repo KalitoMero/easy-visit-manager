@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -16,15 +17,25 @@ export type Visitor = {
   contact: string;
   visitorNumber: number;
   checkInTime: string;
-  checkOutTime?: string;
+  checkOutTime?: string | null;
   additionalVisitors?: AdditionalVisitor[];
   additionalVisitorCount: number;
   notes?: string;
+  policyAccepted?: boolean; // Add missing policyAccepted field
+};
+
+type DeletionSchedule = {
+  enabled: boolean;
+  dayOfWeek: number;
+  hour: number;
+  minute: number;
+  lastRun?: string;
 };
 
 type VisitorStore = {
   visitors: Visitor[];
   visitorCounter: number;
+  deletionSchedule: DeletionSchedule;
   addVisitor: (name: string, company: string, contact: string, salutation?: string) => Visitor;
   addGroupVisitor: (visitors: Array<{ salutation?: string, name: string }>, company: string, contact: string) => Visitor;
   checkOutVisitor: (id: string) => void;
@@ -34,6 +45,27 @@ type VisitorStore = {
   deleteVisitor: (id: string) => void;
   clearVisitors: () => void;
   searchVisitors: (query: string) => Visitor[];
+  acceptPolicy: (id: string) => void;
+  updateDeletionSchedule: (enabled: boolean, dayOfWeek: number, hour: number, minute: number) => void;
+  deleteOldVisitors: () => number;
+  performScheduledCheckout: () => void;
+};
+
+// Helper function for auto checkout initialization
+export const initializeAutoCheckout = () => {
+  // Check out all visitors at 8 PM every day
+  const checkTime = () => {
+    const now = new Date();
+    if (now.getHours() === 20) { // 8 PM
+      useVisitorStore.getState().performScheduledCheckout();
+    }
+  };
+  
+  // Run check every 5 minutes
+  const timer = setInterval(checkTime, 5 * 60 * 1000);
+  
+  // Return cleanup function
+  return () => clearInterval(timer);
 };
 
 export const useVisitorStore = create<VisitorStore>()(
@@ -41,6 +73,12 @@ export const useVisitorStore = create<VisitorStore>()(
     (set, get) => ({
       visitors: [],
       visitorCounter: 1000,
+      deletionSchedule: {
+        enabled: false,
+        dayOfWeek: 0, // Sunday
+        hour: 3, // 3 AM
+        minute: 0,
+      },
       
       addVisitor: (name, company, contact, salutation) => {
         const { visitors, visitorCounter } = get();
@@ -106,6 +144,14 @@ export const useVisitorStore = create<VisitorStore>()(
           ),
         }));
       },
+
+      acceptPolicy: (id) => {
+        set((state) => ({
+          visitors: state.visitors.map((visitor) =>
+            visitor.id === id ? { ...visitor, policyAccepted: true } : visitor
+          ),
+        }));
+      },
       
       getVisitor: (id) => {
         const { visitors } = get();
@@ -147,6 +193,55 @@ export const useVisitorStore = create<VisitorStore>()(
           return nameMatches || companyMatches || contactMatches;
         });
       },
+
+      updateDeletionSchedule: (enabled, dayOfWeek, hour, minute) => {
+        set((state) => ({
+          deletionSchedule: {
+            ...state.deletionSchedule,
+            enabled,
+            dayOfWeek,
+            hour,
+            minute
+          }
+        }));
+      },
+
+      deleteOldVisitors: () => {
+        const { visitors } = get();
+        const inactiveVisitors = visitors.filter(v => v.checkOutTime !== null);
+        
+        if (inactiveVisitors.length === 0) {
+          return 0;
+        }
+
+        set((state) => ({
+          visitors: state.visitors.filter((visitor) => visitor.checkOutTime === null),
+          deletionSchedule: {
+            ...state.deletionSchedule,
+            lastRun: new Date().toISOString()
+          }
+        }));
+
+        return inactiveVisitors.length;
+      },
+
+      performScheduledCheckout: () => {
+        const today = new Date();
+        const hour = today.getHours();
+        
+        // Auto check out remaining visitors at 8 PM
+        if (hour === 20) {
+          set((state) => ({
+            visitors: state.visitors.map((visitor) =>
+              visitor.checkOutTime === null 
+                ? { ...visitor, checkOutTime: new Date().toISOString() } 
+                : visitor
+            ),
+          }));
+          
+          console.log("Performed scheduled checkout at", today.toLocaleTimeString());
+        }
+      }
     }),
     {
       name: 'visitor-storage'

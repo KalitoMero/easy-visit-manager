@@ -19,7 +19,10 @@ const CheckInStep2 = () => {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const acceptPolicy = useVisitorStore(state => state.acceptPolicy);
+  const { acceptPolicy, getVisitor } = useVisitorStore(state => ({
+    acceptPolicy: state.acceptPolicy,
+    getVisitor: state.getVisitor
+  }));
   const visitors = useVisitorStore(state => state.visitors);
   
   const { language } = useLanguageStore();
@@ -64,8 +67,10 @@ const CheckInStep2 = () => {
 
   const handleContinue = () => {
     // Accept policy and navigate directly to success page
-    acceptPolicy(visitor.id);
-    navigate(`/checkin/step3/${visitor.id}`);
+    if (id) {
+      acceptPolicy(id);
+      navigate(`/checkin/step3/${id}`);
+    }
   };
 
   return (

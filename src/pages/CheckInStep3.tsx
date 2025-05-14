@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,8 +24,10 @@ const CheckInStep3 = () => {
   const visitor = visitors.find(v => v.id === id);
   
   useEffect(() => {
-    if (!visitor || !visitor.policyAccepted) {
+    if (!visitor) {
       navigate('/');
+    } else if (!visitor.policyAccepted) {
+      navigate(`/checkin/step2/${id}`);
     } else if (enableAutomaticPrinting) {
       // Automatically prepare badges in the background
       // For silent printing on page load
@@ -39,7 +42,7 @@ const CheckInStep3 = () => {
         }
       };
     }
-  }, [visitor, navigate, enableAutomaticPrinting]);
+  }, [visitor, navigate, enableAutomaticPrinting, id]);
   
   if (!visitor) {
     return null;

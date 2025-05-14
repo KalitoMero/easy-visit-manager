@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import VisitorBadge from './VisitorBadge';
 import { Button } from './ui/button';
@@ -26,7 +25,8 @@ const AdminBadgePreview: React.FC<AdminBadgePreviewProps> = ({ visitor }) => {
     contact: 'Empfang',
     checkInTime: new Date().toISOString(),
     checkOutTime: null,
-    policyAccepted: true
+    policyAccepted: true,
+    additionalVisitorCount: 0
   };
   
   const handlePrint = () => {

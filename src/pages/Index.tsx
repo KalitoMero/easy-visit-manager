@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import NavButton from '@/components/NavButton';
 import { Card, CardContent } from '@/components/ui/card';
-import { initializeAutoCheckout, useVisitorStore } from '@/hooks/useVisitorStore';
+import { useVisitorStore } from '@/hooks/useVisitorStore';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
 import { useTranslation } from '@/locale/translations';
@@ -14,22 +14,29 @@ const Index = () => {
   const { language } = useLanguageStore();
   const t = useTranslation(language);
   const visitors = useVisitorStore((state) => state.visitors);
+  const performScheduledCheckout = useVisitorStore((state) => state.performScheduledCheckout);
 
   useEffect(() => {
     // Log visitors on initial load
     console.log("Initial visitor data:", visitors);
     
     // Set up automatic checkout at 8 PM
-    const cleanupAutoCheckout = initializeAutoCheckout();
+    const checkTime = () => {
+      const now = new Date();
+      if (now.getHours() === 20) { // 8 PM
+        performScheduledCheckout();
+      }
+    };
+    
+    const timer = setInterval(checkTime, 5 * 60 * 1000);
     
     // Try to also perform scheduled checkout if it hasn't been done today
-    // This will help recover from PC shutdown situations
     setTimeout(() => {
-      useVisitorStore.getState().performScheduledCheckout();
+      performScheduledCheckout();
     }, 2000);
     
-    return () => cleanupAutoCheckout();
-  }, [visitors]);
+    return () => clearInterval(timer);
+  }, [visitors, performScheduledCheckout]);
 
   return (
     <div className="app-container">

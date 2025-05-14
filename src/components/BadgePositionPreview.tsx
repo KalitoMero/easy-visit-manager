@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Slider } from "@/components/ui/slider";
 import { Card } from "@/components/ui/card";
@@ -8,11 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import VisitorBadge from './VisitorBadge';
-import { useVisitorStore } from '@/hooks/useVisitorStore';
+import { useVisitorStore, Visitor } from '@/hooks/useVisitorStore';
 import { Move, RotateCw, CreditCard } from 'lucide-react';
 
 // Demo visitor data for the preview
-const createDemoVisitor = () => ({
+const createDemoVisitor = (): Visitor => ({
   id: 'demo-visitor',
   visitorNumber: 123,
   name: 'Max Mustermann',
@@ -20,6 +19,7 @@ const createDemoVisitor = () => ({
   contact: 'Empfang',
   checkInTime: new Date().toISOString(),
   checkOutTime: null,
+  additionalVisitorCount: 0,
   policyAccepted: true
 });
 
