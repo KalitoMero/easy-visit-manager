@@ -6,22 +6,49 @@ import { cn } from "@/lib/utils"
 
 const ScrollArea = React.forwardRef<
   React.ElementRef<typeof ScrollAreaPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root>
->(({ className, children, ...props }, ref) => (
-  <ScrollAreaPrimitive.Root
-    ref={ref}
-    className={cn("relative overflow-hidden", className)}
-    {...props}
-  >
-    <ScrollAreaPrimitive.Viewport 
-      className="h-full w-full rounded-[inherit]"
+  React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root> & {
+    onScrollToBottom?: () => void;
+  }
+>(({ className, children, onScrollToBottom, ...props }, ref) => {
+  const viewportRef = React.useRef<HTMLDivElement>(null);
+
+  // Handle scroll event to detect when user scrolls to bottom
+  const handleScroll = React.useCallback(() => {
+    if (!viewportRef.current || !onScrollToBottom) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = viewportRef.current;
+    const isAtBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 5;
+    
+    if (isAtBottom) {
+      onScrollToBottom();
+    }
+  }, [onScrollToBottom]);
+
+  React.useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport || !onScrollToBottom) return;
+    
+    viewport.addEventListener('scroll', handleScroll);
+    return () => viewport.removeEventListener('scroll', handleScroll);
+  }, [handleScroll, onScrollToBottom]);
+
+  return (
+    <ScrollAreaPrimitive.Root
+      ref={ref}
+      className={cn("relative overflow-hidden", className)}
+      {...props}
     >
-      {children}
-    </ScrollAreaPrimitive.Viewport>
-    <ScrollBar />
-    <ScrollAreaPrimitive.Corner />
-  </ScrollAreaPrimitive.Root>
-))
+      <ScrollAreaPrimitive.Viewport 
+        ref={viewportRef}
+        className="h-full w-full rounded-[inherit]"
+      >
+        {children}
+      </ScrollAreaPrimitive.Viewport>
+      <ScrollBar />
+      <ScrollAreaPrimitive.Corner />
+    </ScrollAreaPrimitive.Root>
+  );
+})
 ScrollArea.displayName = ScrollAreaPrimitive.Root.displayName
 
 const ScrollBar = React.forwardRef<

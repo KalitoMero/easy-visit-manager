@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -34,12 +34,9 @@ const CheckInStep2 = () => {
   const visitor = React.useMemo(() => {
     return visitors.find(v => v.id === id);
   }, [visitors, id]);
-
-  const handleScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
-    const isAtBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 5;
-    
-    if (isAtBottom && !hasScrolledToBottom) {
+  
+  const handleScrollToBottom = React.useCallback(() => {
+    if (!hasScrolledToBottom) {
       setHasScrolledToBottom(true);
       toast({
         title: t('scrollComplete'),
@@ -88,8 +85,9 @@ const CheckInStep2 = () => {
             <div ref={scrollAreaRef} className="relative">
               <ScrollArea 
                 className="h-[350px] rounded-md border p-4 bg-white/80 backdrop-blur-sm"
+                onScrollToBottom={handleScrollToBottom}
               >
-                <div className="p-4 text-lg" onScroll={handleScroll}>
+                <div className="p-4 text-lg">
                   {policyImageUrl && (
                     <div className="mb-6 flex justify-center">
                       <img 
