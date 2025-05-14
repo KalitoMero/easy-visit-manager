@@ -301,6 +301,18 @@ const Admin = () => {
     );
   }
 
+  const previewVisitor: Visitor = {
+    id: "preview-1",
+    name: "John Doe",
+    company: "ACME Corporation",
+    contact: "john.doe@example.com",
+    visitorNumber: 1001,
+    checkInTime: new Date().toISOString(),
+    checkOutTime: null,
+    additionalVisitorCount: 0, // Adding the required property
+    policyAccepted: true
+  };
+
   return (
     <div className="app-container">
       <AdminHomeButton />
@@ -676,17 +688,7 @@ const Admin = () => {
                     <div className="border border-dashed border-gray-300 rounded-lg p-4 flex items-center justify-center">
                       <div className="scale-75 transform-gpu">
                         <VisitorBadge 
-                          visitor={{
-                            id: 'preview',
-                            name: 'Max Mustermann',
-                            company: 'Beispiel GmbH',
-                            contact: 'Petra Meyer',
-                            visitorNumber: 42,
-                            checkInTime: new Date().toISOString(),
-                            checkOutTime: null,
-                            additionalVisitors: [],
-                            policyAccepted: true
-                          }}
+                          visitor={previewVisitor}
                         />
                       </div>
                     </div>

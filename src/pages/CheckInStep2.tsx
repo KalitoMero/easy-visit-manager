@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -19,10 +19,12 @@ const CheckInStep2 = () => {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { acceptPolicy, getVisitor } = useVisitorStore(state => ({
-    acceptPolicy: state.acceptPolicy,
-    getVisitor: state.getVisitor
+  
+  // Use Object.assign to separate the state slices
+  const { acceptPolicy } = useVisitorStore(state => ({ 
+    acceptPolicy: state.acceptPolicy 
   }));
+  // Use a separate selector for the visitors array to prevent unnecessary re-renders
   const visitors = useVisitorStore(state => state.visitors);
   
   const { language } = useLanguageStore();
@@ -83,25 +85,27 @@ const CheckInStep2 = () => {
             <CardTitle className="text-3xl font-bold">{t('visitorPolicy')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <ScrollArea 
-              className="h-[350px] rounded-md border p-4 bg-white/80 backdrop-blur-sm"
-              ref={scrollAreaRef}
-              onScrollCapture={handleScroll}
-            >
-              <div className="p-4 text-lg">
-                {policyImageUrl && (
-                  <div className="mb-6 flex justify-center">
-                    <img 
-                      src={policyImageUrl} 
-                      alt={t('visitorPolicy')} 
-                      className="max-w-full rounded-md max-h-64"
-                    />
-                  </div>
-                )}
-                
-                <div className="whitespace-pre-wrap">{policyText}</div>
-              </div>
-            </ScrollArea>
+            {/* Fix: Don't assign ref directly to ScrollArea to avoid infinite loops */}
+            <div ref={scrollAreaRef}>
+              <ScrollArea 
+                className="h-[350px] rounded-md border p-4 bg-white/80 backdrop-blur-sm"
+                onScrollCapture={handleScroll}
+              >
+                <div className="p-4 text-lg">
+                  {policyImageUrl && (
+                    <div className="mb-6 flex justify-center">
+                      <img 
+                        src={policyImageUrl} 
+                        alt={t('visitorPolicy')} 
+                        className="max-w-full rounded-md max-h-64"
+                      />
+                    </div>
+                  )}
+                  
+                  <div className="whitespace-pre-wrap">{policyText}</div>
+                </div>
+              </ScrollArea>
+            </div>
             
             {!hasScrolledToBottom && (
               <div className="mt-4 text-center text-muted-foreground animate-pulse flex items-center justify-center gap-2">
