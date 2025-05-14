@@ -8,7 +8,7 @@ import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
 import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import { useTranslation } from '@/locale/translations';
-import { ArrowLeft, Printer, Timer } from 'lucide-react';
+import { ArrowLeft, Timer } from 'lucide-react';
 import { ensureQRCodesLoaded } from '@/lib/qrCodeUtils';
 
 const COUNTDOWN_SECONDS = 10; // 10 Sekunden Countdown
@@ -117,17 +117,6 @@ const CheckInStep3 = () => {
                 {t('contactInfo')} <strong>{visitor.contact}</strong> {language === 'de' ? 'über Ihre Ankunft.' : 'about your arrival.'}
               </p>
             </Card>
-            
-            <div className="flex justify-center mt-6">
-              <Button
-                onClick={() => navigate(`/print-badge/${visitor.id}`)}
-                variant="outline"
-                className="flex items-center gap-2 px-6 py-5 text-lg"
-              >
-                <Printer size={20} />
-                {t('viewPrintableBadge')}
-              </Button>
-            </div>
             
             <div className="pt-6 flex flex-col items-center justify-center">
               <div className="mb-2 flex items-center text-muted-foreground">
