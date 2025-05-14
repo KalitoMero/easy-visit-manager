@@ -1,41 +1,42 @@
-
+import { useMemo } from 'react';
+import { useLanguageStore, Language } from '@/hooks/useLanguageStore';
 import { create } from 'zustand';
-import { Language } from '@/hooks/useLanguageStore';
 
-export type TranslationKey = 
-  'selfCheckInTitle' | 
-  'groupCheckInTitle' | 
-  'lastName' | 
-  'firstName' | 
-  'company' | 
-  'contact' | 
-  'privacyPolicyTitle' |
-  'privacyPolicyIntro' |
-  'acceptPolicy' |
+// Define the translation keys
+export type TranslationKey =
+  'selfCheckInTitle' |
+  'lastName' |
+  'company' |
+  'contact' |
   'continueToPolicy' |
-  'backToHome' |
-  'continueRegistration' |
-  'scrollComplete' |
-  'pleaseScrollToAccept' |
-  'acceptAndContinue' |
-  'registrationSuccessful' | 
-  'yourVisitorNumber' |
-  'pleaseNote' |
-  'viewPrintableBadge' |
-  'contactInfo' |
-  'checkOutTitle' |
-  'enterVisitorNumber' |
-  'checkOut' |
-  'checkOutSuccess' |
-  'thankYou' |
-  'visitAgain' |
   'orUse' |
   'groupCheckIn' |
+  'backToHome' |
+  'policyTitle' |
+  'policyDescription' |
+  'policyAccept' |
+  'continueToSummary' |
+  'visitorSummaryTitle' |
+  'visitorDetails' |
+  'visitorBadge' |
+  'printBadge' |
+  'visitorName' |
+  'visitDate' |
+  'visitTime' |
+  'backToStart' |
+  'checkOutTitle' |
+  'enterVisitorNumber' |
+  'enterVisitorNumberDescription' |
+  'checkOut' |
+  'thankYouTitle' |
+  'thankYouDescription' |
+  'backToHomePage' |
+  'additionalVisitor' |
   'additionalVisitors' |
   'addVisitor' |
   'removeVisitor' |
   'admin' |
-  // Adding the missing translation keys below
+  // Added translation keys
   'policyCheckboxEnabled' |
   'visitorNotFound' |
   'visitorPolicy' |
@@ -58,36 +59,36 @@ type TranslationStore = {
   en: Record<TranslationKey, string>;
 };
 
-const translations: TranslationStore = {
+export const translations: TranslationStore = {
   de: {
-    selfCheckInTitle: 'Besucheranmeldung',
-    groupCheckInTitle: 'Gruppenanmeldung',
+    selfCheckInTitle: 'Besucher-Anmeldung',
     lastName: 'Nachname',
-    firstName: 'Vorname',
     company: 'Firma',
-    contact: 'Kontaktperson',
-    privacyPolicyTitle: 'Besucherrichtlinien',
-    privacyPolicyIntro: 'Bitte lesen Sie unsere Besucherrichtlinien:',
-    acceptPolicy: 'Ich akzeptiere die Besucherrichtlinien',
-    continueToPolicy: 'Weiter zu den Richtlinien',
-    backToHome: 'Zurück zur Startseite',
-    continueRegistration: 'Anmeldung fortsetzen',
-    scrollComplete: 'Sie haben die Richtlinien vollständig gelesen',
-    pleaseScrollToAccept: 'Bitte lesen Sie die Richtlinien vollständig durch, um fortzufahren',
-    acceptAndContinue: 'Akzeptieren und fortfahren',
-    registrationSuccessful: 'Anmeldung erfolgreich!',
-    yourVisitorNumber: 'Ihre Besuchernummer ist',
-    pleaseNote: 'Bitte merken Sie sich diese Nummer für die Abmeldung',
-    viewPrintableBadge: 'Besucherausweis anzeigen',
-    contactInfo: 'Ihre Kontaktperson',
-    checkOutTitle: 'Besucher abmelden',
-    enterVisitorNumber: 'Geben Sie Ihre Besuchernummer ein',
-    checkOut: 'Abmelden',
-    checkOutSuccess: 'Abmeldung erfolgreich',
-    thankYou: 'Vielen Dank für Ihren Besuch!',
-    visitAgain: 'Wir freuen uns auf ein Wiedersehen',
-    orUse: 'Oder nutzen Sie die',
+    contact: 'Ansprechpartner',
+    continueToPolicy: 'Weiter zur Richtlinie',
+    orUse: 'oder nutze',
     groupCheckIn: 'Gruppenanmeldung',
+    backToHome: 'Zurück zur Startseite',
+    policyTitle: 'Besucherrichtlinie',
+    policyDescription: 'Bitte lesen Sie die folgende Richtlinie sorgfältig durch und akzeptieren Sie diese.',
+    policyAccept: 'Ich akzeptiere die Besucherrichtlinie',
+    continueToSummary: 'Akzeptieren und Fortfahren',
+    visitorSummaryTitle: 'Anmeldung abgeschlossen',
+    visitorDetails: 'Besucherdetails',
+    visitorBadge: 'Besucherausweis',
+    printBadge: 'Ausweis drucken',
+    visitorName: 'Name',
+    visitDate: 'Besuchsdatum',
+    visitTime: 'Besuchszeit',
+    backToStart: 'Zurück zur Startseite',
+    checkOutTitle: 'Besucher Abmeldung',
+    enterVisitorNumber: 'Besuchernummer eingeben',
+    enterVisitorNumberDescription: 'Bitte geben Sie Ihre Besuchernummer ein, um sich abzumelden',
+    checkOut: 'Abmelden',
+    thankYouTitle: 'Vielen Dank für Ihren Besuch',
+    thankYouDescription: 'Sie wurden erfolgreich abgemeldet',
+    backToHomePage: 'Zurück zur Startseite',
+    additionalVisitor: 'Zusätzlicher Besucher',
     additionalVisitors: 'Weitere Besucher',
     addVisitor: 'Besucher hinzufügen',
     removeVisitor: 'Entfernen',
@@ -112,33 +113,33 @@ const translations: TranslationStore = {
   },
   en: {
     selfCheckInTitle: 'Visitor Check-In',
-    groupCheckInTitle: 'Group Check-In',
-    lastName: 'Last Name',
-    firstName: 'First Name',
+    lastName: 'Last name',
     company: 'Company',
-    contact: 'Contact Person',
-    privacyPolicyTitle: 'Visitor Policy',
-    privacyPolicyIntro: 'Please read our visitor policy:',
-    acceptPolicy: 'I accept the visitor policy',
+    contact: 'Contact person',
     continueToPolicy: 'Continue to Policy',
+    orUse: 'or use',
+    groupCheckIn: 'Group Check-in',
     backToHome: 'Back to Home',
-    continueRegistration: 'Continue Registration',
-    scrollComplete: 'You have completely read the policy',
-    pleaseScrollToAccept: 'Please read the entire policy to continue',
-    acceptAndContinue: 'Accept and Continue',
-    registrationSuccessful: 'Registration Successful!',
-    yourVisitorNumber: 'Your visitor number is',
-    pleaseNote: 'Please note this number for checkout',
-    viewPrintableBadge: 'View Visitor Badge',
-    contactInfo: 'Your contact person',
-    checkOutTitle: 'Visitor Check-Out',
-    enterVisitorNumber: 'Enter your visitor number',
+    policyTitle: 'Visitor Policy',
+    policyDescription: 'Please read and accept the following policy.',
+    policyAccept: 'I accept the visitor policy',
+    continueToSummary: 'Accept and Continue',
+    visitorSummaryTitle: 'Check-in Complete',
+    visitorDetails: 'Visitor Details',
+    visitorBadge: 'Visitor Badge',
+    printBadge: 'Print Badge',
+    visitorName: 'Name',
+    visitDate: 'Visit Date',
+    visitTime: 'Visit Time',
+    backToStart: 'Back to Start',
+    checkOutTitle: 'Visitor Check-out',
+    enterVisitorNumber: 'Enter Visitor Number',
+    enterVisitorNumberDescription: 'Please enter your visitor number to check out',
     checkOut: 'Check Out',
-    checkOutSuccess: 'Checkout Successful',
-    thankYou: 'Thank you for your visit!',
-    visitAgain: 'We look forward to seeing you again',
-    orUse: 'Or use',
-    groupCheckIn: 'group check-in',
+    thankYouTitle: 'Thank you for your visit',
+    thankYouDescription: 'You have been successfully checked out',
+    backToHomePage: 'Back to Home Page',
+    additionalVisitor: 'Additional Visitor',
     additionalVisitors: 'Additional Visitors',
     addVisitor: 'Add Visitor',
     removeVisitor: 'Remove',
@@ -163,10 +164,11 @@ const translations: TranslationStore = {
   }
 };
 
+// Translation hook
 export const useTranslation = (language: Language = 'de') => {
-  const t = (key: TranslationKey): string => {
-    return translations[language][key] || key;
+  const translation = useMemo(() => translations[language], [language]);
+
+  return (key: TranslationKey) => {
+    return translation[key] || `Missing translation for ${key} in ${language}`;
   };
-  
-  return t;
 };
