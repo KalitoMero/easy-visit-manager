@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -47,7 +46,7 @@ type VisitorStore = {
   updateDeletionSchedule: (enabled: boolean, dayOfWeek: number, hour: number, minute: number) => void;
   deleteOldVisitors: () => number;
   performScheduledCheckout: () => void;
-  resetVisitorCounter: (newCounter?: number) => void; // Neue Funktion zum Zurücksetzen
+  resetVisitorCounter: (newCounter?: number) => void;
 };
 
 // Helper function for auto checkout initialization
@@ -67,11 +66,14 @@ export const initializeAutoCheckout = () => {
   return () => clearInterval(timer);
 };
 
+// Konstanten für Standardwerte
+const DEFAULT_VISITOR_COUNTER = 100;
+
 export const useVisitorStore = create<VisitorStore>()(
   persist(
     (set, get) => ({
       visitors: [],
-      visitorCounter: 100, // Start bei 100 statt 1000
+      visitorCounter: DEFAULT_VISITOR_COUNTER, // Start bei 100 statt 1000
       deletionSchedule: {
         enabled: false,
         dayOfWeek: 0, // Sunday
@@ -140,7 +142,7 @@ export const useVisitorStore = create<VisitorStore>()(
           ),
         }));
       },
-
+      
       acceptPolicy: (id) => {
         set((state) => ({
           visitors: state.visitors.map((visitor) =>
@@ -174,7 +176,7 @@ export const useVisitorStore = create<VisitorStore>()(
       },
       
       clearVisitors: () => {
-        set({ visitors: [], visitorCounter: 100 }); // Reset auf 100
+        set({ visitors: [], visitorCounter: DEFAULT_VISITOR_COUNTER }); // Reset auf 100
       },
       
       searchVisitors: (query) => {
@@ -189,7 +191,7 @@ export const useVisitorStore = create<VisitorStore>()(
           return nameMatches || companyMatches || contactMatches;
         });
       },
-
+      
       updateDeletionSchedule: (enabled, dayOfWeek, hour, minute) => {
         set((state) => ({
           deletionSchedule: {
@@ -201,7 +203,7 @@ export const useVisitorStore = create<VisitorStore>()(
           }
         }));
       },
-
+      
       deleteOldVisitors: () => {
         const { visitors } = get();
         const inactiveVisitors = visitors.filter(v => v.checkOutTime !== null);
@@ -220,7 +222,7 @@ export const useVisitorStore = create<VisitorStore>()(
 
         return inactiveVisitors.length;
       },
-
+      
       performScheduledCheckout: () => {
         const today = new Date();
         const hour = today.getHours();
@@ -239,13 +241,21 @@ export const useVisitorStore = create<VisitorStore>()(
         }
       },
       
-      // Neue Funktion zum Zurücksetzen des Besucherzählers
-      resetVisitorCounter: (newCounter = 100) => {
+      resetVisitorCounter: (newCounter = DEFAULT_VISITOR_COUNTER) => {
         set({ visitorCounter: newCounter });
       }
     }),
     {
-      name: 'visitor-storage'
+      name: 'visitor-storage',
+      onRehydrateStorage: (state) => {
+        // Stelle sicher, dass der Besucherzähler bei der Initialisierung mindestens beim Standardwert beginnt
+        return (rehydratedState, error) => {
+          if (!error && rehydratedState && rehydratedState.visitorCounter < DEFAULT_VISITOR_COUNTER) {
+            console.log(`Correcting visitor counter from ${rehydratedState.visitorCounter} to ${DEFAULT_VISITOR_COUNTER}`);
+            rehydratedState.visitorCounter = DEFAULT_VISITOR_COUNTER;
+          }
+        };
+      }
     }
   )
 );

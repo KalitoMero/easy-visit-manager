@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
@@ -6,6 +5,7 @@ import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import VisitorBadge from '@/components/VisitorBadge';
 import { toast } from "@/hooks/use-toast";
 import HomeButton from "@/components/HomeButton";
+import { ensureQRCodesLoaded } from '@/lib/qrCodeUtils';
 
 // Helper function to check if we're running in Electron
 const isElectron = () => {
@@ -114,10 +114,10 @@ const BadgePrintPreview = () => {
     };
   }, [bottomMargin]);
 
-  // Markiere beide QR-Codes als geladen
+  // Handler für QR-Code-Ladeereignis
   const handleQRCodeLoaded = () => {
+    console.log("QR code loaded successfully in component");
     setQrCodesLoaded(true);
-    console.log("QR code loaded successfully");
   };
   
   useEffect(() => {
@@ -127,6 +127,11 @@ const BadgePrintPreview = () => {
       
       const printBadge = async () => {
         try {
+          // Warten auf sichere QR-Code-Generierung
+          await ensureQRCodesLoaded(() => {
+            console.log("QR codes confirmed loaded, proceeding with print");
+          });
+          
           // Electron printing
           if (isElectron()) {
             const result = await window.electronAPI.printBadge({
@@ -378,7 +383,7 @@ const BadgePrintPreview = () => {
         </div>
         
         {/* Individual badges for additional visitors */}
-        {hasAdditionalVisitors && visitor.additionalVisitors?.map((additionalVisitor) => (
+        {visitor.additionalVisitors && visitor.additionalVisitors.length > 0 && visitor.additionalVisitors.map((additionalVisitor) => (
           <div key={additionalVisitor.id} className="mb-4">
             <h3 className="text-md font-medium mb-2">Zusätzlicher Besucher: {additionalVisitor.name}</h3>
             <VisitorBadge 

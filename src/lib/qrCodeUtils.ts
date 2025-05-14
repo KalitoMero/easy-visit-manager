@@ -35,3 +35,62 @@ export async function generateQRCodeDataUrl(data: string, size: number = 140): P
     return '';
   }
 }
+
+/**
+ * Ensures QR codes are fully loaded before printing
+ * @param callback Function to call when all QR codes are loaded
+ * @param maxWaitTime Maximum time to wait in ms before timing out
+ * @returns Promise that resolves when QR codes are loaded or timeout
+ */
+export function ensureQRCodesLoaded(callback: () => void, maxWaitTime: number = 3000): Promise<boolean> {
+  return new Promise((resolve) => {
+    // Track if QR codes are loaded
+    const qrStatus = {
+      loaded: document.querySelectorAll('img[src^="data:image/png;base64"]').length > 0,
+      timeout: false
+    };
+
+    // If already loaded, resolve immediately
+    if (qrStatus.loaded) {
+      console.log("QR codes already loaded");
+      callback();
+      resolve(true);
+      return;
+    }
+
+    // Set timeout for QR code loading
+    const timeoutId = setTimeout(() => {
+      console.log("QR code loading timed out");
+      qrStatus.timeout = true;
+      // Call callback even if timed out, to avoid blocking the user
+      callback();
+      resolve(false);
+    }, maxWaitTime);
+
+    // Observer to detect QR code images being added to the DOM
+    const observer = new MutationObserver((mutations) => {
+      const qrImages = document.querySelectorAll('img[src^="data:image/png;base64"]');
+      if (qrImages.length > 0 && !qrStatus.timeout) {
+        console.log("QR codes detected in DOM");
+        clearTimeout(timeoutId);
+        observer.disconnect();
+        
+        // Add a small delay to ensure the QR code is fully rendered
+        setTimeout(() => {
+          console.log("QR codes fully loaded");
+          callback();
+          resolve(true);
+        }, 300);
+      }
+    });
+
+    // Start observing the document
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['src']
+    });
+  });
+}
+

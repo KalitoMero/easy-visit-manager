@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +9,7 @@ import { useLanguageStore } from '@/hooks/useLanguageStore';
 import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import { useTranslation } from '@/locale/translations';
 import { ArrowLeft, Printer, Timer } from 'lucide-react';
+import { ensureQRCodesLoaded } from '@/lib/qrCodeUtils';
 
 const COUNTDOWN_SECONDS = 10; // 10 Sekunden Countdown
 
@@ -24,6 +24,7 @@ const CheckInStep3 = () => {
   
   // Countdown Timer
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
+  const [printPreparing, setPrintPreparing] = useState(false);
   
   // Find the current visitor
   const visitor = visitors.find(v => v.id === id);
@@ -33,21 +34,40 @@ const CheckInStep3 = () => {
       navigate('/');
     } else if (!visitor.policyAccepted) {
       navigate(`/checkin/step2/${id}`);
-    } else if (enableAutomaticPrinting) {
-      // Automatically prepare badges in the background
-      // For silent printing on page load
-      const iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      iframe.src = `/print-badge/${visitor.id}`;
-      document.body.appendChild(iframe);
+    } else if (enableAutomaticPrinting && !printPreparing) {
+      // Markiere als in Vorbereitung
+      setPrintPreparing(true);
       
-      return () => {
-        if (document.body.contains(iframe)) {
-          document.body.removeChild(iframe);
-        }
+      // Stellen Sie sicher, dass QR-Codes geladen werden, bevor Sie drucken
+      const preparePrinting = async () => {
+        // Iframe erstellen, aber noch nicht zum DOM hinzufügen
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = `/print-badge/${visitor.id}`;
+        
+        // Warten, bis der Iframe geladen ist und dann QR-Code-Ladung sicherstellen
+        iframe.onload = () => {
+          console.log("Print iframe loaded, ensuring QR codes are ready");
+          
+          // QR-Code-Ladung in iframe prüfen und warten
+          setTimeout(() => {
+            document.body.appendChild(iframe);
+          }, 500);
+        };
+        
+        // Starte den Ladevorgang
+        document.body.appendChild(iframe);
+        
+        return () => {
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
+          }
+        };
       };
+      
+      preparePrinting();
     }
-  }, [visitor, navigate, enableAutomaticPrinting, id]);
+  }, [visitor, navigate, enableAutomaticPrinting, id, printPreparing]);
 
   // Countdown-Timer Effekt
   useEffect(() => {

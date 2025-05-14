@@ -47,23 +47,36 @@ const VisitorBadge = ({
   
   // Load the QR code immediately to ensure it's ready for printing
   useEffect(() => {
+    let isMounted = true;
+    
     const loadQrCode = async () => {
+      if (!isMounted) return;
+      
       setIsLoading(true);
       try {
         const dataUrl = await generateQRCodeDataUrl(checkoutEmailUrl, badgeLayout.qrCodeSize);
-        setQrCodeUrl(dataUrl);
+        if (isMounted) {
+          setQrCodeUrl(dataUrl);
+        }
       } catch (error) {
         console.error("Failed to generate QR code:", error);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
     
     loadQrCode();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [checkoutEmailUrl, badgeLayout.qrCodeSize]);
 
   // Handle QR code image load event
   const handleQrCodeLoaded = () => {
+    console.log(`QR code for visitor ${displayVisitorNumber} loaded successfully`);
     setQrCodeLoaded(true);
     if (onQRCodeLoaded) {
       onQRCodeLoaded();

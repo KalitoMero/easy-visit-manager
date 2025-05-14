@@ -8,6 +8,9 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { RefreshCw } from 'lucide-react';
 
+// Standard-Besucherzähler-Wert
+const DEFAULT_VISITOR_COUNTER = 100;
+
 const VisitorCounterReset = () => {
   const visitorCounter = useVisitorStore(state => state.visitorCounter);
   const resetVisitorCounter = useVisitorStore(state => state.resetVisitorCounter);
@@ -28,6 +31,15 @@ const VisitorCounterReset = () => {
     toast({
       title: "Besucherzähler zurückgesetzt",
       description: `Der Besucherzähler wurde auf ${counterValue} gesetzt.`,
+    });
+  };
+
+  const handleResetToDefault = () => {
+    resetVisitorCounter(DEFAULT_VISITOR_COUNTER);
+    setNewCounter(DEFAULT_VISITOR_COUNTER.toString());
+    toast({
+      title: "Besucherzähler zurückgesetzt",
+      description: `Der Besucherzähler wurde auf den Standardwert ${DEFAULT_VISITOR_COUNTER} gesetzt.`,
     });
   };
 
@@ -63,12 +75,22 @@ const VisitorCounterReset = () => {
                 className="flex items-center gap-2"
               >
                 <RefreshCw className="h-4 w-4" />
-                Zurücksetzen
+                Setzen
               </Button>
             </div>
             <div className="text-sm text-muted-foreground">
-              Standardwert ist 100. Bei Zurücksetzen wird diese Nummer für den nächsten Besucher verwendet.
+              Standardwert ist {DEFAULT_VISITOR_COUNTER}. Bei Zurücksetzen wird diese Nummer für den nächsten Besucher verwendet.
             </div>
+            
+            <Button 
+              onClick={handleResetToDefault}
+              variant="secondary"
+              size="sm"
+              className="mt-2"
+            >
+              <RefreshCw className="h-3 w-3 mr-1" />
+              Auf Standardwert {DEFAULT_VISITOR_COUNTER} zurücksetzen
+            </Button>
           </div>
         </div>
       </CardContent>
