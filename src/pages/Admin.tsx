@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +8,6 @@ import { Visitor, useVisitorStore } from '@/hooks/useVisitorStore';
 import { useToast } from "@/hooks/use-toast";
 import AdminHomeButton from "@/components/AdminHomeButton";
 import { usePolicyStore } from "@/hooks/usePolicyStore";
-import { useVisitorStore } from "@/hooks/useVisitorStore";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { format } from 'date-fns';
@@ -16,6 +16,9 @@ import { useLanguageStore, Language } from '@/hooks/useLanguageStore';
 import ImageUploader from "@/components/ImageUploader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { usePrinterSettings } from "@/hooks/usePrinterSettings";
 import { Printer, Settings, Move, Layout } from "lucide-react";
 import BadgePositionPreview from "@/components/BadgePositionPreview";
