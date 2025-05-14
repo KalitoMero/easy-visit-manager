@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -20,11 +20,8 @@ const CheckInStep2 = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Use Object.assign to separate the state slices
-  const { acceptPolicy } = useVisitorStore(state => ({ 
-    acceptPolicy: state.acceptPolicy 
-  }));
-  // Use a separate selector for the visitors array to prevent unnecessary re-renders
+  // Use separate selectors to prevent re-renders
+  const acceptPolicy = useVisitorStore(state => state.acceptPolicy);
   const visitors = useVisitorStore(state => state.visitors);
   
   const { language } = useLanguageStore();
@@ -33,9 +30,12 @@ const CheckInStep2 = () => {
   const policyText = usePolicyStore(state => state.getPolicyText(language));
   const policyImageUrl = usePolicyStore(state => state.policyImageUrl);
   
-  const visitor = visitors.find(v => v.id === id);
+  // Memoize the visitor lookup to prevent unnecessary re-renders
+  const visitor = React.useMemo(() => {
+    return visitors.find(v => v.id === id);
+  }, [visitors, id]);
 
-  const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
+  const handleScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
     const isAtBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 5;
     
@@ -47,7 +47,7 @@ const CheckInStep2 = () => {
         variant: "default",
       });
     }
-  };
+  }, [hasScrolledToBottom, toast, t]);
   
   if (!visitor) {
     return (
@@ -85,13 +85,11 @@ const CheckInStep2 = () => {
             <CardTitle className="text-3xl font-bold">{t('visitorPolicy')}</CardTitle>
           </CardHeader>
           <CardContent>
-            {/* Fix: Don't assign ref directly to ScrollArea to avoid infinite loops */}
-            <div ref={scrollAreaRef}>
+            <div ref={scrollAreaRef} className="relative">
               <ScrollArea 
                 className="h-[350px] rounded-md border p-4 bg-white/80 backdrop-blur-sm"
-                onScrollCapture={handleScroll}
               >
-                <div className="p-4 text-lg">
+                <div className="p-4 text-lg" onScroll={handleScroll}>
                   {policyImageUrl && (
                     <div className="mb-6 flex justify-center">
                       <img 
