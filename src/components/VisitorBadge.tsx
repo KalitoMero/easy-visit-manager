@@ -27,8 +27,6 @@ const VisitorBadge = ({
 }: VisitorBadgeProps) => {
   // Use the provided name (for group visitors) or the primary visitor name
   const displayName = name || visitor.name;
-  // Format the name with salutation if available
-  const formattedName = visitor.salutation ? `${visitor.salutation} ${displayName}` : displayName;
   // Use the provided visitor number override or the primary visitor number
   const displayVisitorNumber = visitorNumber || visitor.visitorNumber;
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
@@ -129,8 +127,11 @@ const VisitorBadge = ({
           <div className="visitor-number text-5xl font-bold text-primary mb-2 text-center">
             {displayVisitorNumber}
           </div>
+          <div className="salutation text-sm text-muted-foreground mb-1">
+            Mr. / Mrs.
+          </div>
           <div className={`name font-bold ${nameFontClass} truncate max-w-full text-center`}>
-            {formattedName}
+            {displayName}
           </div>
           <div className={`company ${companyFontClass} truncate max-w-full text-center`}>
             {visitor.company}

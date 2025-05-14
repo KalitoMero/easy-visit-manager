@@ -1,18 +1,15 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export type AdditionalVisitor = {
   id: string;
   name: string;
-  salutation?: string;
   visitorNumber: number;
 };
 
 export type Visitor = {
   id: string;
   name: string;
-  salutation?: string; // Optional salutation field (Mr., Mrs., Mx.)
   company: string;
   contact: string;
   visitorNumber: number;
@@ -36,8 +33,8 @@ type VisitorStore = {
   visitors: Visitor[];
   visitorCounter: number;
   deletionSchedule: DeletionSchedule;
-  addVisitor: (name: string, company: string, contact: string, salutation?: string) => Visitor;
-  addGroupVisitor: (visitors: Array<{ salutation?: string, name: string }>, company: string, contact: string) => Visitor;
+  addVisitor: (name: string, company: string, contact: string) => Visitor;
+  addGroupVisitor: (visitors: Array<{ name: string }>, company: string, contact: string) => Visitor;
   checkOutVisitor: (id: string) => void;
   getVisitor: (id: string) => Visitor | undefined;
   getVisitorByNumber: (visitorNumber: number) => Visitor | undefined;
@@ -80,12 +77,11 @@ export const useVisitorStore = create<VisitorStore>()(
         minute: 0,
       },
       
-      addVisitor: (name, company, contact, salutation) => {
+      addVisitor: (name, company, contact) => {
         const { visitors, visitorCounter } = get();
         const newVisitor: Visitor = {
           id: crypto.randomUUID ? crypto.randomUUID() : `visitor-${Date.now()}`,
           name,
-          salutation,
           company,
           contact,
           visitorNumber: visitorCounter,
@@ -112,7 +108,6 @@ export const useVisitorStore = create<VisitorStore>()(
           return {
             id: crypto.randomUUID ? crypto.randomUUID() : `visitor-add-${Date.now()}-${index}`,
             name: visitor.name,
-            salutation: visitor.salutation,
             visitorNumber: currentVisitorNumber
           };
         });
@@ -120,7 +115,6 @@ export const useVisitorStore = create<VisitorStore>()(
         const newVisitor: Visitor = {
           id: crypto.randomUUID ? crypto.randomUUID() : `visitor-${Date.now()}`,
           name: mainVisitor.name,
-          salutation: mainVisitor.salutation,
           company,
           contact,
           visitorNumber: visitorCounter,
