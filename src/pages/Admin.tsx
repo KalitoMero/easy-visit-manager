@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,10 +19,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { usePrinterSettings } from "@/hooks/usePrinterSettings";
-import { Printer, Settings, Move, Layout } from "lucide-react";
+import { Printer, Settings, Move, Layout, RefreshCw } from "lucide-react";
 import BadgePositionPreview from "@/components/BadgePositionPreview";
 import BadgeLayoutSettings from "@/components/BadgeLayoutSettings";
 import VisitorBadge from "@/components/VisitorBadge";
+import VisitorCounterReset from "@/components/VisitorCounterReset";
 
 const formatTime = (isoString: string, language: Language) => {
   if (!isoString) return "-";
@@ -412,104 +412,108 @@ const Admin = () => {
           </TabsContent>
           
           <TabsContent value="settings">
-            <Card>
-              <CardHeader>
-                <CardTitle>Automatische Datenlöschung</CardTitle>
-                <CardDescription>Konfigurieren Sie, wann abgemeldete Besucherdaten automatisch gelöscht werden sollen</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    id="deletion-enabled"
-                    checked={deletionEnabled}
-                    onCheckedChange={setDeletionEnabled}
-                  />
-                  <Label htmlFor="deletion-enabled">Automatische Löschung aktivieren</Label>
-                </div>
-                
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="deletion-day">Wochentag</Label>
-                    <Select 
-                      disabled={!deletionEnabled} 
-                      value={deletionDay} 
-                      onValueChange={setDeletionDay}
-                    >
-                      <SelectTrigger id="deletion-day">
-                        <SelectValue placeholder="Wochentag wählen" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {weekdays.map(day => (
-                          <SelectItem key={day.value} value={day.value}>
-                            {day.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+            <div className="space-y-6">
+              <VisitorCounterReset />
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Automatische Datenlöschung</CardTitle>
+                  <CardDescription>Konfigurieren Sie, wann abgemeldete Besucherdaten automatisch gelöscht werden sollen</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="deletion-enabled"
+                      checked={deletionEnabled}
+                      onCheckedChange={setDeletionEnabled}
+                    />
+                    <Label htmlFor="deletion-enabled">Automatische Löschung aktivieren</Label>
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="deletion-hour">Stunde</Label>
-                    <Select 
-                      disabled={!deletionEnabled} 
-                      value={deletionHour} 
-                      onValueChange={setDeletionHour}
-                    >
-                      <SelectTrigger id="deletion-hour">
-                        <SelectValue placeholder="Stunde wählen" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {hours.map(hour => (
-                          <SelectItem key={hour.value} value={hour.value}>
-                            {hour.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="deletion-day">Wochentag</Label>
+                      <Select 
+                        disabled={!deletionEnabled} 
+                        value={deletionDay} 
+                        onValueChange={setDeletionDay}
+                      >
+                        <SelectTrigger id="deletion-day">
+                          <SelectValue placeholder="Wochentag wählen" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {weekdays.map(day => (
+                            <SelectItem key={day.value} value={day.value}>
+                              {day.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="deletion-hour">Stunde</Label>
+                      <Select 
+                        disabled={!deletionEnabled} 
+                        value={deletionHour} 
+                        onValueChange={setDeletionHour}
+                      >
+                        <SelectTrigger id="deletion-hour">
+                          <SelectValue placeholder="Stunde wählen" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {hours.map(hour => (
+                            <SelectItem key={hour.value} value={hour.value}>
+                              {hour.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="deletion-minute">Minute</Label>
+                      <Select 
+                        disabled={!deletionEnabled} 
+                        value={deletionMinute} 
+                        onValueChange={setDeletionMinute}
+                      >
+                        <SelectTrigger id="deletion-minute">
+                          <SelectValue placeholder="Minute wählen" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {minutes.map(minute => (
+                            <SelectItem key={minute.value} value={minute.value}>
+                              {minute.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="deletion-minute">Minute</Label>
-                    <Select 
-                      disabled={!deletionEnabled} 
-                      value={deletionMinute} 
-                      onValueChange={setDeletionMinute}
-                    >
-                      <SelectTrigger id="deletion-minute">
-                        <SelectValue placeholder="Minute wählen" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {minutes.map(minute => (
-                          <SelectItem key={minute.value} value={minute.value}>
-                            {minute.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                {deletionSchedule.lastRun && (
-                  <p className="text-sm text-muted-foreground">
-                    Zuletzt ausgeführt: {formatTime(deletionSchedule.lastRun, language)}
-                  </p>
-                )}
-                
-                <div className="flex justify-between pt-4">
-                  <Button 
-                    variant="outline" 
-                    onClick={handleManualDeletion} 
-                    disabled={inactiveVisitors.length === 0}
-                  >
-                    Jetzt manuell löschen ({inactiveVisitors.length})
-                  </Button>
+                  {deletionSchedule.lastRun && (
+                    <p className="text-sm text-muted-foreground">
+                      Zuletzt ausgeführt: {formatTime(deletionSchedule.lastRun, language)}
+                    </p>
+                  )}
                   
-                  <Button onClick={handleSaveDeletionSchedule}>
-                    Einstellungen speichern
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                  <div className="flex justify-between pt-4">
+                    <Button 
+                      variant="outline" 
+                      onClick={handleManualDeletion} 
+                      disabled={inactiveVisitors.length === 0}
+                    >
+                      Jetzt manuell löschen ({inactiveVisitors.length})
+                    </Button>
+                    
+                    <Button onClick={handleSaveDeletionSchedule}>
+                      Einstellungen speichern
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
           
           <TabsContent value="printer">

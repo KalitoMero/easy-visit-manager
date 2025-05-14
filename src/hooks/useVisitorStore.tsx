@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -18,7 +19,7 @@ export type Visitor = {
   additionalVisitors?: AdditionalVisitor[];
   additionalVisitorCount: number;
   notes?: string;
-  policyAccepted?: boolean; // Add missing policyAccepted field
+  policyAccepted?: boolean;
 };
 
 type DeletionSchedule = {
@@ -46,6 +47,7 @@ type VisitorStore = {
   updateDeletionSchedule: (enabled: boolean, dayOfWeek: number, hour: number, minute: number) => void;
   deleteOldVisitors: () => number;
   performScheduledCheckout: () => void;
+  resetVisitorCounter: (newCounter?: number) => void; // Neue Funktion zum Zurücksetzen
 };
 
 // Helper function for auto checkout initialization
@@ -69,7 +71,7 @@ export const useVisitorStore = create<VisitorStore>()(
   persist(
     (set, get) => ({
       visitors: [],
-      visitorCounter: 1000,
+      visitorCounter: 100, // Start bei 100 statt 1000
       deletionSchedule: {
         enabled: false,
         dayOfWeek: 0, // Sunday
@@ -172,7 +174,7 @@ export const useVisitorStore = create<VisitorStore>()(
       },
       
       clearVisitors: () => {
-        set({ visitors: [], visitorCounter: 1000 });
+        set({ visitors: [], visitorCounter: 100 }); // Reset auf 100
       },
       
       searchVisitors: (query) => {
@@ -235,6 +237,11 @@ export const useVisitorStore = create<VisitorStore>()(
           
           console.log("Performed scheduled checkout at", today.toLocaleTimeString());
         }
+      },
+      
+      // Neue Funktion zum Zurücksetzen des Besucherzählers
+      resetVisitorCounter: (newCounter = 100) => {
+        set({ visitorCounter: newCounter });
       }
     }),
     {

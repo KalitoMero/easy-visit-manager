@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from 'react';
+
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { usePrinterSettings } from '@/hooks/usePrinterSettings';
@@ -37,6 +38,7 @@ const BadgePrintPreview = () => {
   } = usePrinterSettings();
   const printAttemptedRef = useRef(false);
   const printTimestamp = useRef(new Date()).current;
+  const [qrCodesLoaded, setQrCodesLoaded] = useState(false);
   
   // Find the primary visitor
   const visitor = visitors.find(v => v.id === id);
@@ -111,10 +113,16 @@ const BadgePrintPreview = () => {
       document.head.removeChild(styleEl);
     };
   }, [bottomMargin]);
+
+  // Markiere beide QR-Codes als geladen
+  const handleQRCodeLoaded = () => {
+    setQrCodesLoaded(true);
+    console.log("QR code loaded successfully");
+  };
   
   useEffect(() => {
-    // Vermeidung mehrfacher Druckversuche
-    if (visitor && !printAttemptedRef.current && enableAutomaticPrinting) {
+    // Vermeidung mehrfacher Druckversuche und warten auf QR-Code Ladung
+    if (visitor && !printAttemptedRef.current && enableAutomaticPrinting && qrCodesLoaded) {
       printAttemptedRef.current = true;
       
       const printBadge = async () => {
@@ -187,9 +195,9 @@ const BadgePrintPreview = () => {
       
       printBadge();
     }
-  }, [visitor, enableAutomaticPrinting, printWithoutDialog, printDelay, selectedPrinterName, printCopies, 
-      badgeRotation, badgeOffsetX, badgeOffsetY, 
-      secondBadgeRotation, secondBadgeOffsetX, secondBadgeOffsetY, badgeLayout, showBrandingOnPrint, bottomMargin]);
+  }, [visitor, enableAutomaticPrinting, printWithoutDialog, printDelay, selectedPrinterName, 
+      printCopies, badgeRotation, badgeOffsetX, badgeOffsetY, secondBadgeRotation, 
+      secondBadgeOffsetX, secondBadgeOffsetY, badgeLayout, showBrandingOnPrint, bottomMargin, qrCodesLoaded]);
   
   if (!visitor) {
     return (
@@ -243,6 +251,7 @@ const BadgePrintPreview = () => {
                 printTimestamp={printTimestamp}
                 qrPosition={badgeLayout.qrCodePosition || 'right'}
                 className="print-badge"
+                onQRCodeLoaded={handleQRCodeLoaded}
               />
             </div>
           </div>
@@ -280,6 +289,7 @@ const BadgePrintPreview = () => {
                 printTimestamp={printTimestamp}
                 qrPosition={badgeLayout.qrCodePosition || 'right'}
                 className="print-badge"
+                onQRCodeLoaded={handleQRCodeLoaded}
               />
             </div>
           </div>
@@ -322,6 +332,7 @@ const BadgePrintPreview = () => {
                   visitor={visitor} 
                   printTimestamp={printTimestamp}
                   qrPosition={badgeLayout.qrCodePosition || 'right'}
+                  onQRCodeLoaded={handleQRCodeLoaded}
                 />
               </div>
             </div>
@@ -359,6 +370,7 @@ const BadgePrintPreview = () => {
                   visitor={visitor} 
                   printTimestamp={printTimestamp}
                   qrPosition={badgeLayout.qrCodePosition || 'right'}
+                  onQRCodeLoaded={handleQRCodeLoaded}
                 />
               </div>
             </div>
@@ -375,6 +387,7 @@ const BadgePrintPreview = () => {
               visitorNumber={additionalVisitor.visitorNumber}
               printTimestamp={printTimestamp}
               qrPosition={badgeLayout.qrCodePosition || 'right'}
+              onQRCodeLoaded={handleQRCodeLoaded}
             />
           </div>
         ))}

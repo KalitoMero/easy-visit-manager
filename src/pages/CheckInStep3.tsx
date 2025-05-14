@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,9 @@ import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
 import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import { useTranslation } from '@/locale/translations';
-import { ArrowLeft, Printer } from 'lucide-react';
+import { ArrowLeft, Printer, Timer } from 'lucide-react';
+
+const COUNTDOWN_SECONDS = 10; // 10 Sekunden Countdown
 
 const CheckInStep3 = () => {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +21,9 @@ const CheckInStep3 = () => {
   
   const { language } = useLanguageStore();
   const t = useTranslation(language);
+  
+  // Countdown Timer
+  const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
   
   // Find the current visitor
   const visitor = visitors.find(v => v.id === id);
@@ -43,6 +48,26 @@ const CheckInStep3 = () => {
       };
     }
   }, [visitor, navigate, enableAutomaticPrinting, id]);
+
+  // Countdown-Timer Effekt
+  useEffect(() => {
+    // Starte den Countdown nur, wenn wir einen Besucher haben
+    if (visitor) {
+      const timer = setInterval(() => {
+        setCountdown((prevCount) => {
+          if (prevCount <= 1) {
+            clearInterval(timer);
+            navigate('/'); // Zurück zur Startseite nach Ablauf des Countdowns
+            return 0;
+          }
+          return prevCount - 1;
+        });
+      }, 1000);
+      
+      // Bereinigungsfunktion
+      return () => clearInterval(timer);
+    }
+  }, [visitor, navigate]);
   
   if (!visitor) {
     return null;
@@ -87,9 +112,13 @@ const CheckInStep3 = () => {
               </Button>
             </div>
             
-            <div className="pt-6 flex justify-center">
+            <div className="pt-6 flex flex-col items-center justify-center">
+              <div className="mb-2 flex items-center text-muted-foreground">
+                <Timer className="h-4 w-4 mr-1" />
+                <span>{language === 'de' ? 'Automatische Rückkehr zur Startseite in' : 'Automatic return to home in'} {countdown} {countdown === 1 ? (language === 'de' ? 'Sekunde' : 'second') : (language === 'de' ? 'Sekunden' : 'seconds')}</span>
+              </div>
               <NavButton to="/" position="center">
-                {t('backToHome')}
+                {language === 'de' ? `Zurück zur Startseite (${countdown})` : `Back to Home (${countdown})`}
               </NavButton>
             </div>
           </CardContent>

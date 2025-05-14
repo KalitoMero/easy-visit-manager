@@ -15,6 +15,7 @@ interface VisitorBadgeProps {
   className?: string; // Optional className for styling
   printTimestamp?: Date; // Optional timestamp for when the badge was printed
   qrPosition?: 'right' | 'center'; // QR code position option
+  onQRCodeLoaded?: () => void; // Callback when QR code is loaded
 }
 
 const VisitorBadge = ({ 
@@ -23,7 +24,8 @@ const VisitorBadge = ({
   visitorNumber, 
   className = '',
   printTimestamp = new Date(), // Default to current time if not provided
-  qrPosition = 'right' // Default to right-aligned QR code
+  qrPosition = 'right', // Default to right-aligned QR code
+  onQRCodeLoaded
 }: VisitorBadgeProps) => {
   // Use the provided name (for group visitors) or the primary visitor name
   const displayName = name || visitor.name;
@@ -31,6 +33,7 @@ const VisitorBadge = ({
   const displayVisitorNumber = visitorNumber || visitor.visitorNumber;
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
+  const [qrCodeLoaded, setQrCodeLoaded] = useState(false);
   
   // Get badge layout settings
   const badgeLayout = usePrinterSettings(state => state.badgeLayout);
@@ -58,6 +61,14 @@ const VisitorBadge = ({
     
     loadQrCode();
   }, [checkoutEmailUrl, badgeLayout.qrCodeSize]);
+
+  // Handle QR code image load event
+  const handleQrCodeLoaded = () => {
+    setQrCodeLoaded(true);
+    if (onQRCodeLoaded) {
+      onQRCodeLoaded();
+    }
+  };
 
   // Font size utility function
   const getFontSize = (size: 'small' | 'medium' | 'large') => {
@@ -107,6 +118,7 @@ const VisitorBadge = ({
     <div className={cn(
       "visitor-badge bg-white border border-gray-300 rounded-md p-4 flex flex-col box-border",
       "max-h-[74mm] w-full overflow-hidden print:shadow-none",
+      "max-w-[105mm]", // Breiter machen, um den vollen horizontalen Platz zu nutzen
       className
     )}>
       {/* Badge Header */}
@@ -159,6 +171,7 @@ const VisitorBadge = ({
                   alt={`QR Code for visitor ${displayVisitorNumber}`} 
                   className="object-contain"
                   style={{ width: `${badgeLayout.qrCodeSize}px`, height: `${badgeLayout.qrCodeSize}px` }}
+                  onLoad={handleQrCodeLoaded}
                 />
               </a>
             ) : (
@@ -179,8 +192,8 @@ const VisitorBadge = ({
       </div>
       
       {/* Badge Footer */}
-      <div className="badge-footer border-t pt-2 mt-auto" style={{ marginTop: `${badgeLayout.footerSpacing}px` }}>
-        {/* Contact Information */}
+      <div className="badge-footer border-t pt-2 mt-auto" style={{ marginTop: `${Math.max(badgeLayout.footerSpacing, 2)}px` }}>
+        {/* Contact Information - immer anzeigen mit ausreichend Platz */}
         {badgeLayout.showContact && (
           <div className="contact text-sm truncate w-full mb-1">
             Contact: <span className="font-medium">{visitor.contact}</span>

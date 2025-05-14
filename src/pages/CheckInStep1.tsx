@@ -1,94 +1,66 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import HomeButton from '@/components/HomeButton';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useNavigate } from 'react-router-dom';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
-import { useToast } from '@/hooks/use-toast';
+import NavButton from '@/components/NavButton';
+import HomeButton from '@/components/HomeButton';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
 import { useTranslation } from '@/locale/translations';
-import { Plus, X, ArrowLeft } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { UserPlus, Users } from 'lucide-react';
 
-const CheckInStep1 = () => {
-  const [name, setName] = useState('');
-  const [additionalVisitors, setAdditionalVisitors] = useState<Array<{ name: string }>>([]);
-  const [company, setCompany] = useState('');
-  const [contact, setContact] = useState('');
+// Define form schema
+const visitorFormSchema = z.object({
+  name: z.string().min(1, {
+    message: "Name is required."
+  }),
+  company: z.string().min(1, {
+    message: "Company is required."
+  }),
+  contact: z.string().min(1, {
+    message: "Contact is required."
+  }),
+});
+
+type VisitorFormValues = z.infer<typeof visitorFormSchema>;
+
+const CheckInStep1: React.FC = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const addVisitor = useVisitorStore(state => state.addVisitor);
-  const addGroupVisitor = useVisitorStore(state => state.addGroupVisitor);
-  const isMobile = useIsMobile();
-  
+  const addVisitor = useVisitorStore((state) => state.addVisitor);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { language } = useLanguageStore();
   const t = useTranslation(language);
-  
-  // Language dependent salutation hint
-  const salutationHint = language === 'de' ? 'Herr / Frau' : 'Mr. / Mrs.';
-  
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!name.trim()) {
-      toast({
-        title: t('nameRequired'),
-        description: t('nameRequired'),
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (!company.trim()) {
-      toast({
-        title: t('companyRequired'),
-        description: t('companyRequired'),
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (!contact.trim()) {
-      toast({
-        title: t('contactRequired'),
-        description: t('contactRequired'),
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Filter out empty names
-    const validAdditionalVisitors = additionalVisitors.filter(v => v.name.trim());
-    
-    // If there are additional visitors, register as a group
-    if (validAdditionalVisitors.length > 0) {
-      const allVisitors = [{ name }, ...validAdditionalVisitors];
-      const visitor = addGroupVisitor(allVisitors, company, contact);
+
+  // Initialize form with react-hook-form and zod validation
+  const form = useForm<VisitorFormValues>({
+    resolver: zodResolver(visitorFormSchema),
+    defaultValues: {
+      name: "",
+      company: "",
+      contact: ""
+    },
+  });
+
+  // Handle form submission
+  const onSubmit = (values: VisitorFormValues) => {
+    setIsSubmitting(true);
+
+    try {
+      // Add visitor to store
+      const visitor = addVisitor(values.name, values.company, values.contact);
+      
+      // Navigate to next step
       navigate(`/checkin/step2/${visitor.id}`);
-    } else {
-      // Register as a single visitor
-      const visitor = addVisitor(name, company, contact);
-      navigate(`/checkin/step2/${visitor.id}`);
+    } catch (error) {
+      console.error("Error during check-in:", error);
+      setIsSubmitting(false);
     }
-  };
-
-  const addVisitorField = () => {
-    setAdditionalVisitors([...additionalVisitors, { name: '' }]);
-  };
-
-  const updateAdditionalVisitor = (index: number, value: string) => {
-    const updated = [...additionalVisitors];
-    updated[index] = { name: value };
-    setAdditionalVisitors(updated);
-  };
-
-  const removeAdditionalVisitor = (index: number) => {
-    const updated = [...additionalVisitors];
-    updated.splice(index, 1);
-    setAdditionalVisitors(updated);
   };
 
   return (
@@ -96,110 +68,101 @@ const CheckInStep1 = () => {
       <HomeButton />
       
       <div className="page-container">
-        <Card className="border-0 shadow-none bg-transparent">
-          <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-bold">{t('visitorRegistration')}</CardTitle>
+        <Card className="mx-auto max-w-2xl">
+          <CardHeader>
+            <CardTitle className="text-center text-2xl">
+              {t('selfCheckInTitle')}
+            </CardTitle>
           </CardHeader>
+          
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Label htmlFor="name" className="text-lg">
-                    {t('name')}
-                  </Label>
-                  <span className="text-sm text-muted-foreground">
-                    {salutationHint}
-                  </span>
-                </div>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="h-14 text-lg bg-white/80 backdrop-blur-sm"
-                  placeholder={t('fullName')}
-                  autoFocus
-                  autoComplete="name"
-                  inputMode="text"
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-baseline justify-between">
+                        <FormLabel className="text-lg">{t('lastName')}</FormLabel> 
+                        <span className="text-sm text-muted-foreground">
+                          {language === 'de' ? 'Herr / Frau' : 'Mr. / Mrs.'}
+                        </span>
+                      </div>
+                      <FormControl>
+                        <Input 
+                          autoFocus
+                          placeholder={t('lastName')} 
+                          {...field} 
+                          className="text-lg h-12" 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              
-              {/* Additional visitors */}
-              {additionalVisitors.map((visitor, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <div className="flex-1">
-                    <Label htmlFor={`additional-visitor-${index}`} className="text-lg block mb-2">
-                      {t('additionalVisitor')}
-                    </Label>
-                    <Input
-                      id={`additional-visitor-${index}`}
-                      value={visitor.name}
-                      onChange={(e) => updateAdditionalVisitor(index, e.target.value)}
-                      className="h-14 text-lg bg-white/80 backdrop-blur-sm"
-                      placeholder={t('fullName')}
-                      autoComplete="name"
-                      inputMode="text"
-                    />
-                  </div>
-                  <Button 
-                    type="button" 
-                    variant="ghost" 
-                    onClick={() => removeAdditionalVisitor(index)}
-                    className="mt-8"
-                  >
-                    <X className="h-5 w-5" />
-                  </Button>
-                </div>
-              ))}
-              
-              <div>
+                
+                <FormField
+                  control={form.control}
+                  name="company"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-lg">{t('company')}</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder={t('company')} 
+                          {...field} 
+                          className="text-lg h-12" 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="contact"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-lg">{t('contact')}</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder={t('contact')} 
+                          {...field} 
+                          className="text-lg h-12" 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
                 <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={addVisitorField}
-                  className="flex items-center gap-2"
+                  type="submit" 
+                  className="w-full py-6 text-xl mt-6" 
+                  disabled={isSubmitting}
                 >
-                  <Plus className="h-5 w-5" />
-                  {t('addVisitor')}
+                  <UserPlus className="mr-2 h-5 w-5" />
+                  {t('continueToPolicy')}
                 </Button>
-              </div>
-              
-              <div>
-                <Label htmlFor="company" className="text-lg block mb-2">
-                  {t('company')}
-                </Label>
-                <Input
-                  id="company"
-                  value={company}
-                  onChange={(e) => setCompany(e.target.value)}
-                  className="h-14 text-lg bg-white/80 backdrop-blur-sm"
-                  placeholder={t('company')}
-                  autoComplete="organization"
-                  inputMode="text"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="contact" className="text-lg block mb-2">
-                  {t('contactPerson')}
-                </Label>
-                <Input
-                  id="contact"
-                  value={contact}
-                  onChange={(e) => setContact(e.target.value)}
-                  className="h-14 text-lg bg-white/80 backdrop-blur-sm"
-                  placeholder={t('contactPerson')}
-                  autoComplete="off"
-                  inputMode="text"
-                />
-              </div>
-              
-              <div className="pt-4 flex justify-end">
-                <Button type="submit" className="px-8 py-6 text-lg transition-all duration-300 hover:scale-105">
-                  {t('next')}
-                </Button>
-              </div>
-            </form>
+                
+                <div className="text-center text-sm text-muted-foreground">
+                  {t('orUse')}{" "}
+                  <NavButton to="/checkin/group" variant="link" className="p-0 h-auto">
+                    <Users className="inline-block mr-1 h-3 w-3" />
+                    {t('groupCheckIn')}
+                  </NavButton>
+                </div>
+              </form>
+            </Form>
           </CardContent>
+          
+          <CardFooter className="flex justify-center">
+            <NavButton to="/" variant="outline">
+              {t('backToHome')}
+            </NavButton>
+          </CardFooter>
         </Card>
       </div>
     </div>
