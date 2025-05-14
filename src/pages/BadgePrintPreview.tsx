@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
@@ -32,7 +31,9 @@ const BadgePrintPreview = () => {
     // Badge layout
     badgeLayout,
     // Branding-Option
-    showBrandingOnPrint
+    showBrandingOnPrint,
+    // Unterer Rand
+    bottomMargin
   } = usePrinterSettings();
   const printAttemptedRef = useRef(false);
   const printTimestamp = useRef(new Date()).current;
@@ -64,6 +65,8 @@ const BadgePrintPreview = () => {
           left: 0;
           width: 105mm;
           height: 148mm;
+          padding-bottom: ${bottomMargin}mm; /* Unterer Rand anwendbar */
+          box-sizing: border-box;
         }
         
         /* Kein Rand und kein Hintergrund beim Drucken */
@@ -107,7 +110,7 @@ const BadgePrintPreview = () => {
     return () => {
       document.head.removeChild(styleEl);
     };
-  }, []);
+  }, [bottomMargin]);
   
   useEffect(() => {
     // Vermeidung mehrfacher Druckversuche
@@ -130,10 +133,12 @@ const BadgePrintPreview = () => {
                 // Zweite Badge-Position
                 secondRotation: secondBadgeRotation,
                 secondOffsetX: secondBadgeOffsetX,
-                secondOffsetY: secondBadgeOffsetY
+                secondOffsetY: secondBadgeOffsetY,
+                // Unterer Rand
+                bottomMargin: bottomMargin
               },
               layoutOptions: badgeLayout, // Pass badge layout options to Electron
-              showBranding: showBrandingOnPrint // Neue Branding-Option an Electron übergeben
+              showBranding: showBrandingOnPrint // Branding-Option an Electron übergeben
             });
             
             if (result.success) {
@@ -184,7 +189,7 @@ const BadgePrintPreview = () => {
     }
   }, [visitor, enableAutomaticPrinting, printWithoutDialog, printDelay, selectedPrinterName, printCopies, 
       badgeRotation, badgeOffsetX, badgeOffsetY, 
-      secondBadgeRotation, secondBadgeOffsetX, secondBadgeOffsetY, badgeLayout, showBrandingOnPrint]);
+      secondBadgeRotation, secondBadgeOffsetX, secondBadgeOffsetY, badgeLayout, showBrandingOnPrint, bottomMargin]);
   
   if (!visitor) {
     return (

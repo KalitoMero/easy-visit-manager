@@ -18,7 +18,8 @@ export async function printToPDF(window, route, settings) {
       
       // Position and rotation parameters
       const positionParams = `&offsetX=${printOptions.offsetX || 0}&offsetY=${printOptions.offsetY || 0}&rotation=${printOptions.rotation || 0}` +
-                            `&secondOffsetX=${printOptions.secondOffsetX || 0}&secondOffsetY=${printOptions.secondOffsetY || 0}&secondRotation=${printOptions.secondRotation || 0}`;
+                            `&secondOffsetX=${printOptions.secondOffsetX || 0}&secondOffsetY=${printOptions.secondOffsetY || 0}&secondRotation=${printOptions.secondRotation || 0}` +
+                            `&bottomMargin=${printOptions.bottomMargin || 0}`;
       
       // Add layout parameters if available
       const layoutParams = settings.layoutOptions ? 

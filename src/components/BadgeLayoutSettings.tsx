@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Eye, Layout, Type, QrCode, ArrowDownWideNarrow, AlignRight, AlignCenter } from "lucide-react";
 import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
 
 interface BadgeLayoutSettingsProps {
   className?: string;
@@ -17,7 +18,9 @@ interface BadgeLayoutSettingsProps {
 const BadgeLayoutSettings: React.FC<BadgeLayoutSettingsProps> = ({ className }) => {
   const {
     badgeLayout,
-    setBadgeLayout
+    setBadgeLayout,
+    bottomMargin,
+    setBottomMargin
   } = usePrinterSettings();
 
   const fontSizeOptions = [
@@ -65,6 +68,14 @@ const BadgeLayoutSettings: React.FC<BadgeLayoutSettingsProps> = ({ className }) 
     setBadgeLayout({ qrCodePosition: value as 'right' | 'center' });
   };
 
+  // Handle bottom margin changes
+  const handleBottomMarginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.target.value);
+    if (!isNaN(value) && value >= 0 && value <= 20) {
+      setBottomMargin(value);
+    }
+  };
+
   // Reset to default settings
   const handleResetDefaults = () => {
     setBadgeLayout({
@@ -77,6 +88,7 @@ const BadgeLayoutSettings: React.FC<BadgeLayoutSettingsProps> = ({ className }) 
       footerSpacing: 8,
       qrCodePosition: 'right'
     });
+    setBottomMargin(0);
   };
 
   return (
@@ -266,6 +278,33 @@ const BadgeLayoutSettings: React.FC<BadgeLayoutSettingsProps> = ({ className }) 
                 <span>Standard</span>
                 <span>Großer Abstand</span>
               </div>
+            </div>
+          </div>
+
+          {/* Bottom Margin */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium flex items-center gap-2">
+              <ArrowDownWideNarrow className="h-4 w-4" /> Unterer Rand
+            </h4>
+            
+            <div className="space-y-2">
+              <div className="grid grid-cols-3 gap-2">
+                <Label htmlFor="bottom-margin" className="self-center">Unterer Rand (mm)</Label>
+                <div className="col-span-2">
+                  <Input
+                    id="bottom-margin"
+                    type="number"
+                    min="0"
+                    max="20"
+                    step="0.5"
+                    value={bottomMargin}
+                    onChange={handleBottomMarginChange}
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Zusätzlicher Abstand am unteren Seitenrand (0-20 mm)
+              </p>
             </div>
           </div>
           

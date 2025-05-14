@@ -9,7 +9,8 @@ type PrinterSettingsState = {
   printDelay: number; // Verzögerung in Millisekunden
   selectedPrinterName: string | null; // Name des ausgewählten Druckers
   printCopies: number; // Anzahl der Kopien
-  showBrandingOnPrint: boolean; // Neue Option: Branding auf Ausdruck anzeigen
+  showBrandingOnPrint: boolean; // Branding auf Ausdruck anzeigen
+  bottomMargin: number; // Neuer unterer Rand in mm
   
   // Badge Position und Rotation (Oberer Ausweis)
   badgeRotation: 0 | 90 | 180 | 270; // Rotation in Grad (0, 90, 180, 270)
@@ -39,7 +40,8 @@ type PrinterSettingsState = {
   setPrintDelay: (value: number) => void;
   setSelectedPrinterName: (value: string | null) => void;
   setPrintCopies: (value: number) => void;
-  setShowBrandingOnPrint: (value: boolean) => void; // Neue Aktion: Branding-Einstellung setzen
+  setShowBrandingOnPrint: (value: boolean) => void;
+  setBottomMargin: (value: number) => void; // Neue Funktion für unteren Rand
   setBadgeRotation: (value: 0 | 90 | 180 | 270) => void;
   setBadgeOffsetX: (value: number) => void;
   setBadgeOffsetY: (value: number) => void;
@@ -92,7 +94,8 @@ export const usePrinterSettings = create<PrinterSettingsState>()(
       printDelay: 500,
       selectedPrinterName: null,
       printCopies: 1,
-      showBrandingOnPrint: false, // Neue Option: Standardmäßig kein Branding auf Ausdruck
+      showBrandingOnPrint: false,
+      bottomMargin: 0, // Standardwert für unteren Rand: 0mm
       
       // Standard Positionierung - Erster Ausweis
       badgeRotation: 0,
@@ -113,7 +116,7 @@ export const usePrinterSettings = create<PrinterSettingsState>()(
         fontSizeCompany: 'medium',
         qrCodeSize: 120,
         footerSpacing: 8,
-        qrCodePosition: 'right', // Standardposition: rechts
+        qrCodePosition: 'right',
       },
 
       // Setter-Funktionen
@@ -122,7 +125,8 @@ export const usePrinterSettings = create<PrinterSettingsState>()(
       setPrintDelay: (value) => set({ printDelay: value }),
       setSelectedPrinterName: (value) => set({ selectedPrinterName: value }),
       setPrintCopies: (value) => set({ printCopies: value }),
-      setShowBrandingOnPrint: (value) => set({ showBrandingOnPrint: value }), // Neue Setter-Funktion
+      setShowBrandingOnPrint: (value) => set({ showBrandingOnPrint: value }),
+      setBottomMargin: (value) => set({ bottomMargin: value }), // Neue Setter-Funktion
       setBadgeRotation: (value) => set({ badgeRotation: value }),
       setBadgeOffsetX: (value) => set({ badgeOffsetX: value }),
       setBadgeOffsetY: (value) => set({ badgeOffsetY: value }),

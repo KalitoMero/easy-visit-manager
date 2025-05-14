@@ -27,6 +27,8 @@ const VisitorBadge = ({
 }: VisitorBadgeProps) => {
   // Use the provided name (for group visitors) or the primary visitor name
   const displayName = name || visitor.name;
+  // Format the name with salutation if available
+  const formattedName = visitor.salutation ? `${visitor.salutation} ${displayName}` : displayName;
   // Use the provided visitor number override or the primary visitor number
   const displayVisitorNumber = visitorNumber || visitor.visitorNumber;
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
@@ -128,7 +130,7 @@ const VisitorBadge = ({
             {displayVisitorNumber}
           </div>
           <div className={`name font-bold ${nameFontClass} truncate max-w-full text-center`}>
-            {displayName}
+            {formattedName}
           </div>
           <div className={`company ${companyFontClass} truncate max-w-full text-center`}>
             {visitor.company}
@@ -179,19 +181,19 @@ const VisitorBadge = ({
       <div className="badge-footer border-t pt-2 mt-auto" style={{ marginTop: `${badgeLayout.footerSpacing}px` }}>
         {/* Contact Information */}
         {badgeLayout.showContact && (
-          <div className="contact text-sm truncate w-full">
+          <div className="contact text-sm truncate w-full mb-1">
             Contact: <span className="font-medium">{visitor.contact}</span>
           </div>
         )}
         
-        {/* Date and Time */}
+        {/* Date and Time - Improved to prevent truncation */}
         {badgeLayout.showDateTime && (
-          <div className="datetime flex items-center justify-between text-xs text-muted-foreground mt-1">
-            <div className="date flex items-center gap-1">
+          <div className="datetime flex items-center justify-between text-xs text-muted-foreground">
+            <div className="date flex items-center gap-1 whitespace-nowrap">
               <Calendar className="w-3 h-3" />
               <span>{formattedDate}</span>
             </div>
-            <div className="time flex items-center gap-1">
+            <div className="time flex items-center gap-1 whitespace-nowrap">
               <Clock className="w-3 h-3" />
               <span>{formattedTime} Uhr</span>
             </div>

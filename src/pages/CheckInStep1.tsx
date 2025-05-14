@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import HomeButton from '@/components/HomeButton';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { useToast } from '@/hooks/use-toast';
@@ -14,8 +15,9 @@ import { Plus, X, ArrowLeft } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const CheckInStep1 = () => {
+  const [salutation, setSalutation] = useState<string>('');
   const [name, setName] = useState('');
-  const [additionalVisitors, setAdditionalVisitors] = useState<string[]>([]);
+  const [additionalVisitors, setAdditionalVisitors] = useState<Array<{ salutation: string, name: string }>>([]);
   const [company, setCompany] = useState('');
   const [contact, setContact] = useState('');
   const navigate = useNavigate();
@@ -58,27 +60,27 @@ const CheckInStep1 = () => {
     }
     
     // Filter out empty names
-    const validAdditionalVisitors = additionalVisitors.filter(v => v.trim());
+    const validAdditionalVisitors = additionalVisitors.filter(v => v.name.trim());
     
     // If there are additional visitors, register as a group
     if (validAdditionalVisitors.length > 0) {
-      const allNames = [name, ...validAdditionalVisitors];
-      const visitor = addGroupVisitor(allNames, company, contact);
+      const allVisitors = [{ salutation, name }, ...validAdditionalVisitors];
+      const visitor = addGroupVisitor(allVisitors, company, contact);
       navigate(`/checkin/step2/${visitor.id}`);
     } else {
       // Register as a single visitor
-      const visitor = addVisitor(name, company, contact);
+      const visitor = addVisitor(name, company, contact, salutation);
       navigate(`/checkin/step2/${visitor.id}`);
     }
   };
 
   const addVisitorField = () => {
-    setAdditionalVisitors([...additionalVisitors, '']);
+    setAdditionalVisitors([...additionalVisitors, { salutation: '', name: '' }]);
   };
 
-  const updateAdditionalVisitor = (index: number, value: string) => {
+  const updateAdditionalVisitor = (index: number, field: 'salutation' | 'name', value: string) => {
     const updated = [...additionalVisitors];
-    updated[index] = value;
+    updated[index] = { ...updated[index], [field]: value };
     setAdditionalVisitors(updated);
   };
 
@@ -87,6 +89,12 @@ const CheckInStep1 = () => {
     updated.splice(index, 1);
     setAdditionalVisitors(updated);
   };
+
+  const salutationOptions = [
+    { value: "Mr.", label: "Mr." },
+    { value: "Mrs.", label: "Mrs." },
+    { value: "Mx.", label: "Mx." }
+  ];
 
   return (
     <div className="app-container">
@@ -103,16 +111,34 @@ const CheckInStep1 = () => {
                 <Label htmlFor="name" className="text-lg block mb-2">
                   {t('name')}
                 </Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="h-14 text-lg bg-white/80 backdrop-blur-sm"
-                  placeholder={t('fullName')}
-                  autoFocus
-                  autoComplete="name"
-                  inputMode="text"
-                />
+                <div className="grid grid-cols-4 gap-2">
+                  <div>
+                    <Select value={salutation} onValueChange={setSalutation}>
+                      <SelectTrigger id="salutation">
+                        <SelectValue placeholder="Anrede" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {salutationOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="col-span-3">
+                    <Input
+                      id="name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="h-14 text-lg bg-white/80 backdrop-blur-sm"
+                      placeholder={t('fullName')}
+                      autoFocus
+                      autoComplete="name"
+                      inputMode="text"
+                    />
+                  </div>
+                </div>
               </div>
               
               {/* Additional visitors */}
@@ -122,15 +148,36 @@ const CheckInStep1 = () => {
                     <Label htmlFor={`additional-visitor-${index}`} className="text-lg block mb-2">
                       {t('additionalVisitor')}
                     </Label>
-                    <Input
-                      id={`additional-visitor-${index}`}
-                      value={visitor}
-                      onChange={(e) => updateAdditionalVisitor(index, e.target.value)}
-                      className="h-14 text-lg bg-white/80 backdrop-blur-sm"
-                      placeholder={t('fullName')}
-                      autoComplete="name"
-                      inputMode="text"
-                    />
+                    <div className="grid grid-cols-4 gap-2">
+                      <div>
+                        <Select 
+                          value={visitor.salutation} 
+                          onValueChange={(value) => updateAdditionalVisitor(index, 'salutation', value)}
+                        >
+                          <SelectTrigger id={`salutation-${index}`}>
+                            <SelectValue placeholder="Anrede" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {salutationOptions.map((option) => (
+                              <SelectItem key={`${index}-${option.value}`} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="col-span-3">
+                        <Input
+                          id={`additional-visitor-${index}`}
+                          value={visitor.name}
+                          onChange={(e) => updateAdditionalVisitor(index, 'name', e.target.value)}
+                          className="h-14 text-lg bg-white/80 backdrop-blur-sm"
+                          placeholder={t('fullName')}
+                          autoComplete="name"
+                          inputMode="text"
+                        />
+                      </div>
+                    </div>
                   </div>
                   <Button 
                     type="button" 

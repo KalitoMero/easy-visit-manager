@@ -1,403 +1,155 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export interface Visitor {
+export type AdditionalVisitor = {
   id: string;
-  visitorNumber: number;
   name: string;
+  salutation?: string;
+  visitorNumber: number;
+};
+
+export type Visitor = {
+  id: string;
+  name: string;
+  salutation?: string; // Optional salutation field (Mr., Mrs., Mx.)
   company: string;
   contact: string;
+  visitorNumber: number;
   checkInTime: string;
-  checkOutTime: string | null;
-  policyAccepted: boolean;
-  additionalVisitors?: Array<{
-    id: string;
-    visitorNumber: number;
-    name: string;
-  }>; // Updated structure for additional visitors
-}
+  checkOutTime?: string;
+  additionalVisitors?: AdditionalVisitor[];
+  additionalVisitorCount: number;
+  notes?: string;
+};
 
-interface VisitorState {
+type VisitorStore = {
   visitors: Visitor[];
-  currentVisitorNumber: number;
-  lastReset: string;
-  lastAutoCheckout: string;
-  deletionSchedule: {
-    enabled: boolean;
-    dayOfWeek: number; // 0-6, 0 is Sunday
-    hour: number; // 0-23
-    minute: number; // 0-59
-    lastRun: string | null;
-  };
-  
-  addVisitor: (name: string, company: string, contact: string) => Visitor;
-  addGroupVisitor: (names: string[], company: string, contact: string) => Visitor;
-  acceptPolicy: (id: string) => void;
-  checkOutVisitor: (visitorNumber: number) => boolean;
-  checkOutAllVisitors: () => void;
+  visitorCounter: number;
+  addVisitor: (name: string, company: string, contact: string, salutation?: string) => Visitor;
+  addGroupVisitor: (visitors: Array<{ salutation?: string, name: string }>, company: string, contact: string) => Visitor;
+  checkOutVisitor: (id: string) => void;
+  getVisitor: (id: string) => Visitor | undefined;
   getVisitorByNumber: (visitorNumber: number) => Visitor | undefined;
-  resetVisitorNumberIfNeeded: () => void;
-  performScheduledCheckout: () => void;
-  updateDeletionSchedule: (enabled: boolean, dayOfWeek: number, hour: number, minute: number) => void;
-  runScheduledDeletion: () => void;
-  deleteOldVisitors: () => number;
-}
-
-// Helper to get the current week number (ISO week-numbering year)
-const getISOWeek = () => {
-  const date = new Date();
-  const dayNum = date.getUTCDay() || 7;
-  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-  return Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+  updateVisitor: (id: string, updates: Partial<Omit<Visitor, 'id'>>) => void;
+  deleteVisitor: (id: string) => void;
+  clearVisitors: () => void;
+  searchVisitors: (query: string) => Visitor[];
 };
 
-// Helper to get current week as string YYYY-WW (ISO format)
-const getCurrentWeekString = () => {
-  const date = new Date();
-  const year = date.getUTCFullYear();
-  const week = getISOWeek();
-  return `${year}-${week.toString().padStart(2, '0')}`;
-};
-
-// Helper to format current time
-const getCurrentTime = () => {
-  return new Date().toISOString();
-};
-
-// Helper to get current date as string YYYY-MM-DD
-const getCurrentDateString = () => {
-  const now = new Date();
-  return `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
-};
-
-export const useVisitorStore = create<VisitorState>()(
+export const useVisitorStore = create<VisitorStore>()(
   persist(
     (set, get) => ({
       visitors: [],
-      currentVisitorNumber: 100, // Start from 100 for three-digit numbers
-      lastReset: getCurrentWeekString(),
-      lastAutoCheckout: '',
-      deletionSchedule: {
-        enabled: false,
-        dayOfWeek: 0, // Sunday by default
-        hour: 3, // 3 AM by default
-        minute: 0,
-        lastRun: null,
-      },
-
-      resetVisitorNumberIfNeeded: () => {
-        const currentWeek = getCurrentWeekString();
-        const { lastReset } = get();
-        
-        // Reset visitor number at the beginning of a new week
-        if (lastReset !== currentWeek) {
-          console.log(`Zurücksetzen der Besuchernummer: Neue Woche erkannt (${lastReset} -> ${currentWeek})`);
-          set({ currentVisitorNumber: 100, lastReset: currentWeek });
-        }
-      },
-
-      addVisitor: (name, company, contact) => {
-        // First reset visitor number if needed
-        get().resetVisitorNumberIfNeeded();
-        
-        const { visitors, currentVisitorNumber } = get();
+      visitorCounter: 1000,
+      
+      addVisitor: (name, company, contact, salutation) => {
+        const { visitors, visitorCounter } = get();
         const newVisitor: Visitor = {
-          id: crypto.randomUUID(),
-          visitorNumber: currentVisitorNumber,
+          id: crypto.randomUUID ? crypto.randomUUID() : `visitor-${Date.now()}`,
           name,
+          salutation,
           company,
           contact,
-          checkInTime: getCurrentTime(),
-          checkOutTime: null,
-          policyAccepted: false,
+          visitorNumber: visitorCounter,
+          checkInTime: new Date().toISOString(),
+          additionalVisitorCount: 0,
         };
         
-        set({
-          visitors: [...visitors, newVisitor],
-          currentVisitorNumber: currentVisitorNumber + 1,
+        set({ 
+          visitors: [newVisitor, ...visitors],
+          visitorCounter: visitorCounter + 1 
         });
-        
-        console.log("Added new visitor:", newVisitor);
-        console.log("Current visitors:", [...visitors, newVisitor]);
         
         return newVisitor;
       },
-
-      addGroupVisitor: (names, company, contact) => {
-        // First reset visitor number if needed
-        get().resetVisitorNumberIfNeeded();
+      
+      addGroupVisitor: (visitorList, company, contact) => {
+        const { visitors, visitorCounter } = get();
+        let currentVisitorNumber = visitorCounter;
         
-        const { visitors, currentVisitorNumber } = get();
-        let nextVisitorNumber = currentVisitorNumber;
-        
-        const primaryName = names[0]; // First name is the primary visitor
-        const additionalNames = names.slice(1); // Rest are additional visitors
-        
-        // Create an array of additional visitors with their own numbers
-        const additionalVisitorsWithNumbers = additionalNames.map(name => {
-          nextVisitorNumber++; // Increment for each additional visitor
+        // Create the main visitor from the first person in the list
+        const mainVisitor = visitorList[0];
+        const additionalVisitors = visitorList.slice(1).map((visitor, index) => {
+          currentVisitorNumber++;
           return {
-            id: crypto.randomUUID(),
-            name,
-            visitorNumber: nextVisitorNumber,
+            id: crypto.randomUUID ? crypto.randomUUID() : `visitor-add-${Date.now()}-${index}`,
+            name: visitor.name,
+            salutation: visitor.salutation,
+            visitorNumber: currentVisitorNumber
           };
         });
         
         const newVisitor: Visitor = {
-          id: crypto.randomUUID(),
-          visitorNumber: currentVisitorNumber,
-          name: primaryName,
-          additionalVisitors: additionalVisitorsWithNumbers,
+          id: crypto.randomUUID ? crypto.randomUUID() : `visitor-${Date.now()}`,
+          name: mainVisitor.name,
+          salutation: mainVisitor.salutation,
           company,
           contact,
-          checkInTime: getCurrentTime(),
-          checkOutTime: null,
-          policyAccepted: false,
+          visitorNumber: visitorCounter,
+          checkInTime: new Date().toISOString(),
+          additionalVisitors,
+          additionalVisitorCount: additionalVisitors.length,
         };
         
-        // Update the visitor number to be after all assigned numbers
-        set({
-          visitors: [...visitors, newVisitor],
-          currentVisitorNumber: nextVisitorNumber + 1,
+        set({ 
+          visitors: [newVisitor, ...visitors],
+          visitorCounter: currentVisitorNumber + 1
         });
-        
-        console.log("Added new group visitor:", newVisitor);
-        console.log("Current visitors:", [...visitors, newVisitor]);
         
         return newVisitor;
       },
       
-      acceptPolicy: (id) => {
-        set(state => ({
-          visitors: state.visitors.map(visitor => 
-            visitor.id === id 
-              ? { ...visitor, policyAccepted: true } 
-              : visitor
+      checkOutVisitor: (id) => {
+        set((state) => ({
+          visitors: state.visitors.map((visitor) =>
+            visitor.id === id ? { ...visitor, checkOutTime: new Date().toISOString() } : visitor
           ),
         }));
       },
       
-      checkOutVisitor: (visitorNumber) => {
+      getVisitor: (id) => {
         const { visitors } = get();
-        const visitorIndex = visitors.findIndex(
-          v => v.visitorNumber === visitorNumber && v.checkOutTime === null
-        );
-        
-        if (visitorIndex === -1) return false;
-        
-        set(state => {
-          const updatedVisitors = state.visitors.map((visitor, idx) => 
-            idx === visitorIndex 
-              ? { ...visitor, checkOutTime: getCurrentTime() } 
-              : visitor
-          );
-          console.log("Checked out visitor:", visitorNumber);
-          console.log("Updated visitors:", updatedVisitors);
-          return { visitors: updatedVisitors };
-        });
-        
-        return true;
-      },
-      
-      checkOutAllVisitors: () => {
-        const currentTime = getCurrentTime();
-        set(state => {
-          const updatedVisitors = state.visitors.map(visitor => 
-            visitor.checkOutTime === null 
-              ? { ...visitor, checkOutTime: currentTime } 
-              : visitor
-          );
-          console.log("Checked out all visitors");
-          console.log("Updated visitors:", updatedVisitors);
-          return { visitors: updatedVisitors };
-        });
+        return visitors.find((visitor) => visitor.id === id);
       },
       
       getVisitorByNumber: (visitorNumber) => {
-        const visitors = get().visitors;
-        
-        // First check main visitors
-        const mainVisitor = visitors.find(v => v.visitorNumber === visitorNumber);
-        if (mainVisitor) return mainVisitor;
-        
-        // If not found, check additional visitors
-        for (const visitor of visitors) {
-          if (visitor.additionalVisitors) {
-            const additionalVisitor = visitor.additionalVisitors.find(
-              v => v.visitorNumber === visitorNumber
-            );
-            if (additionalVisitor) {
-              // Return a visitor object with the additional visitor's info
-              return {
-                ...visitor,
-                id: additionalVisitor.id,
-                name: additionalVisitor.name,
-                visitorNumber: additionalVisitor.visitorNumber,
-              };
-            }
-          }
-        }
-        
-        return undefined;
-      },
-
-      performScheduledCheckout: () => {
-        const currentDate = getCurrentDateString();
-        const { lastAutoCheckout } = get();
-        
-        // Nur einmal täglich ausführen
-        if (lastAutoCheckout !== currentDate) {
-          // Alle aktiven Besucher abmelden
-          get().checkOutAllVisitors();
-          // Datum des letzten Checkouts aktualisieren
-          set({ lastAutoCheckout: currentDate });
-          console.log('Täglicher automatischer Checkout am', currentDate, 'durchgeführt');
-        } else {
-          console.log('Täglicher Checkout bereits durchgeführt am', lastAutoCheckout);
-        }
-      },
-
-      updateDeletionSchedule: (enabled, dayOfWeek, hour, minute) => {
-        set(state => ({
-          deletionSchedule: {
-            ...state.deletionSchedule,
-            enabled,
-            dayOfWeek,
-            hour,
-            minute
-          }
-        }));
-        console.log(`Updated deletion schedule: enabled=${enabled}, day=${dayOfWeek}, time=${hour}:${minute}`);
-      },
-
-      runScheduledDeletion: () => {
-        const { deletionSchedule } = get();
-        if (!deletionSchedule.enabled) return;
-
-        const now = new Date();
-        const currentDay = now.getDay();
-        const currentHour = now.getHours();
-        const currentMinute = now.getMinutes();
-        
-        // Check if today is the scheduled day
-        if (currentDay === deletionSchedule.dayOfWeek) {
-          // Check if we're past the scheduled time
-          if ((currentHour > deletionSchedule.hour) || 
-              (currentHour === deletionSchedule.hour && currentMinute >= deletionSchedule.minute)) {
-            
-            // Check if we've already run today
-            const lastRunDate = deletionSchedule.lastRun ? new Date(deletionSchedule.lastRun) : null;
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            
-            if (!lastRunDate || lastRunDate < today) {
-              // Time to run the deletion
-              const deletedCount = get().deleteOldVisitors();
-              
-              // Update the last run time
-              set(state => ({
-                deletionSchedule: {
-                  ...state.deletionSchedule,
-                  lastRun: new Date().toISOString()
-                }
-              }));
-              
-              console.log(`Scheduled deletion ran on ${new Date().toISOString()}, deleted ${deletedCount} visitors`);
-            }
-          }
-        }
-      },
-
-      deleteOldVisitors: () => {
         const { visitors } = get();
+        return visitors.find((visitor) => visitor.visitorNumber === visitorNumber);
+      },
+      
+      updateVisitor: (id, updates) => {
+        set((state) => ({
+          visitors: state.visitors.map((visitor) =>
+            visitor.id === id ? { ...visitor, ...updates } : visitor
+          ),
+        }));
+      },
+      
+      deleteVisitor: (id) => {
+        set((state) => ({
+          visitors: state.visitors.filter((visitor) => visitor.id !== id),
+        }));
+      },
+      
+      clearVisitors: () => {
+        set({ visitors: [], visitorCounter: 1000 });
+      },
+      
+      searchVisitors: (query) => {
+        const { visitors } = get();
+        const searchTerm = query.toLowerCase().trim();
         
-        // Only delete visitors that are checked out
-        const activeVisitors = visitors.filter(v => v.checkOutTime === null);
-        const inactiveVisitors = visitors.filter(v => v.checkOutTime !== null);
-        
-        // Update the store to only keep active visitors
-        set({ visitors: activeVisitors });
-        
-        console.log(`Deleted ${inactiveVisitors.length} checked-out visitors`);
-        return inactiveVisitors.length;
+        return visitors.filter(visitor => {
+          const nameMatches = visitor.name.toLowerCase().includes(searchTerm);
+          const companyMatches = visitor.company.toLowerCase().includes(searchTerm);
+          const contactMatches = visitor.contact.toLowerCase().includes(searchTerm);
+          
+          return nameMatches || companyMatches || contactMatches;
+        });
       },
     }),
     {
-      name: 'visitor-storage',
-      // Ensure data is properly saved to localStorage
-      version: 1, // Add version for future migrations if needed
-      
-      onRehydrateStorage: () => {
-        console.log("Rehydrating visitor data from localStorage...");
-        return (state) => {
-          if (state) {
-            console.log("Visitor data rehydrated:", state.visitors);
-            // Reset visitor numbers for a new week if needed
-            state.resetVisitorNumberIfNeeded();
-          } else {
-            console.warn("Failed to rehydrate visitor data");
-          }
-        };
-      },
+      name: 'visitor-storage'
     }
   )
 );
-
-// Set up automatic 8 PM checkout and background interval saving
-export const initializeAutoCheckout = () => {
-  // Sofort prüfen, ob heute bereits ein Auto-Checkout durchgeführt wurde
-  setTimeout(() => {
-    const now = new Date();
-    const eightPM = new Date(now);
-    eightPM.setHours(20, 0, 0, 0);
-    
-    // Wenn es nach 20 Uhr ist, prüfen ob der automatische Checkout bereits durchgeführt wurde
-    if (now >= eightPM) {
-      useVisitorStore.getState().performScheduledCheckout();
-    }
-  }, 1000);
-
-  // Setup autosave interval every 15 seconds 
-  const autosaveInterval = setInterval(() => {
-    // This will trigger a save by accessing the state
-    const state = useVisitorStore.getState();
-    console.log('Auto-saving visitor data...', new Date().toISOString());
-    console.log('Current visitors:', state.visitors);
-    // Simply accessing state properties will trigger persistence middleware
-    state.resetVisitorNumberIfNeeded();
-    
-    // Check if we should run the scheduled deletion
-    state.runScheduledDeletion();
-  }, 15000); // Every 15 seconds
-
-  const scheduleCheckout = () => {
-    const now = new Date();
-    const eightPM = new Date(now);
-    eightPM.setHours(20, 0, 0, 0);
-    
-    let timeUntilCheckout;
-    if (now >= eightPM) {
-      // If it's past 8PM, schedule for tomorrow
-      eightPM.setDate(eightPM.getDate() + 1);
-    }
-    
-    timeUntilCheckout = eightPM.getTime() - now.getTime();
-    console.log(`Nächster automatischer Checkout in ${Math.round(timeUntilCheckout/1000/60)} Minuten geplant`);
-    
-    return setTimeout(() => {
-      console.log('Automatischer Checkout um 20 Uhr wird ausgeführt...');
-      useVisitorStore.getState().performScheduledCheckout();
-      // Schedule next checkout
-      scheduleCheckout();
-    }, timeUntilCheckout);
-  };
-  
-  const checkoutTimer = scheduleCheckout();
-  
-  // Return a cleanup function that clears both timers
-  return () => {
-    clearTimeout(checkoutTimer);
-    clearInterval(autosaveInterval);
-  };
-};
