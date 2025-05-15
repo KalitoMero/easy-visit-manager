@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -120,6 +121,20 @@ const CheckInStep1: React.FC = () => {
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                {/* Add Additional Visitor Button - New position above name field */}
+                <div className="flex justify-end mb-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addAdditionalVisitor}
+                    className="text-sm flex items-center gap-1"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    {language === 'de' ? 'Weitere Person mitanmelden' : 'Register additional person'}
+                  </Button>
+                </div>
+                
                 <FormField
                   control={form.control}
                   name="name"
@@ -173,17 +188,6 @@ const CheckInStep1: React.FC = () => {
                     </div>
                   </div>
                 ))}
-                
-                {/* Button zum Hinzufügen weiterer Besucher */}
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={addAdditionalVisitor}
-                  className="w-full"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  {t('addVisitor')}
-                </Button>
                 
                 <FormField
                   control={form.control}

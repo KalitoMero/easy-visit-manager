@@ -1,5 +1,4 @@
-
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -11,6 +10,7 @@ import { usePolicyStore } from '@/hooks/usePolicyStore';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
 import { useTranslation } from '@/locale/translations';
+import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import { ArrowLeft, ArrowDown } from 'lucide-react';
 
 const CheckInStep2 = () => {
@@ -19,6 +19,10 @@ const CheckInStep2 = () => {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Get printer settings for automatic printing
+  const enableAutomaticPrinting = usePrinterSettings(state => state.enableAutomaticPrinting);
+  const printDelay = usePrinterSettings(state => state.printDelay);
   
   // Use separate selectors to prevent re-renders
   const acceptPolicy = useVisitorStore(state => state.acceptPolicy);
@@ -65,10 +69,18 @@ const CheckInStep2 = () => {
   }
 
   const handleContinue = () => {
-    // Accept policy and navigate directly to success page
+    // Accept policy
     if (id) {
       acceptPolicy(id);
-      navigate(`/checkin/step3/${id}`);
+      
+      // If automatic printing is enabled, navigate to badge print preview first
+      if (enableAutomaticPrinting) {
+        // Navigate to the print badge page, which will trigger automatic printing
+        navigate(`/print-badge/${id}`);
+      } else {
+        // Otherwise proceed to the success page as before
+        navigate(`/checkin/step3/${id}`);
+      }
     }
   };
 
