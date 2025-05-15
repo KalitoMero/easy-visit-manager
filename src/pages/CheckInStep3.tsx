@@ -11,6 +11,7 @@ import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import { useTranslation } from '@/locale/translations';
 import { ArrowLeft, Timer } from 'lucide-react';
 import { ensureQRCodesLoaded } from '@/lib/qrCodeUtils';
+import { useToast } from '@/components/ui/use-toast';
 
 const COUNTDOWN_SECONDS = 10; // 10 Sekunden Countdown
 
@@ -18,7 +19,8 @@ const CheckInStep3 = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const visitors = useVisitorStore(state => state.visitors);
-  const { enableAutomaticPrinting } = usePrinterSettings();
+  const { enableAutomaticPrinting, printDelay } = usePrinterSettings();
+  const { toast } = useToast();
   
   const { language } = useLanguageStore();
   const t = useTranslation(language);
@@ -32,53 +34,79 @@ const CheckInStep3 = () => {
   const visitor = visitors.find(v => v.id === id);
   
   useEffect(() => {
-    // Check if we arrived from print-badge page and set print as complete
+    // Check if we need to print (from URL parameter)
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('fromPrint') === 'true') {
-      setPrintComplete(true);
-    }
+    const shouldPrint = urlParams.get('print') === 'true';
     
     if (!visitor) {
       navigate('/');
-    } else if (!visitor.policyAccepted) {
+      return;
+    }
+    
+    if (!visitor.policyAccepted) {
       navigate(`/checkin/step2/${id}`);
-    } else if (enableAutomaticPrinting && !printPreparing && !printComplete) {
-      // Markiere als in Vorbereitung
+      return;
+    }
+    
+    // Handle background printing if needed
+    if (enableAutomaticPrinting && shouldPrint && !printPreparing && !printComplete) {
       setPrintPreparing(true);
       
-      // Stellen Sie sicher, dass QR-Codes geladen werden, bevor Sie drucken
-      const preparePrinting = async () => {
-        // Iframe erstellen, aber noch nicht zum DOM hinzufügen
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.src = `/print-badge/${visitor.id}`;
-        
-        // Warten, bis der Iframe geladen ist und dann QR-Code-Ladung sicherstellen
-        iframe.onload = () => {
-          console.log("Print iframe loaded, ensuring QR codes are ready");
+      const printBadgeInBackground = async () => {
+        try {
+          // Create a hidden iframe for printing
+          const iframe = document.createElement('iframe');
+          iframe.style.position = 'absolute';
+          iframe.style.left = '-9999px';
+          iframe.style.top = '-9999px';
+          iframe.style.width = '0';
+          iframe.style.height = '0';
+          iframe.style.border = 'none';
+          iframe.src = `/print-badge/${visitor.id}`;
           
-          // QR-Code-Ladung in iframe prüfen und warten
-          setTimeout(() => {
-            document.body.appendChild(iframe);
+          // Add the iframe to the document
+          document.body.appendChild(iframe);
+          
+          // Wait for the iframe to load
+          iframe.onload = () => {
+            console.log("Print iframe loaded, ensuring QR codes are ready");
             
-            // Nach kurzer Verzögerung als abgeschlossen markieren
+            // Wait for QR codes and content to be ready
             setTimeout(() => {
-              setPrintComplete(true);
-              // Entferne den iframe wieder
-              if (document.body.contains(iframe)) {
+              try {
+                // Try to access the iframe content to trigger print
+                if (iframe.contentWindow) {
+                  iframe.contentWindow.print();
+                  
+                  // Mark as complete after print dialog closes or prints
+                  setTimeout(() => {
+                    setPrintComplete(true);
+                    // Remove the iframe after printing
+                    document.body.removeChild(iframe);
+                  }, 500);
+                }
+              } catch (error) {
+                console.error("Error triggering print:", error);
+                // Remove the iframe if there's an error
                 document.body.removeChild(iframe);
+                setPrintComplete(true);
               }
-            }, 500);
-          }, 500);
-        };
-        
-        // Starte den Ladevorgang
-        document.body.appendChild(iframe);
+            }, printDelay || 1000);
+          };
+        } catch (error) {
+          console.error("Error preparing print:", error);
+          setPrintComplete(true);
+          toast({
+            title: language === 'de' ? 'Druckfehler' : 'Print Error',
+            description: language === 'de' ? 'Besucherausweis konnte nicht gedruckt werden' : 'Visitor badge could not be printed',
+            variant: "destructive"
+          });
+        }
       };
       
-      preparePrinting();
+      printBadgeInBackground();
     }
-  }, [visitor, navigate, enableAutomaticPrinting, id, printPreparing, printComplete]);
+  }, [visitor, navigate, enableAutomaticPrinting, id, printPreparing, printComplete, printDelay, language, toast]);
 
   // Countdown-Timer Effekt
   useEffect(() => {

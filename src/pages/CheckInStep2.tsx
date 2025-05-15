@@ -8,7 +8,7 @@ import NavButton from '@/components/NavButton';
 import HomeButton from '@/components/HomeButton';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { usePolicyStore } from '@/hooks/usePolicyStore';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
 import { useTranslation } from '@/locale/translations';
 import { usePrinterSettings } from '@/hooks/usePrinterSettings';
@@ -47,11 +47,12 @@ const CheckInStep2 = () => {
       setHasScrolledToBottom(true);
       toast({
         title: t('scrollComplete'),
-        description: t('signatureRequired'),
+        // Fix translation key - use a custom message instead of a nonexistent key
+        description: language === 'de' ? 'Bitte unterschreiben Sie unten' : 'Please sign below',
         variant: "default",
       });
     }
-  }, [hasScrolledToBottom, toast, t]);
+  }, [hasScrolledToBottom, toast, t, language]);
   
   // Handle signature change
   const handleSignatureChange = (signatureDataUrl: string | null) => {
@@ -81,10 +82,11 @@ const CheckInStep2 = () => {
     if (id) {
       acceptPolicy(id, signature);
       
-      // If automatic printing is enabled, navigate to badge print preview first
+      // If automatic printing is enabled, create a hidden iframe for printing
+      // but immediately redirect to success page
       if (enableAutomaticPrinting) {
-        // Navigate to the print badge page, which will trigger automatic printing
-        navigate(`/print-badge/${id}`);
+        // Create a new URL with a special parameter to trigger printing on the success page
+        navigate(`/checkin/step3/${id}?print=true`);
       } else {
         // Otherwise proceed to the success page as before
         navigate(`/checkin/step3/${id}`);
