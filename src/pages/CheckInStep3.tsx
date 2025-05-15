@@ -10,7 +10,7 @@ import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import { useTranslation } from '@/locale/translations';
 import { ArrowLeft, Timer } from 'lucide-react';
 import { ensureQRCodesLoaded } from '@/lib/qrCodeUtils';
-import { useToast } from '@/components/ui/toast';
+import { useToast } from '@/hooks/use-toast';
 
 const COUNTDOWN_SECONDS = 10; // 10 Sekunden Countdown
 
