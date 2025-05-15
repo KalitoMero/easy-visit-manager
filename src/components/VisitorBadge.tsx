@@ -34,6 +34,7 @@ const VisitorBadge = ({
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [qrCodeLoaded, setQrCodeLoaded] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   
   // Get badge layout settings
   const badgeLayout = usePrinterSettings(state => state.badgeLayout);
@@ -54,16 +55,31 @@ const VisitorBadge = ({
       
       setIsLoading(true);
       try {
+        console.log(`Loading QR code for visitor ${displayVisitorNumber}, attempt ${loadAttempt + 1}`);
         const dataUrl = await generateQRCodeDataUrl(checkoutEmailUrl, badgeLayout.qrCodeSize);
         if (isMounted) {
-          setQrCodeUrl(dataUrl);
+          if (dataUrl) {
+            console.log(`QR code loaded successfully for visitor ${displayVisitorNumber}`);
+            setQrCodeUrl(dataUrl);
+            setIsLoading(false);
+          } else {
+            console.error(`Failed to generate QR code for visitor ${displayVisitorNumber}`);
+            
+            // If loading fails and we haven't exceeded max attempts, try again
+            if (loadAttempt < 3) {
+              setTimeout(() => {
+                if (isMounted) {
+                  setLoadAttempt(prev => prev + 1);
+                }
+              }, 500);
+            } else {
+              setIsLoading(false);
+            }
+          }
         }
       } catch (error) {
-        console.error("Failed to generate QR code:", error);
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        console.error(`Failed to generate QR code for visitor ${displayVisitorNumber}:`, error);
+        setIsLoading(false);
       }
     };
     
@@ -72,7 +88,7 @@ const VisitorBadge = ({
     return () => {
       isMounted = false;
     };
-  }, [checkoutEmailUrl, badgeLayout.qrCodeSize]);
+  }, [checkoutEmailUrl, badgeLayout.qrCodeSize, displayVisitorNumber, loadAttempt]);
 
   // Handle QR code image load event
   const handleQrCodeLoaded = () => {
@@ -131,7 +147,7 @@ const VisitorBadge = ({
     <div className={cn(
       "visitor-badge bg-white border border-gray-300 rounded-md p-4 flex flex-col box-border",
       "max-h-[74mm] w-full overflow-hidden print:shadow-none",
-      "max-w-[105mm]", // Breiter machen, um den vollen horizontalen Platz zu nutzen
+      "max-w-[105mm]", // Make wider to use full horizontal space
       className
     )}>
       {/* Badge Header */}
@@ -206,7 +222,7 @@ const VisitorBadge = ({
       
       {/* Badge Footer */}
       <div className="badge-footer border-t pt-2 mt-auto" style={{ marginTop: `${Math.max(badgeLayout.footerSpacing, 2)}px` }}>
-        {/* Contact Information - immer anzeigen mit ausreichend Platz */}
+        {/* Contact Information - always display with enough space */}
         {badgeLayout.showContact && (
           <div className="contact text-sm truncate w-full mb-1">
             Contact: <span className="font-medium">{visitor.contact}</span>

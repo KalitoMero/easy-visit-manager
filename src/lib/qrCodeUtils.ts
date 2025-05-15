@@ -25,7 +25,8 @@ export async function generateQRCodeDataUrl(data: string, size: number = 140): P
       color: {
         dark: '#000000',
         light: '#FFFFFF'
-      }
+      },
+      errorCorrectionLevel: 'H' // Higher error correction for better scanning
     });
     
     console.log("QR code generated successfully");
@@ -42,17 +43,24 @@ export async function generateQRCodeDataUrl(data: string, size: number = 140): P
  * @param maxWaitTime Maximum time to wait in ms before timing out
  * @returns Promise that resolves when QR codes are loaded or timeout
  */
-export function ensureQRCodesLoaded(callback: () => void, maxWaitTime: number = 3000): Promise<boolean> {
+export function ensureQRCodesLoaded(callback: () => void, maxWaitTime: number = 5000): Promise<boolean> {
   return new Promise((resolve) => {
     // Track if QR codes are loaded
     const qrStatus = {
-      loaded: document.querySelectorAll('img[src^="data:image/png;base64"]').length > 0,
+      loaded: false,
       timeout: false
     };
 
+    // Check if QR codes are already in the DOM
+    const checkExistingQRCodes = () => {
+      const qrImages = document.querySelectorAll('img[src^="data:image/png;base64"]');
+      return qrImages.length > 0;
+    };
+
     // If already loaded, resolve immediately
-    if (qrStatus.loaded) {
+    if (checkExistingQRCodes()) {
       console.log("QR codes already loaded");
+      qrStatus.loaded = true;
       callback();
       resolve(true);
       return;
@@ -69,8 +77,7 @@ export function ensureQRCodesLoaded(callback: () => void, maxWaitTime: number = 
 
     // Observer to detect QR code images being added to the DOM
     const observer = new MutationObserver((mutations) => {
-      const qrImages = document.querySelectorAll('img[src^="data:image/png;base64"]');
-      if (qrImages.length > 0 && !qrStatus.timeout) {
+      if (checkExistingQRCodes() && !qrStatus.timeout) {
         console.log("QR codes detected in DOM");
         clearTimeout(timeoutId);
         observer.disconnect();
@@ -78,9 +85,10 @@ export function ensureQRCodesLoaded(callback: () => void, maxWaitTime: number = 
         // Add a small delay to ensure the QR code is fully rendered
         setTimeout(() => {
           console.log("QR codes fully loaded");
+          qrStatus.loaded = true;
           callback();
           resolve(true);
-        }, 300);
+        }, 500);
       }
     });
 
@@ -93,4 +101,3 @@ export function ensureQRCodesLoaded(callback: () => void, maxWaitTime: number = 
     });
   });
 }
-

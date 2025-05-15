@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
@@ -39,39 +40,40 @@ const BadgePrintPreview = () => {
   const printAttemptedRef = useRef(false);
   const printTimestamp = useRef(new Date()).current;
   const [qrCodesLoaded, setQrCodesLoaded] = useState(false);
+  const [qrLoadingAttempts, setQrLoadingAttempts] = useState(0);
   
   // Find the primary visitor
   const visitor = visitors.find(v => v.id === id);
 
   // Add global print styles to hide elements and control branding
   useEffect(() => {
-    // Erstelle ein style-Element für die Print-Styles
+    // Create style element for print styles
     const styleEl = document.createElement('style');
     styleEl.setAttribute('type', 'text/css');
     styleEl.textContent = `
       @media print {
-        /* Verstecke Standard-UI-Elemente beim Drucken */
+        /* Hide standard UI elements when printing */
         body * {
           visibility: hidden;
         }
         
-        /* Zeige nur die Badge-Container und deren Inhalte an */
+        /* Show only the badge container and its contents */
         .visitor-badge-container, .visitor-badge-container * {
           visibility: visible;
         }
 
-        /* Container direkt positionieren */
+        /* Direct container positioning */
         .visitor-badge-container {
           position: absolute;
           top: 0;
           left: 0;
           width: 105mm;
           height: 148mm;
-          padding-bottom: ${bottomMargin}mm; /* Unterer Rand anwendbar */
+          padding-bottom: ${bottomMargin}mm; /* Apply bottom margin */
           box-sizing: border-box;
         }
         
-        /* Kein Rand und kein Hintergrund beim Drucken */
+        /* No border or background when printing */
         .visitor-badge {
           border: none !important;
           box-shadow: none !important;
@@ -79,7 +81,7 @@ const BadgePrintPreview = () => {
           print-color-adjust: exact !important;
         }
 
-        /* Lovable/Edit-Branding verstecken */
+        /* Hide Lovable/Edit branding */
         .lovable-badge, 
         [data-lovable-badge="true"],
         #lovable-badge-root,
@@ -97,7 +99,7 @@ const BadgePrintPreview = () => {
           z-index: -9999 !important;
         }
 
-        /* Seiteneinstellungen für A6 */
+        /* Page settings for A6 */
         @page {
           size: 105mm 148mm;
           margin: 0;
@@ -105,53 +107,69 @@ const BadgePrintPreview = () => {
       }
     `;
     
-    // Füge die Styles zum Head hinzu
+    // Add styles to head
     document.head.appendChild(styleEl);
     
-    // Bereinigungsfunktion zum Entfernen der Styles
+    // Cleanup function to remove styles
     return () => {
       document.head.removeChild(styleEl);
     };
   }, [bottomMargin]);
 
-  // Handler für QR-Code-Ladeereignis
+  // QR code loading event handler
   const handleQRCodeLoaded = () => {
     console.log("QR code loaded successfully in component");
     setQrCodesLoaded(true);
   };
   
+  // Retry QR code generation if it fails
   useEffect(() => {
-    // Vermeidung mehrfacher Druckversuche und warten auf QR-Code Ladung
+    if (!qrCodesLoaded && qrLoadingAttempts < 3 && visitor) {
+      const timer = setTimeout(() => {
+        console.log(`QR code loading attempt ${qrLoadingAttempts + 1}`);
+        setQrLoadingAttempts(prev => prev + 1);
+        // Force re-render to try loading QR code again
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [qrCodesLoaded, qrLoadingAttempts, visitor]);
+  
+  useEffect(() => {
+    // Avoid multiple print attempts and wait for QR code to load
     if (visitor && !printAttemptedRef.current && enableAutomaticPrinting && qrCodesLoaded) {
       printAttemptedRef.current = true;
       
       const printBadge = async () => {
         try {
-          // Warten auf sichere QR-Code-Generierung
+          console.log("Starting print process - QR codes loaded:", qrCodesLoaded);
+          
+          // Wait for secure QR code generation with increased timeout
           await ensureQRCodesLoaded(() => {
-            console.log("QR codes confirmed loaded, proceeding with print");
-          });
+            console.log("QR codes confirmed loaded via ensureQRCodesLoaded, proceeding with print");
+          }, 5000);
           
           // Electron printing
           if (isElectron()) {
+            console.log("Using Electron printing API");
             const result = await window.electronAPI.printBadge({
               id: visitor.id,
               name: visitor.name,
               printerName: selectedPrinterName,
               printOptions: {
-                // Erste Badge-Position
+                // First badge position
                 rotation: badgeRotation,
                 offsetX: badgeOffsetX,
                 offsetY: badgeOffsetY,
-                // Zweite Badge-Position
+                // Second badge position
                 secondRotation: secondBadgeRotation,
                 secondOffsetX: secondBadgeOffsetX,
                 secondOffsetY: secondBadgeOffsetY,
-                // Unterer Rand
+                // Bottom margin
                 bottomMargin: bottomMargin
               },
               layoutOptions: badgeLayout, // Pass badge layout options to Electron
-              showBranding: showBrandingOnPrint // Branding-Option an Electron übergeben
+              showBranding: showBrandingOnPrint // Pass branding option to Electron
             });
             
             if (result.success) {
@@ -164,18 +182,19 @@ const BadgePrintPreview = () => {
               }, printDelay);
             }
           } else {
+            console.log("Using browser printing");
             // Browser printing
             const isKioskPrintingSupported = 
               window.navigator.userAgent.includes('Chrome') || 
               window.navigator.userAgent.includes('Chromium');
             
             if (printWithoutDialog && isKioskPrintingSupported) {
-              console.log('Kiosk-Druck wird initiiert...');
+              console.log('Initiating kiosk print...');
               window.print();
             } else {
-              // Fallback für den Fall, dass kein Kiosk-Modus aktiv ist
-              // oder der Nutzer möchte den Druckdialog sehen
-              console.log('Fallback-Druck mit Verzögerung wird initiiert...');
+              // Fallback if no kiosk mode is active
+              // or the user wants to see the print dialog
+              console.log('Initiating fallback print with delay...');
               const timer = setTimeout(() => {
                 window.print();
               }, printDelay);
@@ -198,7 +217,10 @@ const BadgePrintPreview = () => {
         }
       };
       
-      printBadge();
+      // Add a short delay before printing to ensure everything is rendered
+      setTimeout(() => {
+        printBadge();
+      }, 500);
     }
   }, [visitor, enableAutomaticPrinting, printWithoutDialog, printDelay, selectedPrinterName, 
       printCopies, badgeRotation, badgeOffsetX, badgeOffsetY, secondBadgeRotation, 
@@ -213,7 +235,7 @@ const BadgePrintPreview = () => {
     );
   }
   
-  // Für Gruppenbesucher, erstelle einen Ausweis für jeden Besucher
+  // For group visitors, create a badge for each visitor
   const hasAdditionalVisitors = visitor.additionalVisitors && visitor.additionalVisitors.length > 0;
   
   return (
@@ -238,7 +260,7 @@ const BadgePrintPreview = () => {
             top: '0',
             left: '0',
             width: '100%',
-            height: '74mm', /* Exakt die Hälfte von A6-Höhe */
+            height: '74mm', /* Exactly half of A6 height */
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
@@ -276,7 +298,7 @@ const BadgePrintPreview = () => {
             top: '74mm',
             left: '0',
             width: '100%',
-            height: '74mm', /* Exakt die Hälfte von A6-Höhe */
+            height: '74mm', /* Exactly half of A6 height */
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',

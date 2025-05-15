@@ -44,27 +44,30 @@ const SignaturePad: React.FC<SignaturePadProps> = ({
         
         // Clear canvas to white
         ctx.fillStyle = '#fff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillRect(0, 0, width, height);
       }
     }
   }, [width, height]);
 
-  // Get event coordinates relative to canvas
+  // Get event coordinates relative to canvas - FIXED FOR CORRECT SCALING
   const getCoordinates = (event: MouseEvent | TouchEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
 
     const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
     
     if ('touches' in event) {
+      // For touch events
       return {
-        x: event.touches[0].clientX - rect.left,
-        y: event.touches[0].clientY - rect.top
+        x: (event.touches[0].clientX - rect.left),
+        y: (event.touches[0].clientY - rect.top)
       };
     } else {
+      // For mouse events
       return {
-        x: event.clientX - rect.left,
-        y: event.clientY - rect.top
+        x: (event.clientX - rect.left),
+        y: (event.clientY - rect.top)
       };
     }
   };
@@ -122,13 +125,19 @@ const SignaturePad: React.FC<SignaturePadProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return false;
     
-    const pixelBuffer = new Uint32Array(
-      ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer
-    );
+    // Get image data with correct dimensions
+    const imageData = ctx.getImageData(0, 0, canvas.width / (window.devicePixelRatio || 1), canvas.height / (window.devicePixelRatio || 1));
+    const pixelData = imageData.data;
     
-    // Find a non-white pixel (white is 0xFFFFFFFF)
-    // We check if there's any drawing besides the white background
-    return pixelBuffer.some(color => color !== 0xFFFFFFFF && color !== 0);
+    // Check for non-white pixels (RGBA format: R=255, G=255, B=255, A=255 for white)
+    for (let i = 0; i < pixelData.length; i += 4) {
+      // If any pixel is not white (allowing for small variations)
+      if (pixelData[i] < 250 || pixelData[i + 1] < 250 || pixelData[i + 2] < 250) {
+        return true;
+      }
+    }
+    
+    return false;
   };
 
   // Clear signature
@@ -140,7 +149,7 @@ const SignaturePad: React.FC<SignaturePadProps> = ({
     if (!ctx) return;
 
     ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, width * (window.devicePixelRatio || 1), height * (window.devicePixelRatio || 1));
     
     setHasSignature(false);
     onChange(null);
