@@ -61,21 +61,38 @@ const SignaturePad: React.FC<SignaturePadProps> = ({
     if (!canvas) return { x: 0, y: 0 };
 
     const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
     
+    // Get the actual CSS width of the canvas element
+    const cssWidth = rect.width;
+    const cssHeight = rect.height;
+    
+    // Get the internal canvas width (which may be scaled by devicePixelRatio)
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+    
+    // Calculate the scale factor between CSS pixels and canvas pixels
+    const scaleX = canvasWidth / cssWidth;
+    const scaleY = canvasHeight / cssHeight;
+    
+    // Get the cursor position in CSS pixels
+    let x, y;
     if ('touches' in event) {
       // For touch events
-      return {
-        x: (event.touches[0].clientX - rect.left),
-        y: (event.touches[0].clientY - rect.top)
-      };
+      x = event.touches[0].clientX - rect.left;
+      y = event.touches[0].clientY - rect.top;
     } else {
       // For mouse events
-      return {
-        x: (event.clientX - rect.left),
-        y: (event.clientY - rect.top)
-      };
+      x = event.clientX - rect.left;
+      y = event.clientY - rect.top;
     }
+    
+    // Convert the position to canvas coordinates
+    // We divide by devicePixelRatio since the context is already scaled in the initialization
+    const dpr = window.devicePixelRatio || 1;
+    return {
+      x: x,
+      y: y
+    };
   };
 
   // Draw on canvas
@@ -131,8 +148,9 @@ const SignaturePad: React.FC<SignaturePadProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return false;
     
-    // Get image data with proper scaling
-    const imageData = ctx.getImageData(0, 0, canvas.width / (window.devicePixelRatio || 1), canvas.height / (window.devicePixelRatio || 1));
+    // Get image data, accounting for devicePixelRatio
+    const dpr = window.devicePixelRatio || 1;
+    const imageData = ctx.getImageData(0, 0, canvas.width / dpr, canvas.height / dpr);
     const pixelData = imageData.data;
     
     // Check for non-white pixels (RGBA format: R=255, G=255, B=255, A=255 for white)
