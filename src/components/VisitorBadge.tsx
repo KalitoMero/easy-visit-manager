@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Visitor } from '@/hooks/useVisitorStore';
 import { generateCheckoutEmailUrl, generateQRCodeDataUrl } from '@/lib/qrCodeUtils';
 import { QrCode, Mail, Calendar, Clock } from 'lucide-react';
@@ -35,6 +35,7 @@ const VisitorBadge = ({
   const [isLoading, setIsLoading] = useState(true);
   const [qrCodeLoaded, setQrCodeLoaded] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
+  const qrImgRef = useRef<HTMLImageElement>(null);
   
   // Get badge layout settings
   const badgeLayout = usePrinterSettings(state => state.badgeLayout);
@@ -66,7 +67,7 @@ const VisitorBadge = ({
             console.error(`Failed to generate QR code for visitor ${displayVisitorNumber}`);
             
             // If loading fails and we haven't exceeded max attempts, try again
-            if (loadAttempt < 3) {
+            if (loadAttempt < 5) { // Increased max attempts
               setTimeout(() => {
                 if (isMounted) {
                   setLoadAttempt(prev => prev + 1);
@@ -80,6 +81,15 @@ const VisitorBadge = ({
       } catch (error) {
         console.error(`Failed to generate QR code for visitor ${displayVisitorNumber}:`, error);
         setIsLoading(false);
+        
+        // Retry on error
+        if (loadAttempt < 5) { // Increased max attempts
+          setTimeout(() => {
+            if (isMounted) {
+              setLoadAttempt(prev => prev + 1);
+            }
+          }, 800);
+        }
       }
     };
     
@@ -198,6 +208,7 @@ const VisitorBadge = ({
                 title="Scan to open email for checkout"
               >
                 <img 
+                  ref={qrImgRef}
                   src={qrCodeUrl} 
                   alt={`QR Code for visitor ${displayVisitorNumber}`} 
                   className="object-contain"

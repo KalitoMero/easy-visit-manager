@@ -9,7 +9,7 @@ import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
 import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import { useTranslation } from '@/locale/translations';
-import { ArrowLeft, Timer } from 'lucide-react';
+import { ArrowLeft, Timer, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const COUNTDOWN_SECONDS = 10; // 10 Sekunden Countdown
@@ -36,10 +36,7 @@ const CheckInStep3 = () => {
   const visitor = visitors.find(v => v.id === id);
   
   useEffect(() => {
-    // Check if we need to print (from URL parameter)
-    const urlParams = new URLSearchParams(location.search);
-    const shouldPrint = urlParams.get('print') === 'true';
-    
+    // Ensure we have a visitor before proceeding
     if (!visitor) {
       console.error("Visitor not found with ID:", id);
       navigate('/');
@@ -70,16 +67,26 @@ const CheckInStep3 = () => {
       updateVisitor(visitor.id, { checkOutTime: null });
     }
     
-    // Handle navigation to print page - only if not already initiated
-    if (enableAutomaticPrinting && shouldPrint && !printInitiated) {
-      console.log("Redirecting to print preview page with automatic printing");
+    // This effect runs when the component mounts, so let's handle printing here
+    if (enableAutomaticPrinting && !printInitiated) {
+      console.log("Initiating automatic printing for visitor:", visitor.visitorNumber);
       setPrintInitiated(true);
       
-      // Navigate to print page instead of creating an iframe
-      // This will rely on the BadgePrintPreview component to handle the actual printing
-      navigate(`/print-badge/${visitor.id}`);
+      // Show a confirmation toast
+      toast({
+        title: language === 'de' ? "Besucherausweis wird gedruckt" : "Printing visitor badge",
+        description: language === 'de' 
+          ? `Besucherausweis für ${visitor.name} (${visitor.visitorNumber}) wird gedruckt` 
+          : `Printing visitor badge for ${visitor.name} (${visitor.visitorNumber})`,
+      });
+      
+      // Add a slight delay before navigating to ensure the UI updates are visible
+      setTimeout(() => {
+        // Navigate to print page with query param to trigger print
+        navigate(`/print-badge/${visitor.id}`);
+      }, 300);
     }
-  }, [visitor, navigate, updateVisitor, enableAutomaticPrinting, id, location, printInitiated]);
+  }, [visitor, navigate, updateVisitor, enableAutomaticPrinting, id, location, printInitiated, toast, language]);
 
   // Countdown-Timer Effekt
   useEffect(() => {
@@ -100,6 +107,21 @@ const CheckInStep3 = () => {
       return () => clearInterval(timer);
     }
   }, [visitor, navigate]);
+
+  // Manually print badge function
+  const handlePrintBadge = () => {
+    if (!visitor) return;
+    
+    toast({
+      title: language === 'de' ? "Druckvorgang gestartet" : "Print process started",
+      description: language === 'de' 
+        ? "Besucherausweis wird vorbereitet..." 
+        : "Visitor badge is being prepared...",
+    });
+    
+    // Redirect to print page
+    navigate(`/print-badge/${visitor.id}`);
+  };
   
   if (!visitor) {
     return null;
@@ -134,6 +156,17 @@ const CheckInStep3 = () => {
               <div className="text-sm text-muted-foreground">
                 {language === 'de' ? 'Besucherausweis wird gedruckt...' : 'Printing visitor badge...'}
               </div>
+            )}
+            
+            {enableAutomaticPrinting && !printInitiated && (
+              <Button 
+                onClick={handlePrintBadge}
+                variant="outline" 
+                className="mt-2"
+              >
+                <Printer className="h-4 w-4 mr-2" />
+                {language === 'de' ? 'Besucherausweis drucken' : 'Print visitor badge'}
+              </Button>
             )}
             
             <div className="pt-6 flex flex-col items-center justify-center">

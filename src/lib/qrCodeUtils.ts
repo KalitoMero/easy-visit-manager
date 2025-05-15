@@ -54,6 +54,7 @@ export function ensureQRCodesLoaded(callback: () => void, maxWaitTime: number = 
     // Check if QR codes are already in the DOM
     const checkExistingQRCodes = () => {
       const qrImages = document.querySelectorAll('img[src^="data:image/png;base64"]');
+      console.log(`Found ${qrImages.length} QR code images in DOM`);
       return qrImages.length > 0;
     };
 
@@ -88,16 +89,17 @@ export function ensureQRCodesLoaded(callback: () => void, maxWaitTime: number = 
           qrStatus.loaded = true;
           callback();
           resolve(true);
-        }, 500);
+        }, 800); // Increased delay to ensure full rendering
       }
     });
 
-    // Start observing the document
+    // Start observing the document with expanded options
     observer.observe(document.body, {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['src']
+      attributeFilter: ['src'],
+      characterData: true
     });
   });
 }
