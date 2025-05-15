@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,10 +13,12 @@ import { useLanguageStore } from '@/hooks/useLanguageStore';
 import { useTranslation } from '@/locale/translations';
 import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import { ArrowLeft, ArrowDown } from 'lucide-react';
+import SignaturePad from '@/components/SignaturePad';
 
 const CheckInStep2 = () => {
   const { id } = useParams<{ id: string }>();
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
+  const [signature, setSignature] = useState<string | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -44,11 +47,16 @@ const CheckInStep2 = () => {
       setHasScrolledToBottom(true);
       toast({
         title: t('scrollComplete'),
-        description: t('policyCheckboxEnabled'),
+        description: t('signatureRequired'),
         variant: "default",
       });
     }
   }, [hasScrolledToBottom, toast, t]);
+  
+  // Handle signature change
+  const handleSignatureChange = (signatureDataUrl: string | null) => {
+    setSignature(signatureDataUrl);
+  };
   
   if (!visitor) {
     return (
@@ -69,9 +77,9 @@ const CheckInStep2 = () => {
   }
 
   const handleContinue = () => {
-    // Accept policy
+    // Accept policy with signature
     if (id) {
-      acceptPolicy(id);
+      acceptPolicy(id, signature);
       
       // If automatic printing is enabled, navigate to badge print preview first
       if (enableAutomaticPrinting) {
@@ -123,6 +131,20 @@ const CheckInStep2 = () => {
               </div>
             )}
             
+            {/* Signature area - only show after scrolling to bottom */}
+            {hasScrolledToBottom && (
+              <div className="mt-6 space-y-4">
+                <h3 className="text-lg font-medium">
+                  {language === 'de' ? 'Bitte unterschreiben Sie hier:' : 'Please sign here:'}
+                </h3>
+                <SignaturePad 
+                  onChange={handleSignatureChange} 
+                  width={window.innerWidth > 768 ? 400 : window.innerWidth - 80}
+                  height={200}
+                />
+              </div>
+            )}
+            
             <div className="pt-6 flex justify-between items-center">
               <NavButton 
                 to="/checkin/step1" 
@@ -137,7 +159,7 @@ const CheckInStep2 = () => {
               <Button 
                 onClick={handleContinue}
                 className="px-8 py-6 text-lg transition-all duration-300 hover:scale-105 ml-auto"
-                disabled={!hasScrolledToBottom}
+                disabled={!hasScrolledToBottom || !signature}
               >
                 {t('acceptAndContinue')}
               </Button>

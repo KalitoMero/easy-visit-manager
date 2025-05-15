@@ -19,6 +19,7 @@ export type Visitor = {
   additionalVisitorCount: number;
   notes?: string;
   policyAccepted?: boolean;
+  signature?: string | null; // Signatur als Base64-String
 };
 
 type DeletionSchedule = {
@@ -42,7 +43,7 @@ type VisitorStore = {
   deleteVisitor: (id: string) => void;
   clearVisitors: () => void;
   searchVisitors: (query: string) => Visitor[];
-  acceptPolicy: (id: string) => void;
+  acceptPolicy: (id: string, signature?: string | null) => void;
   updateDeletionSchedule: (enabled: boolean, dayOfWeek: number, hour: number, minute: number) => void;
   deleteOldVisitors: () => number;
   performScheduledCheckout: () => void;
@@ -143,10 +144,10 @@ export const useVisitorStore = create<VisitorStore>()(
         }));
       },
       
-      acceptPolicy: (id) => {
+      acceptPolicy: (id, signature = null) => {
         set((state) => ({
           visitors: state.visitors.map((visitor) =>
-            visitor.id === id ? { ...visitor, policyAccepted: true } : visitor
+            visitor.id === id ? { ...visitor, policyAccepted: true, signature } : visitor
           ),
         }));
       },

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,16 +26,23 @@ const CheckInStep3 = () => {
   // Countdown Timer
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
   const [printPreparing, setPrintPreparing] = useState(false);
+  const [printComplete, setPrintComplete] = useState(false);
   
   // Find the current visitor
   const visitor = visitors.find(v => v.id === id);
   
   useEffect(() => {
+    // Check if we arrived from print-badge page and set print as complete
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('fromPrint') === 'true') {
+      setPrintComplete(true);
+    }
+    
     if (!visitor) {
       navigate('/');
     } else if (!visitor.policyAccepted) {
       navigate(`/checkin/step2/${id}`);
-    } else if (enableAutomaticPrinting && !printPreparing) {
+    } else if (enableAutomaticPrinting && !printPreparing && !printComplete) {
       // Markiere als in Vorbereitung
       setPrintPreparing(true);
       
@@ -52,22 +60,25 @@ const CheckInStep3 = () => {
           // QR-Code-Ladung in iframe prüfen und warten
           setTimeout(() => {
             document.body.appendChild(iframe);
+            
+            // Nach kurzer Verzögerung als abgeschlossen markieren
+            setTimeout(() => {
+              setPrintComplete(true);
+              // Entferne den iframe wieder
+              if (document.body.contains(iframe)) {
+                document.body.removeChild(iframe);
+              }
+            }, 500);
           }, 500);
         };
         
         // Starte den Ladevorgang
         document.body.appendChild(iframe);
-        
-        return () => {
-          if (document.body.contains(iframe)) {
-            document.body.removeChild(iframe);
-          }
-        };
       };
       
       preparePrinting();
     }
-  }, [visitor, navigate, enableAutomaticPrinting, id, printPreparing]);
+  }, [visitor, navigate, enableAutomaticPrinting, id, printPreparing, printComplete]);
 
   // Countdown-Timer Effekt
   useEffect(() => {
@@ -105,7 +116,7 @@ const CheckInStep3 = () => {
           <CardContent className="space-y-6">
             <div className="py-8">
               <p className="text-xl mb-8">
-                {t('pleaseNote')}
+                {language === 'de' ? 'Ihre Besuchernummer lautet:' : 'Your visitor number is:'}
               </p>
               <div className="text-7xl font-bold text-primary py-4">
                 {visitor.visitorNumber}
@@ -114,7 +125,7 @@ const CheckInStep3 = () => {
             
             <Card className="bg-primary/10 border-primary/30 p-4">
               <p className="text-lg">
-                {t('contactInfo')} <strong>{visitor.contact}</strong> {language === 'de' ? 'über Ihre Ankunft.' : 'about your arrival.'}
+                {language === 'de' ? 'Wir informieren Ihren Ansprechpartner' : 'We will inform your contact person'} <strong>{visitor.contact}</strong> {language === 'de' ? 'über Ihre Ankunft.' : 'about your arrival.'}
               </p>
             </Card>
             
