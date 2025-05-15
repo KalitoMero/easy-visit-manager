@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -28,59 +29,59 @@ const SignaturePad: React.FC<SignaturePadProps> = ({
     if (canvas) {
       const ctx = canvas.getContext('2d');
       if (ctx) {
+        // Set basic drawing properties
         ctx.lineWidth = 3;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.strokeStyle = '#000';
         
-        // Set the canvas dimensions correctly
+        // Get the DPR once
         const dpr = window.devicePixelRatio || 1;
         
-        // Set the display size (CSS) to match the desired width/height
+        // Set the display size (CSS)
         canvas.style.width = `${width}px`;
         canvas.style.height = `${height}px`;
         
-        // Set the actual canvas dimensions accounting for DPR
-        canvas.width = width * dpr;
-        canvas.height = height * dpr;
+        // Adjust for high DPI displays for sharpness
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
         
-        // Scale the context to handle the high DPR
+        // Scale once during initialization
         ctx.scale(dpr, dpr);
         
         // Clear canvas to white
         ctx.fillStyle = '#fff';
         ctx.fillRect(0, 0, width, height);
+        
+        // Log the actual dimensions for debugging
+        console.log(`Canvas initialized: CSS size ${width}x${height}, actual size ${canvas.width}x${canvas.height}, DPR: ${dpr}`);
       }
     }
   }, [width, height]);
 
-  // Get event coordinates relative to canvas - CORRECTED FOR PROPER SCALING
+  // Get correct event coordinates relative to canvas
   const getCoordinates = (event: MouseEvent | TouchEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
 
     const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
     
-    // Calculate the scale factor between canvas dimensions and displayed dimensions
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    
-    // Get the cursor position in CSS pixels
     let clientX, clientY;
     if ('touches' in event) {
-      // For touch events
       clientX = event.touches[0].clientX - rect.left;
       clientY = event.touches[0].clientY - rect.top;
     } else {
-      // For mouse events
       clientX = event.clientX - rect.left;
       clientY = event.clientY - rect.top;
     }
     
-    // Apply scaling factor to get accurate canvas coordinates
+    // FIXED: Convert correctly to canvas coordinates
+    // Since we scaled the context by dpr during initialization,
+    // we need to work in CSS pixels now (not multiply by dpr again)
     return {
-      x: clientX * scaleX / (window.devicePixelRatio || 1),
-      y: clientY * scaleY / (window.devicePixelRatio || 1)
+      x: clientX,
+      y: clientY
     };
   };
 
@@ -137,8 +138,10 @@ const SignaturePad: React.FC<SignaturePadProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return false;
     
-    // Get image data, accounting for devicePixelRatio
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    // Get image data - make sure we're checking the entire canvas
+    const dpr = window.devicePixelRatio || 1;
+    // Use width and height values that match the area we're drawing on
+    const imageData = ctx.getImageData(0, 0, width, height);
     const pixelData = imageData.data;
     
     // Check for non-white pixels (RGBA format: R=255, G=255, B=255, A=255 for white)
@@ -181,7 +184,7 @@ const SignaturePad: React.FC<SignaturePadProps> = ({
           onTouchMove={draw}
           onTouchEnd={stopDrawing}
           className="cursor-crosshair touch-none"
-          style={{ width: '100%', height }}
+          style={{ width: '100%', maxWidth: '100%' }}
         />
         {!hasSignature && (
           <div className="absolute inset-0 flex items-center justify-center text-gray-400 pointer-events-none">
