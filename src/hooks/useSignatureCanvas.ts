@@ -28,25 +28,24 @@ export const useSignatureCanvas = ({
         ctx.lineJoin = 'round';
         ctx.strokeStyle = '#000';
         
-        // Get the DPR once
+        // Get the DPR
         const dpr = window.devicePixelRatio || 1;
         
         // Set the display size (CSS)
         canvas.style.width = `${width}px`;
         canvas.style.height = `${height}px`;
         
-        // Adjust for high DPI displays for sharpness
+        // Set the actual dimensions of the canvas
         canvas.width = Math.floor(width * dpr);
         canvas.height = Math.floor(height * dpr);
         
-        // Scale once during initialization
-        ctx.scale(dpr, dpr);
+        // Note: Removed ctx.scale(dpr, dpr) to prevent double scaling
+        // Instead, we'll handle the scaling in the coordinate translation
         
         // Clear canvas to white
         ctx.fillStyle = '#fff';
-        ctx.fillRect(0, 0, width, height);
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Log the actual dimensions for debugging
         console.log(`Canvas initialized: CSS size ${width}x${height}, actual size ${canvas.width}x${canvas.height}, DPR: ${dpr}`);
       }
     }
@@ -62,20 +61,18 @@ export const useSignatureCanvas = ({
     
     let clientX, clientY;
     if ('touches' in event) {
-      clientX = event.touches[0].clientX - rect.left;
-      clientY = event.touches[0].clientY - rect.top;
+      clientX = event.touches[0].clientX;
+      clientY = event.touches[0].clientY;
     } else {
-      clientX = event.clientX - rect.left;
-      clientY = event.clientY - rect.top;
+      clientX = event.clientX;
+      clientY = event.clientY;
     }
     
-    // Convert correctly to canvas coordinates
-    // Since we scaled the context by dpr during initialization,
-    // we need to work in CSS pixels now (not multiply by dpr again)
-    return {
-      x: clientX,
-      y: clientY
-    };
+    // Translate coordinates with proper scaling for high-DPI displays
+    const x = (clientX - rect.left) * (canvas.width / rect.width);
+    const y = (clientY - rect.top) * (canvas.height / rect.height);
+    
+    return { x, y };
   };
 
   // Check if canvas has signature data
@@ -86,10 +83,8 @@ export const useSignatureCanvas = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return false;
     
-    // Get image data - make sure we're checking the entire canvas
-    const dpr = window.devicePixelRatio || 1;
-    // Use width and height values that match the area we're drawing on
-    const imageData = ctx.getImageData(0, 0, width, height);
+    // Check the entire canvas area
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const pixelData = imageData.data;
     
     // Check for non-white pixels (RGBA format: R=255, G=255, B=255, A=255 for white)
@@ -161,7 +156,7 @@ export const useSignatureCanvas = ({
 
     // Clear with proper dimensions
     ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, width, height);
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     setHasSignature(false);
     onSignatureChange(null);
