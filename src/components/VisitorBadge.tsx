@@ -145,30 +145,32 @@ const VisitorBadge = ({
 
   return (
     <div className={cn(
-      "visitor-badge bg-white border border-gray-300 rounded-md p-4 flex flex-col box-border",
+      "visitor-badge bg-white border border-gray-300 rounded-md p-2 flex flex-col box-border",
       "max-h-[74mm] overflow-hidden print:shadow-none",
       "w-full print:w-[105mm]", // Ensure full width usage for print
+      "print:h-[74mm] print:max-h-[74mm]", // Optimize height for print
+      "print:p-1", // Reduce padding when printing
       className
     )}>
-      {/* Badge Header */}
-      <div className="badge-header border-b pb-2 text-center">
+      {/* Badge Header - Reduced padding */}
+      <div className="badge-header border-b pb-1 pt-0 text-center">
         <div className={`font-bold ${titleFontClass}`}>VISITOR</div>
       </div>
       
       {/* Badge Content - Main area with visitor info and QR code */}
       <div className={cn(
-        "badge-content flex-1 py-3", 
+        "badge-content flex-1 py-1", // Reduced vertical padding
         qrPosition === 'center' ? "flex flex-col items-center" : "flex justify-between items-center"
       )}>
         {/* Left column - Visitor information */}
         <div className={cn(
-          "visitor-info flex flex-col justify-center py-2 gap-2",
-          qrPosition === 'center' ? "mb-4 w-full items-center" : "flex-1 items-center"
+          "visitor-info flex flex-col justify-center py-1 gap-1", // Reduced gap and padding
+          qrPosition === 'center' ? "mb-2 w-full items-center" : "flex-1 items-center"
         )}>
-          <div className="visitor-number text-5xl font-bold text-primary mb-2">
+          <div className="visitor-number text-5xl font-bold text-primary mb-1">
             {displayVisitorNumber}
           </div>
-          <div className="salutation text-sm text-muted-foreground mb-1">
+          <div className="salutation text-sm text-muted-foreground">
             Mr. / Mrs.
           </div>
           <div className={`name font-bold ${nameFontClass} truncate max-w-full text-center`}>
@@ -182,9 +184,9 @@ const VisitorBadge = ({
         {/* QR code section */}
         <div className={cn(
           "qr-code-section flex flex-col items-center",
-          qrPosition === 'center' ? "w-full" : "ml-3"
+          qrPosition === 'center' ? "w-full" : "ml-2" // Reduced margin
         )}>
-          <div className="qr-code-container flex items-center justify-center p-2 border border-gray-200 rounded-lg print:border-0 bg-white">
+          <div className="qr-code-container flex items-center justify-center p-1 border border-gray-200 rounded-lg print:border-0 bg-white">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center w-24 h-24 bg-gray-100 rounded animate-pulse print:hidden">
                 <QrCode className="w-10 h-10 text-gray-300" />
@@ -206,24 +208,24 @@ const VisitorBadge = ({
             ) : (
               <div className="flex flex-col items-center justify-center w-24 h-24 bg-gray-100 rounded print:bg-transparent">
                 <QrCode className="w-10 h-10 text-gray-400" />
-                <div className="text-xs text-center mt-2 text-gray-500">
+                <div className="text-xs text-center mt-1 text-gray-500">
                   QR code unavailable
                 </div>
               </div>
             )}
           </div>
           
-          <div className="text-xs text-center mt-2">
+          <div className="text-xs text-center mt-1"> {/* Reduced margin */}
             <p className="font-bold">Scan to checkout</p>
           </div>
         </div>
       </div>
       
       {/* Badge Footer */}
-      <div className="badge-footer border-t pt-2 mt-auto" style={{ marginTop: `${Math.max(badgeLayout.footerSpacing, 2)}px` }}>
+      <div className="badge-footer border-t pt-1 mt-auto"> {/* Reduced top padding */}
         {/* Contact Information - always display with enough space */}
         {badgeLayout.showContact && (
-          <div className="contact text-sm truncate w-full mb-1">
+          <div className="contact text-sm truncate w-full">
             Contact: <span className="font-medium">{visitor.contact}</span>
           </div>
         )}

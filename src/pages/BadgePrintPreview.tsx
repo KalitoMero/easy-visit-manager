@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
@@ -85,10 +86,27 @@ const BadgePrintPreview = () => {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
           width: 105mm !important; /* Full width usage */
-          padding: 3mm !important; /* Small inner padding to prevent content being cut off */
+          padding: 1mm !important; /* Minimal inner padding to prevent content being cut off */
           box-sizing: border-box !important;
           overflow: visible !important;
           margin: 0 !important;
+          height: 74mm !important; /* Exactly half of A6 height */
+          max-height: 74mm !important;
+          display: flex !important;
+          flex-direction: column !important;
+          justify-content: space-between !important;
+        }
+
+        /* Maximize space usage for content */
+        .badge-content {
+          flex: 1 !important;
+          display: flex !important;
+          justify-content: space-between !important;
+        }
+
+        /* Minimize spacing for header and footer */
+        .badge-header, .badge-footer {
+          padding: 0.5mm 0 !important;
         }
 
         /* Hide Lovable/Edit branding */
@@ -270,6 +288,7 @@ const BadgePrintPreview = () => {
             <div style={{
               transform: `translate(${badgeOffsetX}mm, ${badgeOffsetY}mm) rotate(${badgeRotation}deg)`,
               width: '100%',
+              height: '100%',
               maxHeight: '74mm',
               boxSizing: 'border-box'
             }}>
@@ -277,7 +296,7 @@ const BadgePrintPreview = () => {
                 visitor={visitor} 
                 printTimestamp={printTimestamp}
                 qrPosition={badgeLayout.qrCodePosition || 'right'}
-                className="print-badge w-full"
+                className="print-badge w-full h-full"
                 onQRCodeLoaded={handleQRCodeLoaded}
               />
             </div>
@@ -310,6 +329,7 @@ const BadgePrintPreview = () => {
             <div style={{
               transform: `translate(${secondBadgeOffsetX}mm, ${secondBadgeOffsetY}mm) rotate(${secondBadgeRotation}deg)`,
               width: '100%',
+              height: '100%',
               maxHeight: '74mm',
               boxSizing: 'border-box'
             }}>
@@ -317,7 +337,7 @@ const BadgePrintPreview = () => {
                 visitor={visitor} 
                 printTimestamp={printTimestamp}
                 qrPosition={badgeLayout.qrCodePosition || 'right'}
-                className="print-badge w-full"
+                className="print-badge w-full h-full"
                 onQRCodeLoaded={handleQRCodeLoaded}
               />
             </div>
@@ -355,14 +375,14 @@ const BadgePrintPreview = () => {
                 transition: 'transform 0.2s ease-in-out',
                 scale: '0.7',
                 width: '100%',
-                maxHeight: '74mm',
+                height: '100%',
                 boxSizing: 'border-box'
               }}>
                 <VisitorBadge 
                   visitor={visitor} 
                   printTimestamp={printTimestamp}
                   qrPosition={badgeLayout.qrCodePosition || 'right'}
-                  className="w-full"
+                  className="w-full h-full"
                   onQRCodeLoaded={handleQRCodeLoaded}
                 />
               </div>
@@ -395,14 +415,14 @@ const BadgePrintPreview = () => {
                 transition: 'transform 0.2s ease-in-out',
                 scale: '0.7',
                 width: '100%',
-                maxHeight: '74mm',
+                height: '100%',
                 boxSizing: 'border-box'
               }}>
                 <VisitorBadge 
                   visitor={visitor} 
                   printTimestamp={printTimestamp}
                   qrPosition={badgeLayout.qrCodePosition || 'right'}
-                  className="w-full"
+                  className="w-full h-full"
                   onQRCodeLoaded={handleQRCodeLoaded}
                 />
               </div>
