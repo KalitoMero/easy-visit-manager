@@ -19,7 +19,7 @@ const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
   placeholderText
 }) => {
   return (
-    <div className="relative">
+    <div className="relative w-full h-full">
       <canvas
         ref={canvasRef}
         onMouseDown={startDrawing}
@@ -29,8 +29,7 @@ const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
         onTouchStart={startDrawing}
         onTouchMove={draw}
         onTouchEnd={stopDrawing}
-        className="cursor-crosshair touch-none"
-        style={{ width: '100%', maxWidth: '100%' }}
+        className="cursor-crosshair touch-none w-full h-full"
       />
       {!hasSignature && (
         <div className="absolute inset-0 flex items-center justify-center text-gray-400 pointer-events-none">
