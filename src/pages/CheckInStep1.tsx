@@ -111,7 +111,8 @@ const CheckInStep1: React.FC = () => {
       <HomeButton />
       
       <div className="page-container">
-        <Card className="mx-auto max-w-2xl">
+        {/* Make form 20% wider with w-[120%] class */}
+        <Card className="mx-auto max-w-3xl w-[120%]">
           <CardHeader>
             <CardTitle className="text-center text-2xl">
               {t('selfCheckInTitle')}
@@ -121,7 +122,7 @@ const CheckInStep1: React.FC = () => {
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {/* Add Additional Visitor Button - New position above name field */}
+                {/* Add Additional Visitor Button */}
                 <div className="flex justify-end mb-2">
                   <Button
                     type="button"
@@ -135,30 +136,58 @@ const CheckInStep1: React.FC = () => {
                   </Button>
                 </div>
                 
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-lg">
-                        {t('lastName')} 
-                        <span className="text-sm text-muted-foreground ml-2">
-                          ({language === 'de' ? 'Herr / Frau' : 'Mr. / Mrs.'})
-                        </span>
-                      </FormLabel>
-                      <FormControl>
-                        <Input 
-                          autoFocus
-                          placeholder={t('lastName')} 
-                          {...field} 
-                          className="text-lg h-12" 
-                          autoComplete="off"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Two column layout for name and company */}
+                <div className="flex flex-col md:flex-row gap-4">
+                  {/* Name field - half width */}
+                  <div className="md:w-1/2">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-lg">
+                            {t('lastName')} 
+                            <span className="text-sm text-muted-foreground ml-2">
+                              ({language === 'de' ? 'Herr / Frau' : 'Mr. / Mrs.'})
+                            </span>
+                          </FormLabel>
+                          <FormControl>
+                            <Input 
+                              autoFocus
+                              placeholder={t('lastName')} 
+                              {...field} 
+                              className="text-lg h-12" 
+                              autoComplete="off"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  {/* Company field - half width */}
+                  <div className="md:w-1/2">
+                    <FormField
+                      control={form.control}
+                      name="company"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-lg">{t('company')}</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder={t('company')} 
+                              {...field} 
+                              className="text-lg h-12" 
+                              autoComplete="off"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
                 
                 {/* Zusätzliche Besucher */}
                 {additionalVisitors.map((visitor, index) => (
@@ -189,25 +218,7 @@ const CheckInStep1: React.FC = () => {
                   </div>
                 ))}
                 
-                <FormField
-                  control={form.control}
-                  name="company"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-lg">{t('company')}</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder={t('company')} 
-                          {...field} 
-                          className="text-lg h-12" 
-                          autoComplete="off"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
+                {/* Contact person field */}
                 <FormField
                   control={form.control}
                   name="contact"

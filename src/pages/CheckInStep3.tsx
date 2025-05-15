@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +10,7 @@ import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import { useTranslation } from '@/locale/translations';
 import { ArrowLeft, Timer } from 'lucide-react';
 import { ensureQRCodesLoaded } from '@/lib/qrCodeUtils';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/components/ui/toast';
 
 const COUNTDOWN_SECONDS = 10; // 10 Sekunden Countdown
 
@@ -88,10 +87,10 @@ const CheckInStep3 = () => {
           iframe.style.position = 'absolute';
           iframe.style.left = '-9999px';
           iframe.style.top = '-9999px';
-          iframe.style.width = '500px';  // Wider iframe for debugging
-          iframe.style.height = '500px'; // Taller iframe for debugging
+          iframe.style.width = '500px';
+          iframe.style.height = '500px';
           iframe.style.border = 'none';
-          iframe.style.visibility = 'hidden'; // Hide it but keep it in the DOM
+          iframe.style.visibility = 'hidden';
           iframe.src = `/print-badge/${visitor.id}`;
           
           // Add the iframe to the document
@@ -130,8 +129,8 @@ const CheckInStep3 = () => {
                   // Remove the iframe if there's an error
                   document.body.removeChild(iframe);
                 }
-              }, Math.max(printDelay, 2000)); // Ensure at least 2 seconds for rendering
-            }, 7000); // Increase timeout to 7 seconds for QR codes
+              }, Math.max(printDelay, 2000));
+            }, 7000);
           };
           
           // Handle iframe loading errors

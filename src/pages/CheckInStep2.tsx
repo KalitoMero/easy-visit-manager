@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -133,7 +132,19 @@ const CheckInStep2 = () => {
       
       <div className="page-container">
         <Card className="border-0 shadow-none bg-transparent">
-          <CardHeader className="text-center">
+          <CardHeader className="text-center relative pb-2">
+            {/* Moved back button to top left corner */}
+            <div className="absolute left-0 top-0">
+              <NavButton 
+                to="/checkin/step1" 
+                position="left" 
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft size={16} />
+                {t('back')}
+              </NavButton>
+            </div>
             <CardTitle className="text-3xl font-bold">{t('visitorPolicy')}</CardTitle>
           </CardHeader>
           <CardContent>
@@ -168,41 +179,34 @@ const CheckInStep2 = () => {
             
             {/* Signature area - only show after scrolling to bottom */}
             {hasScrolledToBottom && (
-              <div className="mt-6 space-y-4">
-                <h3 className="text-lg font-medium">
-                  {language === 'de' ? 'Bitte unterschreiben Sie hier:' : 'Please sign here:'}
-                </h3>
-                <SignaturePad 
-                  onChange={handleSignatureChange} 
-                  width={window.innerWidth > 768 ? 400 : window.innerWidth - 80}
-                  height={200}
-                />
+              <div className="mt-6 flex flex-col md:flex-row gap-6">
+                <div className="flex-1">
+                  <h3 className="text-lg font-medium mb-4">
+                    {language === 'de' ? 'Bitte unterschreiben Sie hier:' : 'Please sign here:'}
+                  </h3>
+                  <SignaturePad 
+                    onChange={handleSignatureChange} 
+                    width={window.innerWidth > 768 ? 400 : window.innerWidth - 80}
+                    height={200}
+                  />
+                </div>
+                
+                {/* Buttons placed to the right of signature pad */}
+                <div className="flex flex-col justify-center gap-4">
+                  <Button 
+                    onClick={handleContinue}
+                    className="px-6 py-6 text-lg transition-all duration-300 hover:scale-105"
+                    disabled={!hasScrolledToBottom || !signature || isProcessing}
+                  >
+                    {isProcessing ? (
+                      language === 'de' ? 'Verarbeitung...' : 'Processing...'
+                    ) : (
+                      t('acceptAndContinue')
+                    )}
+                  </Button>
+                </div>
               </div>
             )}
-            
-            <div className="pt-6 flex justify-between items-center">
-              <NavButton 
-                to="/checkin/step1" 
-                position="left" 
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft size={16} />
-                {t('back')}
-              </NavButton>
-              
-              <Button 
-                onClick={handleContinue}
-                className="px-8 py-6 text-lg transition-all duration-300 hover:scale-105 ml-auto"
-                disabled={!hasScrolledToBottom || !signature || isProcessing}
-              >
-                {isProcessing ? (
-                  language === 'de' ? 'Verarbeitung...' : 'Processing...'
-                ) : (
-                  t('acceptAndContinue')
-                )}
-              </Button>
-            </div>
           </CardContent>
         </Card>
       </div>

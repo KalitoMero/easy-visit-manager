@@ -50,7 +50,7 @@ const SignaturePad: React.FC<SignaturePadProps> = ({
         />
       </Card>
       
-      <div className="flex justify-between">
+      <div className="flex justify-start">
         <Button 
           type="button" 
           variant="outline" 

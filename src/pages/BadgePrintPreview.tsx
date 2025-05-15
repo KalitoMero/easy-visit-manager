@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
@@ -138,6 +137,7 @@ const BadgePrintPreview = () => {
   useEffect(() => {
     // Avoid multiple print attempts and wait for QR code to load
     if (visitor && !printAttemptedRef.current && enableAutomaticPrinting && qrCodesLoaded) {
+      // Mark as attempted immediately to prevent duplicate printing
       printAttemptedRef.current = true;
       
       const printBadge = async () => {
