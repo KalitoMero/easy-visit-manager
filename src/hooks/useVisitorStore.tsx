@@ -20,6 +20,7 @@ export type Visitor = {
   notes?: string;
   policyAccepted?: boolean;
   signature?: string | null; // Signatur als Base64-String
+  badgePdfUrl?: string; // URL to the generated PDF badge
 };
 
 type DeletionSchedule = {

@@ -11,6 +11,7 @@ import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import { useTranslation } from '@/locale/translations';
 import { ArrowLeft, Timer, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { generateVisitorBadgePdf, printPdf } from '@/lib/pdfBadgeGenerator';
 
 const COUNTDOWN_SECONDS = 10; // 10 Sekunden Countdown
 
@@ -67,9 +68,9 @@ const CheckInStep3 = () => {
       updateVisitor(visitor.id, { checkOutTime: null });
     }
     
-    // This effect runs when the component mounts, so let's handle printing here
-    if (enableAutomaticPrinting && !printInitiated) {
-      console.log("Initiating automatic printing for visitor:", visitor.visitorNumber);
+    // Handle automatic printing (with PDF generation)
+    if (enableAutomaticPrinting && !printInitiated && visitor.policyAccepted) {
+      console.log("Initiating automatic PDF printing for visitor:", visitor.visitorNumber);
       setPrintInitiated(true);
       
       // Show a confirmation toast
@@ -80,11 +81,25 @@ const CheckInStep3 = () => {
           : `Printing visitor badge for ${visitor.name} (${visitor.visitorNumber})`,
       });
       
-      // Add a slight delay before navigating to ensure the UI updates are visible
-      setTimeout(() => {
-        // Navigate to print page with query param to trigger print
-        navigate(`/print-badge/${visitor.id}`);
-      }, 300);
+      // Generate and print PDF badge
+      generateVisitorBadgePdf(visitor).then(({ pdfBlob, pdfUrl }) => {
+        // Save PDF URL to visitor record
+        updateVisitor(visitor.id, { badgePdfUrl: pdfUrl });
+        
+        // Print the PDF
+        setTimeout(() => {
+          printPdf(pdfUrl);
+        }, 300);
+      }).catch(error => {
+        console.error("Error generating PDF badge:", error);
+        toast({
+          title: language === 'de' ? "Fehler beim Drucken" : "Printing Error",
+          description: language === 'de' 
+            ? "Besucherausweis konnte nicht erstellt werden." 
+            : "Could not generate visitor badge.",
+          variant: "destructive"
+        });
+      });
     }
   }, [visitor, navigate, updateVisitor, enableAutomaticPrinting, id, location, printInitiated, toast, language]);
 
@@ -109,7 +124,7 @@ const CheckInStep3 = () => {
   }, [visitor, navigate]);
 
   // Manually print badge function
-  const handlePrintBadge = () => {
+  const handlePrintBadge = async () => {
     if (!visitor) return;
     
     toast({
@@ -119,8 +134,25 @@ const CheckInStep3 = () => {
         : "Visitor badge is being prepared...",
     });
     
-    // Redirect to print page
-    navigate(`/print-badge/${visitor.id}`);
+    try {
+      // Generate PDF badge
+      const { pdfBlob, pdfUrl } = await generateVisitorBadgePdf(visitor);
+      
+      // Save PDF URL to visitor record
+      updateVisitor(visitor.id, { badgePdfUrl: pdfUrl });
+      
+      // Print the PDF
+      printPdf(pdfUrl);
+    } catch (error) {
+      console.error("Error printing badge:", error);
+      toast({
+        title: language === 'de' ? "Fehler" : "Error",
+        description: language === 'de'
+          ? "Beim Drucken ist ein Fehler aufgetreten."
+          : "An error occurred while printing.",
+        variant: "destructive"
+      });
+    }
   };
   
   if (!visitor) {
@@ -158,7 +190,7 @@ const CheckInStep3 = () => {
               </div>
             )}
             
-            {enableAutomaticPrinting && !printInitiated && (
+            {!printInitiated && (
               <Button 
                 onClick={handlePrintBadge}
                 variant="outline" 
