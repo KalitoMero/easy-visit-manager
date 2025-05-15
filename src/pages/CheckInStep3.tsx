@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +10,6 @@ import { useLanguageStore } from '@/hooks/useLanguageStore';
 import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import { useTranslation } from '@/locale/translations';
 import { ArrowLeft, Timer } from 'lucide-react';
-import { ensureQRCodesLoaded } from '@/lib/qrCodeUtils';
 import { useToast } from '@/hooks/use-toast';
 
 const COUNTDOWN_SECONDS = 10; // 10 Sekunden Countdown
@@ -23,16 +23,14 @@ const CheckInStep3 = () => {
   // Use separate selectors to prevent re-renders
   const visitors = useVisitorStore(state => state.visitors);
   const updateVisitor = useVisitorStore(state => state.updateVisitor);
-  const { enableAutomaticPrinting, printDelay } = usePrinterSettings();
+  const { enableAutomaticPrinting } = usePrinterSettings();
   
   const { language } = useLanguageStore();
   const t = useTranslation(language);
   
   // Countdown Timer
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
-  const [printPreparing, setPrintPreparing] = useState(false);
-  const [printComplete, setPrintComplete] = useState(false);
-  const [printError, setPrintError] = useState<string | null>(null);
+  const [printInitiated, setPrintInitiated] = useState(false);
   
   // Find the current visitor
   const visitor = visitors.find(v => v.id === id);
@@ -72,89 +70,16 @@ const CheckInStep3 = () => {
       updateVisitor(visitor.id, { checkOutTime: null });
     }
     
-    console.log("Print settings:", { enableAutomaticPrinting, shouldPrint, printPreparing, printComplete });
-    
-    // Handle background printing if needed
-    if (enableAutomaticPrinting && shouldPrint && !printPreparing && !printComplete) {
-      setPrintPreparing(true);
+    // Handle navigation to print page - only if not already initiated
+    if (enableAutomaticPrinting && shouldPrint && !printInitiated) {
+      console.log("Redirecting to print preview page with automatic printing");
+      setPrintInitiated(true);
       
-      const printBadgeInBackground = async () => {
-        try {
-          console.log("Starting background print preparation");
-          
-          // Create a hidden iframe for printing
-          const iframe = document.createElement('iframe');
-          iframe.style.position = 'absolute';
-          iframe.style.left = '-9999px';
-          iframe.style.top = '-9999px';
-          iframe.style.width = '500px';
-          iframe.style.height = '500px';
-          iframe.style.border = 'none';
-          iframe.style.visibility = 'hidden';
-          iframe.src = `/print-badge/${visitor.id}`;
-          
-          // Add the iframe to the document
-          document.body.appendChild(iframe);
-          console.log("Print iframe created and appended to document");
-          
-          // Wait for the iframe to load
-          iframe.onload = () => {
-            console.log("Print iframe loaded, ensuring QR codes are ready");
-            
-            // Wait for QR codes and content to be ready with increased timeout
-            ensureQRCodesLoaded(() => {
-              console.log("QR codes confirmed loaded, proceeding with print");
-              
-              setTimeout(() => {
-                try {
-                  // Try to access the iframe content to trigger print
-                  if (iframe.contentWindow) {
-                    console.log("Triggering print dialog");
-                    iframe.contentWindow.print();
-                    
-                    // Mark as complete after print dialog closes or prints
-                    setTimeout(() => {
-                      console.log("Print presumed complete");
-                      setPrintComplete(true);
-                      // Remove the iframe after printing
-                      document.body.removeChild(iframe);
-                    }, 1000);
-                  } else {
-                    throw new Error("Cannot access iframe content window");
-                  }
-                } catch (error) {
-                  console.error("Error triggering print:", error);
-                  setPrintError("Failed to trigger print dialog");
-                  setPrintComplete(true);
-                  // Remove the iframe if there's an error
-                  document.body.removeChild(iframe);
-                }
-              }, Math.max(printDelay, 2000));
-            }, 7000);
-          };
-          
-          // Handle iframe loading errors
-          iframe.onerror = (error) => {
-            console.error("Iframe loading error:", error);
-            setPrintError("Failed to load printing content");
-            setPrintComplete(true);
-            document.body.removeChild(iframe);
-          };
-        } catch (error) {
-          console.error("Error preparing print:", error);
-          setPrintError("Failed to prepare for printing");
-          setPrintComplete(true);
-          toast({
-            title: language === 'de' ? 'Druckfehler' : 'Print Error',
-            description: language === 'de' ? 'Besucherausweis konnte nicht gedruckt werden' : 'Visitor badge could not be printed',
-            variant: "destructive"
-          });
-        }
-      };
-      
-      printBadgeInBackground();
+      // Navigate to print page instead of creating an iframe
+      // This will rely on the BadgePrintPreview component to handle the actual printing
+      navigate(`/print-badge/${visitor.id}`);
     }
-  }, [visitor, navigate, updateVisitor, enableAutomaticPrinting, id, printPreparing, printComplete, printDelay, language, toast, location]);
+  }, [visitor, navigate, updateVisitor, enableAutomaticPrinting, id, location, printInitiated]);
 
   // Countdown-Timer Effekt
   useEffect(() => {
@@ -205,14 +130,8 @@ const CheckInStep3 = () => {
               </p>
             </Card>
             
-            {printError && (
-              <div className="text-red-500 text-sm py-2">
-                {language === 'de' ? 'Hinweis: Der automatische Druck konnte nicht ausgeführt werden.' : 'Note: Automatic printing could not be completed.'}
-              </div>
-            )}
-            
-            {printPreparing && !printComplete && (
-              <div className="text-sm text-muted-foreground animate-pulse">
+            {printInitiated && (
+              <div className="text-sm text-muted-foreground">
                 {language === 'de' ? 'Besucherausweis wird gedruckt...' : 'Printing visitor badge...'}
               </div>
             )}

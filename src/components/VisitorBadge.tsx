@@ -146,8 +146,8 @@ const VisitorBadge = ({
   return (
     <div className={cn(
       "visitor-badge bg-white border border-gray-300 rounded-md p-4 flex flex-col box-border",
-      "max-h-[74mm] w-full overflow-hidden print:shadow-none",
-      "max-w-[105mm]", // Make wider to use full horizontal space
+      "max-h-[74mm] overflow-hidden print:shadow-none",
+      "w-full print:w-[105mm]", // Ensure full width usage for print
       className
     )}>
       {/* Badge Header */}
@@ -162,10 +162,10 @@ const VisitorBadge = ({
       )}>
         {/* Left column - Visitor information */}
         <div className={cn(
-          "visitor-info flex flex-col justify-center items-center py-2 gap-2",
-          qrPosition === 'center' ? "mb-4 w-full" : "flex-1"
+          "visitor-info flex flex-col justify-center py-2 gap-2",
+          qrPosition === 'center' ? "mb-4 w-full items-center" : "flex-1 items-center"
         )}>
-          <div className="visitor-number text-5xl font-bold text-primary mb-2 text-center">
+          <div className="visitor-number text-5xl font-bold text-primary mb-2">
             {displayVisitorNumber}
           </div>
           <div className="salutation text-sm text-muted-foreground mb-1">
@@ -215,7 +215,6 @@ const VisitorBadge = ({
           
           <div className="text-xs text-center mt-2">
             <p className="font-bold">Scan to checkout</p>
-            {/* Removed the line about email address as requested */}
           </div>
         </div>
       </div>

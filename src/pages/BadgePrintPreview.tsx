@@ -36,7 +36,10 @@ const BadgePrintPreview = () => {
     // Unterer Rand
     bottomMargin
   } = usePrinterSettings();
+  
+  // Use a single ref to track whether printing has been attempted
   const printAttemptedRef = useRef(false);
+  const printInProgressRef = useRef(false);
   const printTimestamp = useRef(new Date()).current;
   const [qrCodesLoaded, setQrCodesLoaded] = useState(false);
   const [qrLoadingAttempts, setQrLoadingAttempts] = useState(0);
@@ -44,7 +47,7 @@ const BadgePrintPreview = () => {
   // Find the primary visitor
   const visitor = visitors.find(v => v.id === id);
 
-  // Add global print styles to hide elements and control branding
+  // Add global print styles to control layout and optimize A6 usage
   useEffect(() => {
     // Create style element for print styles
     const styleEl = document.createElement('style');
@@ -61,15 +64,18 @@ const BadgePrintPreview = () => {
           visibility: visible;
         }
 
-        /* Direct container positioning */
+        /* Direct container positioning - full A6 width utilization */
         .visitor-badge-container {
           position: absolute;
           top: 0;
           left: 0;
-          width: 105mm;
-          height: 148mm;
+          width: 105mm; /* Exact A6 width */
+          height: 148mm; /* Exact A6 height */
+          padding: 0;
+          margin: 0;
           padding-bottom: ${bottomMargin}mm; /* Apply bottom margin */
           box-sizing: border-box;
+          overflow: hidden;
         }
         
         /* No border or background when printing */
@@ -78,6 +84,11 @@ const BadgePrintPreview = () => {
           box-shadow: none !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
+          width: 105mm !important; /* Full width usage */
+          padding: 3mm !important; /* Small inner padding to prevent content being cut off */
+          box-sizing: border-box !important;
+          overflow: visible !important;
+          margin: 0 !important;
         }
 
         /* Hide Lovable/Edit branding */
@@ -135,93 +146,78 @@ const BadgePrintPreview = () => {
   }, [qrCodesLoaded, qrLoadingAttempts, visitor]);
   
   useEffect(() => {
-    // Avoid multiple print attempts and wait for QR code to load
-    if (visitor && !printAttemptedRef.current && enableAutomaticPrinting && qrCodesLoaded) {
-      // Mark as attempted immediately to prevent duplicate printing
-      printAttemptedRef.current = true;
-      
-      const printBadge = async () => {
-        try {
-          console.log("Starting print process - QR codes loaded:", qrCodesLoaded);
-          
-          // Wait for secure QR code generation with increased timeout
-          await ensureQRCodesLoaded(() => {
-            console.log("QR codes confirmed loaded via ensureQRCodesLoaded, proceeding with print");
-          }, 5000);
-          
-          // Electron printing
-          if (isElectron()) {
-            console.log("Using Electron printing API");
-            const result = await window.electronAPI.printBadge({
-              id: visitor.id,
-              name: visitor.name,
-              printerName: selectedPrinterName,
-              printOptions: {
-                // First badge position
-                rotation: badgeRotation,
-                offsetX: badgeOffsetX,
-                offsetY: badgeOffsetY,
-                // Second badge position
-                secondRotation: secondBadgeRotation,
-                secondOffsetX: secondBadgeOffsetX,
-                secondOffsetY: secondBadgeOffsetY,
-                // Bottom margin
-                bottomMargin: bottomMargin
-              },
-              layoutOptions: badgeLayout, // Pass badge layout options to Electron
-              showBranding: showBrandingOnPrint // Pass branding option to Electron
-            });
-            
-            if (result.success) {
-              console.log('Badge printed successfully through Electron');
-            } else {
-              console.error('Electron print failed:', result.message);
-              // Fallback to browser printing
-              setTimeout(() => {
-                window.print();
-              }, printDelay);
-            }
-          } else {
-            console.log("Using browser printing");
-            // Browser printing
-            const isKioskPrintingSupported = 
-              window.navigator.userAgent.includes('Chrome') || 
-              window.navigator.userAgent.includes('Chromium');
-            
-            if (printWithoutDialog && isKioskPrintingSupported) {
-              console.log('Initiating kiosk print...');
-              window.print();
-            } else {
-              // Fallback if no kiosk mode is active
-              // or the user wants to see the print dialog
-              console.log('Initiating fallback print with delay...');
-              const timer = setTimeout(() => {
-                window.print();
-              }, printDelay);
-              
-              return () => clearTimeout(timer);
-            }
-          }
-        } catch (error) {
-          console.error('Print error:', error);
-          toast({
-            title: "Fehler beim Drucken",
-            description: "Der Ausweis konnte nicht automatisch gedruckt werden. Bitte versuchen Sie manuell zu drucken.",
-            variant: "destructive"
+    // Check if we've already attempted printing or if requirements aren't met
+    if (!visitor || printAttemptedRef.current || !enableAutomaticPrinting || !qrCodesLoaded || printInProgressRef.current) {
+      return;
+    }
+    
+    // Mark as attempted immediately to prevent duplicate printing
+    printAttemptedRef.current = true;
+    
+    const printBadge = async () => {
+      try {
+        // Set print in progress flag to prevent multiple calls
+        printInProgressRef.current = true;
+        console.log("Starting print process - QR codes loaded:", qrCodesLoaded);
+        
+        // Wait for secure QR code generation with increased timeout
+        await ensureQRCodesLoaded(() => {
+          console.log("QR codes confirmed loaded via ensureQRCodesLoaded, proceeding with print");
+        }, 5000);
+        
+        // Add a small delay to ensure everything is rendered
+        await new Promise(resolve => setTimeout(resolve, Math.max(printDelay, 500)));
+        
+        // Electron printing
+        if (isElectron()) {
+          console.log("Using Electron printing API");
+          const result = await window.electronAPI.printBadge({
+            id: visitor.id,
+            name: visitor.name,
+            printerName: selectedPrinterName,
+            printOptions: {
+              // First badge position
+              rotation: badgeRotation,
+              offsetX: badgeOffsetX,
+              offsetY: badgeOffsetY,
+              // Second badge position
+              secondRotation: secondBadgeRotation,
+              secondOffsetX: secondBadgeOffsetX,
+              secondOffsetY: secondBadgeOffsetY,
+              // Bottom margin
+              bottomMargin: bottomMargin
+            },
+            layoutOptions: badgeLayout, // Pass badge layout options to Electron
+            showBranding: showBrandingOnPrint // Pass branding option to Electron
           });
           
-          // Fallback
-          setTimeout(() => {
+          if (result.success) {
+            console.log('Badge printed successfully through Electron');
+          } else {
+            console.error('Electron print failed:', result.message);
+            // Fallback to browser printing - only once
             window.print();
-          }, printDelay);
+          }
+        } else {
+          // Browser printing - only happens once due to flags
+          console.log("Using browser printing");
+          window.print();
         }
-      };
-      
-      // Add a short delay before printing to ensure everything is rendered
-      setTimeout(() => {
-        printBadge();
-      }, 500);
-    }
+      } catch (error) {
+        console.error('Print error:', error);
+        toast({
+          title: "Fehler beim Drucken",
+          description: "Der Ausweis konnte nicht automatisch gedruckt werden. Bitte versuchen Sie manuell zu drucken.",
+          variant: "destructive"
+        });
+      } finally {
+        // Reset the in-progress flag but keep the attempted flag
+        printInProgressRef.current = false;
+      }
+    };
+    
+    // Start print process
+    printBadge();
   }, [visitor, enableAutomaticPrinting, printWithoutDialog, printDelay, selectedPrinterName, 
       printCopies, badgeRotation, badgeOffsetX, badgeOffsetY, secondBadgeRotation, 
       secondBadgeOffsetX, secondBadgeOffsetY, badgeLayout, showBrandingOnPrint, bottomMargin, qrCodesLoaded]);
@@ -245,14 +241,16 @@ const BadgePrintPreview = () => {
         <HomeButton />
       </div>
       
-      {/* Visitor badge container for A6 page */}
+      {/* Visitor badge container for A6 page - optimized for printing */}
       <div className="visitor-badge-container print:block hidden">
         <div className="a6-paper" style={{ 
           width: '105mm', 
           height: '148mm',
           position: 'relative',
           overflow: 'hidden',
-          boxSizing: 'border-box'
+          boxSizing: 'border-box',
+          padding: 0,
+          margin: 0
         }}>
           {/* Top badge with custom position and rotation */}
           <div style={{
@@ -265,11 +263,13 @@ const BadgePrintPreview = () => {
             justifyContent: 'center',
             alignItems: 'center',
             boxSizing: 'border-box',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            padding: 0,
+            margin: 0
           }}>
             <div style={{
               transform: `translate(${badgeOffsetX}mm, ${badgeOffsetY}mm) rotate(${badgeRotation}deg)`,
-              maxWidth: '100%',
+              width: '100%',
               maxHeight: '74mm',
               boxSizing: 'border-box'
             }}>
@@ -277,7 +277,7 @@ const BadgePrintPreview = () => {
                 visitor={visitor} 
                 printTimestamp={printTimestamp}
                 qrPosition={badgeLayout.qrCodePosition || 'right'}
-                className="print-badge"
+                className="print-badge w-full"
                 onQRCodeLoaded={handleQRCodeLoaded}
               />
             </div>
@@ -303,11 +303,13 @@ const BadgePrintPreview = () => {
             justifyContent: 'center',
             alignItems: 'center',
             boxSizing: 'border-box',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            padding: 0,
+            margin: 0
           }}>
             <div style={{
               transform: `translate(${secondBadgeOffsetX}mm, ${secondBadgeOffsetY}mm) rotate(${secondBadgeRotation}deg)`,
-              maxWidth: '100%',
+              width: '100%',
               maxHeight: '74mm',
               boxSizing: 'border-box'
             }}>
@@ -315,7 +317,7 @@ const BadgePrintPreview = () => {
                 visitor={visitor} 
                 printTimestamp={printTimestamp}
                 qrPosition={badgeLayout.qrCodePosition || 'right'}
-                className="print-badge"
+                className="print-badge w-full"
                 onQRCodeLoaded={handleQRCodeLoaded}
               />
             </div>
@@ -352,6 +354,7 @@ const BadgePrintPreview = () => {
                 transformOrigin: 'center',
                 transition: 'transform 0.2s ease-in-out',
                 scale: '0.7',
+                width: '100%',
                 maxHeight: '74mm',
                 boxSizing: 'border-box'
               }}>
@@ -359,6 +362,7 @@ const BadgePrintPreview = () => {
                   visitor={visitor} 
                   printTimestamp={printTimestamp}
                   qrPosition={badgeLayout.qrCodePosition || 'right'}
+                  className="w-full"
                   onQRCodeLoaded={handleQRCodeLoaded}
                 />
               </div>
@@ -390,6 +394,7 @@ const BadgePrintPreview = () => {
                 transformOrigin: 'center',
                 transition: 'transform 0.2s ease-in-out',
                 scale: '0.7',
+                width: '100%',
                 maxHeight: '74mm',
                 boxSizing: 'border-box'
               }}>
@@ -397,6 +402,7 @@ const BadgePrintPreview = () => {
                   visitor={visitor} 
                   printTimestamp={printTimestamp}
                   qrPosition={badgeLayout.qrCodePosition || 'right'}
+                  className="w-full"
                   onQRCodeLoaded={handleQRCodeLoaded}
                 />
               </div>
