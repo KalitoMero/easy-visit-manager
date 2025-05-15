@@ -13,8 +13,11 @@ async function initPdfMake() {
   if (!pdfMake) {
     try {
       // Dynamically import pdfmake modules
-      pdfMake = (await import('pdfmake/build/pdfmake')).default;
-      pdfFonts = (await import('pdfmake/build/vfs_fonts')).default;
+      const pdfMakeModule = await import('pdfmake/build/pdfmake');
+      const pdfFontsModule = await import('pdfmake/build/vfs_fonts');
+      
+      pdfMake = pdfMakeModule.default;
+      pdfFonts = pdfFontsModule.default;
       
       // Initialize fonts
       pdfMake.vfs = pdfFonts.pdfMake.vfs;
