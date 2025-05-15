@@ -94,6 +94,8 @@ export const useVisitorStore = create<VisitorStore>()(
           additionalVisitorCount: 0,
         };
         
+        console.log("Adding new visitor:", newVisitor);
+        
         set({ 
           visitors: [newVisitor, ...visitors],
           visitorCounter: visitorCounter + 1 
@@ -128,6 +130,8 @@ export const useVisitorStore = create<VisitorStore>()(
           additionalVisitorCount: additionalVisitors.length,
         };
         
+        console.log("Adding new group visitor:", newVisitor);
+        
         set({ 
           visitors: [newVisitor, ...visitors],
           visitorCounter: currentVisitorNumber + 1
@@ -137,19 +141,47 @@ export const useVisitorStore = create<VisitorStore>()(
       },
       
       checkOutVisitor: (id) => {
-        set((state) => ({
-          visitors: state.visitors.map((visitor) =>
-            visitor.id === id ? { ...visitor, checkOutTime: new Date().toISOString() } : visitor
-          ),
-        }));
+        set((state) => {
+          // Find the visitor to check out
+          const visitorToCheckOut = state.visitors.find(v => v.id === id);
+          if (visitorToCheckOut) {
+            console.log(`Checking out visitor ${visitorToCheckOut.visitorNumber}`);
+          }
+          
+          return {
+            visitors: state.visitors.map((visitor) =>
+              visitor.id === id ? { ...visitor, checkOutTime: new Date().toISOString() } : visitor
+            ),
+          };
+        });
       },
       
       acceptPolicy: (id, signature = null) => {
-        set((state) => ({
-          visitors: state.visitors.map((visitor) =>
-            visitor.id === id ? { ...visitor, policyAccepted: true, signature } : visitor
-          ),
-        }));
+        console.log(`Accepting policy for visitor ID: ${id} with signature: ${signature ? 'provided' : 'none'}`);
+        
+        set((state) => {
+          // Get the visitor before update
+          const visitorBeforeUpdate = state.visitors.find(v => v.id === id);
+          
+          // Update only policyAccepted and signature fields, preserving all other fields including checkOutTime
+          const updatedVisitors = state.visitors.map((visitor) => {
+            if (visitor.id === id) {
+              // Keep all existing fields, only update policyAccepted and signature
+              return {
+                ...visitor,
+                policyAccepted: true,
+                signature
+              };
+            }
+            return visitor;
+          });
+          
+          // Get the updated visitor for logging
+          const updatedVisitor = updatedVisitors.find(v => v.id === id);
+          console.log("Visitor after policy acceptance:", updatedVisitor);
+          
+          return { visitors: updatedVisitors };
+        });
       },
       
       getVisitor: (id) => {
@@ -163,6 +195,7 @@ export const useVisitorStore = create<VisitorStore>()(
       },
       
       updateVisitor: (id, updates) => {
+        console.log(`Updating visitor ${id} with:`, updates);
         set((state) => ({
           visitors: state.visitors.map((visitor) =>
             visitor.id === id ? { ...visitor, ...updates } : visitor
@@ -230,6 +263,8 @@ export const useVisitorStore = create<VisitorStore>()(
         
         // Auto check out remaining visitors at 8 PM
         if (hour === 20) {
+          console.log("Performing scheduled checkout at", today.toLocaleTimeString());
+          
           set((state) => ({
             visitors: state.visitors.map((visitor) =>
               visitor.checkOutTime === null 
@@ -237,8 +272,6 @@ export const useVisitorStore = create<VisitorStore>()(
                 : visitor
             ),
           }));
-          
-          console.log("Performed scheduled checkout at", today.toLocaleTimeString());
         }
       },
       

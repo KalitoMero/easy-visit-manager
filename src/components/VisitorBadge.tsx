@@ -215,7 +215,7 @@ const VisitorBadge = ({
           
           <div className="text-xs text-center mt-2">
             <p className="font-bold">Scan to checkout</p>
-            <p className="text-muted-foreground mt-1 text-[10px]">Opens email to: besucher@leuka.de</p>
+            {/* Removed the line about email address as requested */}
           </div>
         </div>
       </div>

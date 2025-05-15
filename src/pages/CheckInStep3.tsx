@@ -23,6 +23,7 @@ const CheckInStep3 = () => {
   
   // Use separate selectors to prevent re-renders
   const visitors = useVisitorStore(state => state.visitors);
+  const updateVisitor = useVisitorStore(state => state.updateVisitor);
   const { enableAutomaticPrinting, printDelay } = usePrinterSettings();
   
   const { language } = useLanguageStore();
@@ -48,13 +49,30 @@ const CheckInStep3 = () => {
       return;
     }
     
+    // Log visitor to confirm its status
+    console.log("Visitor on success page:", {
+      id: visitor.id,
+      name: visitor.name,
+      number: visitor.visitorNumber,
+      checkInTime: visitor.checkInTime,
+      checkOutTime: visitor.checkOutTime,
+      policyAccepted: visitor.policyAccepted,
+      signature: visitor.signature ? "exists" : "none"
+    });
+    
     if (!visitor.policyAccepted) {
       console.error("Policy not accepted for visitor:", visitor.visitorNumber);
       navigate(`/checkin/step2/${id}`);
       return;
     }
     
-    console.log("Visitor found on success page:", visitor.name, "ID:", visitor.id, "Number:", visitor.visitorNumber);
+    // Make sure the visitor is not checked out
+    if (visitor.checkOutTime) {
+      console.log("Fixing visitor checkout status - visitor was incorrectly checked out");
+      // Fix: Remove checkout time if it was mistakenly set
+      updateVisitor(visitor.id, { checkOutTime: null });
+    }
+    
     console.log("Print settings:", { enableAutomaticPrinting, shouldPrint, printPreparing, printComplete });
     
     // Handle background printing if needed
@@ -113,7 +131,7 @@ const CheckInStep3 = () => {
                   document.body.removeChild(iframe);
                 }
               }, Math.max(printDelay, 2000)); // Ensure at least 2 seconds for rendering
-            }, 5000); // Increase timeout to 5 seconds for QR codes
+            }, 7000); // Increase timeout to 7 seconds for QR codes
           };
           
           // Handle iframe loading errors
@@ -137,7 +155,7 @@ const CheckInStep3 = () => {
       
       printBadgeInBackground();
     }
-  }, [visitor, navigate, enableAutomaticPrinting, id, printPreparing, printComplete, printDelay, language, toast, location]);
+  }, [visitor, navigate, updateVisitor, enableAutomaticPrinting, id, printPreparing, printComplete, printDelay, language, toast, location]);
 
   // Countdown-Timer Effekt
   useEffect(() => {

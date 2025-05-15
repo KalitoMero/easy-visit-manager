@@ -19,6 +19,7 @@ const CheckInStep2 = () => {
   const { id } = useParams<{ id: string }>();
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const [signature, setSignature] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -42,12 +43,25 @@ const CheckInStep2 = () => {
     return visitors.find(v => v.id === id);
   }, [visitors, id]);
   
+  // Debug log to see visitor status
+  useEffect(() => {
+    if (visitor) {
+      console.log("Current visitor status:", {
+        id: visitor.id,
+        name: visitor.name,
+        number: visitor.visitorNumber,
+        checkInTime: visitor.checkInTime,
+        checkOutTime: visitor.checkOutTime,
+        policyAccepted: visitor.policyAccepted
+      });
+    }
+  }, [visitor]);
+  
   const handleScrollToBottom = React.useCallback(() => {
     if (!hasScrolledToBottom) {
       setHasScrolledToBottom(true);
       toast({
         title: t('scrollComplete'),
-        // Fix translation key - use a custom message instead of a nonexistent key
         description: language === 'de' ? 'Bitte unterschreiben Sie unten' : 'Please sign below',
         variant: "default",
       });
@@ -78,18 +92,37 @@ const CheckInStep2 = () => {
   }
 
   const handleContinue = () => {
-    // Accept policy with signature
+    if (isProcessing) return;
+    setIsProcessing(true);
+    
+    // Accept policy with signature - without affecting checkout status
     if (id) {
-      acceptPolicy(id, signature);
-      
-      // If automatic printing is enabled, create a hidden iframe for printing
-      // but immediately redirect to success page
-      if (enableAutomaticPrinting) {
-        // Create a new URL with a special parameter to trigger printing on the success page
-        navigate(`/checkin/step3/${id}?print=true`);
-      } else {
-        // Otherwise proceed to the success page as before
-        navigate(`/checkin/step3/${id}`);
+      try {
+        console.log("Accepting policy for visitor:", visitor.visitorNumber);
+        acceptPolicy(id, signature);
+        
+        // Log the visitor object after policy acceptance
+        const updatedVisitor = useVisitorStore.getState().getVisitor(id);
+        console.log("Visitor after policy acceptance:", updatedVisitor);
+        
+        // If automatic printing is enabled, create a parameter to trigger printing on the success page
+        if (enableAutomaticPrinting) {
+          console.log("Automatic printing enabled, navigating with print parameter");
+          navigate(`/checkin/step3/${id}?print=true`);
+        } else {
+          console.log("Automatic printing disabled, navigating to success page");
+          navigate(`/checkin/step3/${id}`);
+        }
+      } catch (error) {
+        console.error("Error during policy acceptance:", error);
+        toast({
+          title: language === 'de' ? 'Fehler' : 'Error',
+          description: language === 'de' 
+            ? 'Bei der Verarbeitung ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.'
+            : 'An error occurred during processing. Please try again.',
+          variant: "destructive"
+        });
+        setIsProcessing(false);
       }
     }
   };
@@ -161,9 +194,13 @@ const CheckInStep2 = () => {
               <Button 
                 onClick={handleContinue}
                 className="px-8 py-6 text-lg transition-all duration-300 hover:scale-105 ml-auto"
-                disabled={!hasScrolledToBottom || !signature}
+                disabled={!hasScrolledToBottom || !signature || isProcessing}
               >
-                {t('acceptAndContinue')}
+                {isProcessing ? (
+                  language === 'de' ? 'Verarbeitung...' : 'Processing...'
+                ) : (
+                  t('acceptAndContinue')
+                )}
               </Button>
             </div>
           </CardContent>

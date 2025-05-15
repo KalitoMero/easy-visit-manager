@@ -34,12 +34,18 @@ const SignaturePad: React.FC<SignaturePadProps> = ({
         ctx.lineJoin = 'round';
         ctx.strokeStyle = '#000';
         
-        // Set the canvas to be responsive
+        // Set the canvas dimensions correctly
         const dpr = window.devicePixelRatio || 1;
-        canvas.width = width * dpr;
-        canvas.height = height * dpr;
+        
+        // Set the display size (CSS) to match the desired width/height
         canvas.style.width = `${width}px`;
         canvas.style.height = `${height}px`;
+        
+        // Set the actual canvas dimensions accounting for DPR
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        
+        // Scale the context to handle the high DPR
         ctx.scale(dpr, dpr);
         
         // Clear canvas to white
@@ -125,7 +131,7 @@ const SignaturePad: React.FC<SignaturePadProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return false;
     
-    // Get image data with correct dimensions
+    // Get image data with proper scaling
     const imageData = ctx.getImageData(0, 0, canvas.width / (window.devicePixelRatio || 1), canvas.height / (window.devicePixelRatio || 1));
     const pixelData = imageData.data;
     
@@ -148,8 +154,9 @@ const SignaturePad: React.FC<SignaturePadProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Clear with proper dimensions
     ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, width * (window.devicePixelRatio || 1), height * (window.devicePixelRatio || 1));
+    ctx.fillRect(0, 0, width, height);
     
     setHasSignature(false);
     onChange(null);
@@ -168,7 +175,7 @@ const SignaturePad: React.FC<SignaturePadProps> = ({
           onTouchMove={draw}
           onTouchEnd={stopDrawing}
           className="cursor-crosshair touch-none"
-          style={{ width, height }}
+          style={{ width: '100%', height }}
         />
         {!hasSignature && (
           <div className="absolute inset-0 flex items-center justify-center text-gray-400 pointer-events-none">
