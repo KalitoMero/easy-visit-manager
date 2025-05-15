@@ -38,7 +38,7 @@ const SignaturePad: React.FC<SignaturePadProps> = ({
   const placeholderText = language === 'de' ? 'Hier unterschreiben' : 'Sign here';
   
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col md:flex-row gap-3">
       <Card className="border-2 p-0 overflow-hidden relative" style={{ width: width, height: height }}>
         <SignatureCanvas
           canvasRef={canvasRef}
@@ -50,13 +50,13 @@ const SignaturePad: React.FC<SignaturePadProps> = ({
         />
       </Card>
       
-      <div className="flex justify-start">
+      <div className="flex items-center justify-center">
         <Button 
           type="button" 
           variant="outline" 
           size="sm"
           onClick={clearSignature}
-          className="flex items-center gap-1"
+          className="flex items-center gap-1 h-10"
         >
           <Eraser size={16} />
           {language === 'de' ? 'Löschen' : 'Clear'}
