@@ -48,6 +48,9 @@ type VisitorStore = {
   deleteOldVisitors: () => number;
   performScheduledCheckout: () => void;
   resetVisitorCounter: (newCounter?: number) => void;
+  getActiveVisitors: () => Visitor[];
+  getInactiveVisitors: () => Visitor[];
+  downloadSignature: (id: string) => void;
 };
 
 // Helper function for auto checkout initialization
@@ -92,6 +95,7 @@ export const useVisitorStore = create<VisitorStore>()(
           visitorNumber: visitorCounter,
           checkInTime: new Date().toISOString(),
           additionalVisitorCount: 0,
+          checkOutTime: null, // Explizit auf null setzen, damit der Besucher als aktiv erkannt wird
         };
         
         console.log("Adding new visitor:", newVisitor);
@@ -128,6 +132,7 @@ export const useVisitorStore = create<VisitorStore>()(
           checkInTime: new Date().toISOString(),
           additionalVisitors,
           additionalVisitorCount: additionalVisitors.length,
+          checkOutTime: null, // Explizit auf null setzen, damit der Besucher als aktiv erkannt wird
         };
         
         console.log("Adding new group visitor:", newVisitor);
@@ -160,9 +165,6 @@ export const useVisitorStore = create<VisitorStore>()(
         console.log(`Accepting policy for visitor ID: ${id} with signature: ${signature ? 'provided' : 'none'}`);
         
         set((state) => {
-          // Get the visitor before update
-          const visitorBeforeUpdate = state.visitors.find(v => v.id === id);
-          
           // Update only policyAccepted and signature fields, preserving all other fields including checkOutTime
           const updatedVisitors = state.visitors.map((visitor) => {
             if (visitor.id === id) {
@@ -277,6 +279,32 @@ export const useVisitorStore = create<VisitorStore>()(
       
       resetVisitorCounter: (newCounter = DEFAULT_VISITOR_COUNTER) => {
         set({ visitorCounter: newCounter });
+      },
+
+      // Neue Funktionen zur besseren Trennung von aktiven und inaktiven Besuchern
+      getActiveVisitors: () => {
+        return get().visitors.filter(visitor => visitor.checkOutTime === null);
+      },
+      
+      getInactiveVisitors: () => {
+        return get().visitors.filter(visitor => visitor.checkOutTime !== null);
+      },
+      
+      // Funktion zum Herunterladen der Unterschrift
+      downloadSignature: (id) => {
+        const visitor = get().visitors.find(v => v.id === id);
+        if (!visitor || !visitor.signature) return;
+        
+        // Dateiname generieren
+        const fileName = `signature_${visitor.name.replace(/\s+/g, '_')}_${visitor.visitorNumber}.png`;
+        
+        // Link erstellen und klicken
+        const link = document.createElement('a');
+        link.href = visitor.signature;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       }
     }),
     {

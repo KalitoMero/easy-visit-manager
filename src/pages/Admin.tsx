@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { usePrinterSettings } from "@/hooks/usePrinterSettings";
-import { Printer, Settings, Move, Layout, RefreshCw } from "lucide-react";
+import { Printer, Settings, Move, Layout, RefreshCw, Download, FileImage } from "lucide-react";
 import BadgePositionPreview from "@/components/BadgePositionPreview";
 import BadgeLayoutSettings from "@/components/BadgeLayoutSettings";
 import VisitorBadge from "@/components/VisitorBadge";
@@ -40,8 +41,38 @@ const formatVisitorNames = (visitor) => {
     <div>
       <div>{visitor.name} <span className="text-xs text-muted-foreground">(Hauptbesucher)</span></div>
       {visitor.additionalVisitors.map((additionalName, index) => (
-        <div key={index} className="text-sm pl-3 mt-1">+ {additionalName}</div>
+        <div key={index} className="text-sm pl-3 mt-1">+ {additionalName.name}</div>
       ))}
+    </div>
+  );
+};
+
+const SignaturePreview = ({ signatureUrl }) => {
+  const [showPreview, setShowPreview] = useState(false);
+  
+  if (!signatureUrl) return <span className="text-muted-foreground">-</span>;
+  
+  return (
+    <div>
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        className="h-7 px-2 text-xs"
+        onClick={() => setShowPreview(!showPreview)}
+      >
+        <FileImage className="h-4 w-4 mr-1" />
+        {showPreview ? 'Ausblenden' : 'Anzeigen'}
+      </Button>
+      
+      {showPreview && (
+        <div className="mt-2 border rounded p-1 bg-white">
+          <img 
+            src={signatureUrl} 
+            alt="Unterschrift" 
+            className="max-h-20 max-w-full"
+          />
+        </div>
+      )}
     </div>
   );
 };
@@ -51,7 +82,9 @@ const Admin = () => {
   const [password, setPassword] = useState("");
   const { toast } = useToast();
 
-  const visitors = useVisitorStore((state) => state.visitors);
+  const getActiveVisitors = useVisitorStore((state) => state.getActiveVisitors);
+  const getInactiveVisitors = useVisitorStore((state) => state.getInactiveVisitors);
+  const downloadSignature = useVisitorStore((state) => state.downloadSignature);
   const deletionSchedule = useVisitorStore((state) => state.deletionSchedule);
   const updateDeletionSchedule = useVisitorStore((state) => state.updateDeletionSchedule);
   const deleteOldVisitors = useVisitorStore((state) => state.deleteOldVisitors);
@@ -61,9 +94,14 @@ const Admin = () => {
   const [deletionHour, setDeletionHour] = useState("3");
   const [deletionMinute, setDeletionMinute] = useState("0");
   
+  // Aktive und inaktive Besucher mit den neuen Hilfsmethoden abrufen
+  const activeVisitors = getActiveVisitors();
+  const inactiveVisitors = getInactiveVisitors();
+  
   useEffect(() => {
-    console.log("Loaded visitors in Admin:", visitors);
-  }, [visitors]);
+    console.log("Active visitors:", activeVisitors);
+    console.log("Inactive visitors:", inactiveVisitors);
+  }, [activeVisitors, inactiveVisitors]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -73,16 +111,6 @@ const Admin = () => {
       setDeletionMinute(deletionSchedule.minute.toString());
     }
   }, [isAuthenticated, deletionSchedule]);
-
-  const sortedVisitors = [...visitors].sort((a, b) => {
-    if (a.checkOutTime === null && b.checkOutTime !== null) return -1;
-    if (a.checkOutTime !== null && b.checkOutTime === null) return 1;
-    
-    return new Date(b.checkInTime).getTime() - new Date(a.checkInTime).getTime();
-  });
-
-  const activeVisitors = sortedVisitors.filter(v => v.checkOutTime === null);
-  const inactiveVisitors = sortedVisitors.filter(v => v.checkOutTime !== null);
 
   const { policyText, policyImageUrl, updatePolicyText, updatePolicyImage } = usePolicyStore();
   const [germanPolicyText, setGermanPolicyText] = useState("");
@@ -140,6 +168,10 @@ const Admin = () => {
     e.preventDefault();
     login(password);
     setPassword("");
+  };
+
+  const handleDownloadSignature = (visitorId: string) => {
+    downloadSignature(visitorId);
   };
 
   const weekdays = [
@@ -209,11 +241,11 @@ const Admin = () => {
   const handleTestPrint = () => {
     if (isElectron && window.electronAPI) {
       // In Electron, use the Electron print API
-      if (visitors.length > 0) {
-        const testVisitorId = visitors[0].id;
+      if (activeVisitors.length > 0) {
+        const testVisitorId = activeVisitors[0].id;
         window.electronAPI.printBadge({
           id: testVisitorId,
-          name: visitors[0].name
+          name: activeVisitors[0].name
         }).then(result => {
           if (result.success) {
             toast({
@@ -230,20 +262,20 @@ const Admin = () => {
         });
       } else {
         toast({
-          title: "Kein Besucher vorhanden",
-          description: "Es muss mindestens ein Besucher im System sein, um einen Testdruck durchzuführen.",
+          title: "Kein aktiver Besucher vorhanden",
+          description: "Es muss mindestens ein aktiver Besucher im System sein, um einen Testdruck durchzuführen.",
           variant: "destructive",
         });
       }
     } else {
       // In browser, use the standard approach
-      if (visitors.length > 0) {
-        const testVisitorId = visitors[0].id;
+      if (activeVisitors.length > 0) {
+        const testVisitorId = activeVisitors[0].id;
         window.open(`/print-badge/${testVisitorId}`, '_blank');
       } else {
         toast({
-          title: "Kein Besucher vorhanden",
-          description: "Es muss mindestens ein Besucher im System sein, um einen Testdruck durchzuführen.",
+          title: "Kein aktiver Besucher vorhanden",
+          description: "Es muss mindestens ein aktiver Besucher im System sein, um einen Testdruck durchzuführen.",
           variant: "destructive",
         });
       }
@@ -391,6 +423,7 @@ const Admin = () => {
                         <TableHead>Ansprechpartner</TableHead>
                         <TableHead>Anmeldung</TableHead>
                         <TableHead>Abmeldung</TableHead>
+                        <TableHead>Unterschrift</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -402,6 +435,24 @@ const Admin = () => {
                           <TableCell>{visitor.contact}</TableCell>
                           <TableCell>{formatTime(visitor.checkInTime, language)}</TableCell>
                           <TableCell>{formatTime(visitor.checkOutTime || '', language)}</TableCell>
+                          <TableCell>
+                            {visitor.signature ? (
+                              <div className="flex flex-col gap-1">
+                                <SignaturePreview signatureUrl={visitor.signature} />
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-7 px-2 text-xs"
+                                  onClick={() => handleDownloadSignature(visitor.id)}
+                                >
+                                  <Download className="h-4 w-4 mr-1" />
+                                  Download
+                                </Button>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">Keine Unterschrift</span>
+                            )}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
