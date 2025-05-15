@@ -81,25 +81,29 @@ const CheckInStep3 = () => {
           : `Printing visitor badge for ${visitor.name} (${visitor.visitorNumber})`,
       });
       
-      // Generate and print PDF badge
-      generateVisitorBadgePdf(visitor).then(({ pdfBlob, pdfUrl }) => {
-        // Save PDF URL to visitor record
-        updateVisitor(visitor.id, { badgePdfUrl: pdfUrl });
-        
-        // Print the PDF
-        setTimeout(() => {
-          printPdf(pdfUrl);
-        }, 300);
-      }).catch(error => {
-        console.error("Error generating PDF badge:", error);
-        toast({
-          title: language === 'de' ? "Fehler beim Drucken" : "Printing Error",
-          description: language === 'de' 
-            ? "Besucherausweis konnte nicht erstellt werden." 
-            : "Could not generate visitor badge.",
-          variant: "destructive"
-        });
-      });
+      // Generate and print PDF badge with error handling
+      (async () => {
+        try {
+          const { pdfBlob, pdfUrl } = await generateVisitorBadgePdf(visitor);
+          
+          // Save PDF URL to visitor record
+          updateVisitor(visitor.id, { badgePdfUrl: pdfUrl });
+          
+          // Print the PDF
+          setTimeout(() => {
+            printPdf(pdfUrl);
+          }, 300);
+        } catch (error) {
+          console.error("Error generating PDF badge:", error);
+          toast({
+            title: language === 'de' ? "Fehler beim Drucken" : "Printing Error",
+            description: language === 'de' 
+              ? "Besucherausweis konnte nicht erstellt werden." 
+              : "Could not generate visitor badge.",
+            variant: "destructive"
+          });
+        }
+      })();
     }
   }, [visitor, navigate, updateVisitor, enableAutomaticPrinting, id, location, printInitiated, toast, language]);
 

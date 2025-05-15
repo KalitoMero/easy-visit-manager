@@ -1,13 +1,31 @@
 
-import pdfMake from 'pdfmake/build/pdfmake';
-import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Visitor } from '@/hooks/useVisitorStore';
 import { generateQRCodeDataUrl } from './qrCodeUtils';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
-// Initialize pdfMake
-pdfMake.vfs = pdfFonts.pdfMake.vfs;
+// Use dynamic imports for pdfmake to avoid build issues
+let pdfMake: any = null;
+let pdfFonts: any = null;
+
+// Initialize pdfMake with dynamic import
+async function initPdfMake() {
+  if (!pdfMake) {
+    try {
+      // Dynamically import pdfmake modules
+      pdfMake = (await import('pdfmake/build/pdfmake')).default;
+      pdfFonts = (await import('pdfmake/build/vfs_fonts')).default;
+      
+      // Initialize fonts
+      pdfMake.vfs = pdfFonts.pdfMake.vfs;
+      console.log("PDF Make initialized successfully");
+    } catch (error) {
+      console.error("Failed to initialize pdfMake:", error);
+      throw new Error("Could not load PDF generation library");
+    }
+  }
+  return pdfMake;
+}
 
 // Configure page size for A6 in portrait (105mm x 148mm)
 const PAGE_WIDTH = 105; // mm
@@ -28,6 +46,9 @@ const mmToPt = (mm: number) => mm * MM_TO_PT;
  */
 export const generateVisitorBadgePdf = async (visitor: Visitor) => {
   try {
+    // Initialize pdfMake
+    const pdfMake = await initPdfMake();
+    
     // Generate QR code for checkout
     const qrCodeUrl = await generateQRCodeDataUrl(
       `${window.location.origin}/checkout/${visitor.visitorNumber}`,
@@ -166,7 +187,7 @@ export const generateVisitorBadgePdf = async (visitor: Visitor) => {
     
     // Get PDF as blob
     return new Promise<{pdfBlob: Blob, pdfUrl: string}>((resolve, reject) => {
-      pdfDocGenerator.getBlob((blob) => {
+      pdfDocGenerator.getBlob((blob: Blob) => {
         try {
           // Create URL for the blob
           const pdfUrl = URL.createObjectURL(blob);
