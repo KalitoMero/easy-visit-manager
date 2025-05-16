@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Visitor } from '@/hooks/useVisitorStore';
-import { Printer, Eye, Download, AlertTriangle } from 'lucide-react';
+import { Printer, Eye, Download, AlertTriangle, RefreshCw } from 'lucide-react';
 import { 
   generateVisitorBadgePdf, 
   printPdf, 
@@ -24,8 +24,14 @@ const VisitorPdfBadge = ({ visitor, onPdfGenerated }: VisitorPdfBadgeProps) => {
   const [generatedPdfUrl, setGeneratedPdfUrl] = useState<string | undefined>(visitor.badgePdfUrl);
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
 
-  const generateBadge = async () => {
+  const generateBadge = async (retry = false) => {
+    if (retry) {
+      setRetryCount(prev => prev + 1);
+    }
+    
     try {
       setIsGenerating(true);
       setError(null);
@@ -33,7 +39,7 @@ const VisitorPdfBadge = ({ visitor, onPdfGenerated }: VisitorPdfBadgeProps) => {
       console.log("Starting PDF generation for visitor:", visitor.visitorNumber);
       const { pdfBlob, pdfUrl } = await generateVisitorBadgePdf(visitor);
       
-      console.log("PDF generated successfully, setting state");
+      console.log("PDF generated successfully, blob size:", pdfBlob.size, "setting state");
       setGeneratedPdfUrl(pdfUrl);
       setPdfBlob(pdfBlob);
       
@@ -47,7 +53,7 @@ const VisitorPdfBadge = ({ visitor, onPdfGenerated }: VisitorPdfBadgeProps) => {
       });
     } catch (error) {
       console.error("Error generating PDF:", error);
-      setError("PDF konnte nicht generiert werden. Bitte versuchen Sie es erneut.");
+      setError(`PDF konnte nicht generiert werden. ${error instanceof Error ? error.message : 'Unbekannter Fehler'}. Bitte versuchen Sie es erneut.`);
       toast({
         title: "Fehler",
         description: "PDF konnte nicht generiert werden.",
@@ -106,7 +112,7 @@ const VisitorPdfBadge = ({ visitor, onPdfGenerated }: VisitorPdfBadgeProps) => {
       }
     } else if (generatedPdfUrl) {
       // If we only have the URL but not the blob, regenerate the PDF
-      generateBadge().then(() => {
+      generateBadge(true).then(() => {
         if (pdfBlob) {
           try {
             saveBadgePdf(pdfBlob, visitor);
@@ -126,13 +132,34 @@ const VisitorPdfBadge = ({ visitor, onPdfGenerated }: VisitorPdfBadgeProps) => {
             <Alert variant="destructive" className="mb-2">
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Fehler</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription className="space-y-2">
+                <p>{error}</p>
+                {retryCount >= 2 && (
+                  <div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="mt-1"
+                      onClick={() => setShowDebugInfo(!showDebugInfo)}
+                    >
+                      Debug-Information {showDebugInfo ? 'ausblenden' : 'anzeigen'}
+                    </Button>
+                    {showDebugInfo && (
+                      <pre className="text-xs mt-2 bg-slate-100 p-2 rounded overflow-auto max-h-40">
+                        Visitor: {JSON.stringify(visitor, null, 2)}
+                        <br/>
+                        Retry count: {retryCount}
+                      </pre>
+                    )}
+                  </div>
+                )}
+              </AlertDescription>
             </Alert>
           )}
         
           {!generatedPdfUrl ? (
             <Button 
-              onClick={generateBadge} 
+              onClick={() => generateBadge()}
               disabled={isGenerating}
               variant="outline"
               className="w-full"
@@ -157,6 +184,16 @@ const VisitorPdfBadge = ({ visitor, onPdfGenerated }: VisitorPdfBadgeProps) => {
                 <Button onClick={handleDownload} variant="outline" size="sm" className="flex items-center gap-1">
                   <Download className="h-4 w-4" />
                   <span>Herunterladen</span>
+                </Button>
+                <Button 
+                  onClick={() => generateBadge(true)} 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex items-center gap-1"
+                  disabled={isGenerating}
+                >
+                  <RefreshCw className={`h-4 w-4 ${isGenerating ? 'animate-spin' : ''}`} />
+                  <span>Neu generieren</span>
                 </Button>
               </div>
             </div>

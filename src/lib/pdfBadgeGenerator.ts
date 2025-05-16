@@ -12,16 +12,27 @@ let pdfFonts: any = null;
 async function initPdfMake() {
   if (!pdfMake) {
     try {
+      console.log("Starting pdfMake initialization");
       // Dynamically import pdfmake modules
       const pdfMakeModule = await import('pdfmake/build/pdfmake');
       const pdfFontsModule = await import('pdfmake/build/vfs_fonts');
       
+      console.log("Modules imported, setting up pdfMake");
       pdfMake = pdfMakeModule.default;
       pdfFonts = pdfFontsModule.default;
       
       // Initialize fonts
-      pdfMake.vfs = pdfFonts.pdfMake.vfs;
-      console.log("PDF Make initialized successfully");
+      if (pdfMake && pdfFonts && pdfFonts.pdfMake && pdfFonts.pdfMake.vfs) {
+        pdfMake.vfs = pdfFonts.pdfMake.vfs;
+        console.log("PDF Make initialized successfully with fonts");
+      } else {
+        console.error("PDF fonts not properly loaded:", { 
+          pdfMakeExists: !!pdfMake, 
+          pdfFontsExists: !!pdfFonts,
+          vfsExists: !!(pdfFonts && pdfFonts.pdfMake && pdfFonts.pdfMake.vfs)
+        });
+        throw new Error("PDF fonts could not be initialized");
+      }
     } catch (error) {
       console.error("Failed to initialize pdfMake:", error);
       throw new Error("Could not load PDF generation library");
@@ -48,15 +59,23 @@ const mmToPt = (mm: number) => mm * MM_TO_PT;
  * @returns Promise with the generated PDF blob and URL
  */
 export const generateVisitorBadgePdf = async (visitor: Visitor) => {
+  console.log("Starting PDF generation for visitor:", visitor.visitorNumber);
   try {
     // Initialize pdfMake
     const pdfMake = await initPdfMake();
+    if (!pdfMake) {
+      throw new Error("PDF library failed to initialize");
+    }
+    
+    console.log("PDF library initialized, generating QR code");
     
     // Generate QR code for checkout
     const qrCodeUrl = await generateQRCodeDataUrl(
       `${window.location.origin}/checkout/${visitor.visitorNumber}`,
       450 // Generate a high-resolution QR code
     );
+    
+    console.log("QR code generated successfully");
     
     // Format date and time
     const dateTimeStr = format(
@@ -163,6 +182,8 @@ export const generateVisitorBadgePdf = async (visitor: Visitor) => {
       ];
     };
     
+    console.log("Building PDF document definition");
+    
     // PDF document definition
     const docDefinition = {
       pageSize: { width: mmToPt(PAGE_WIDTH), height: mmToPt(PAGE_HEIGHT) },
@@ -185,21 +206,26 @@ export const generateVisitorBadgePdf = async (visitor: Visitor) => {
       ]
     };
     
+    console.log("Creating PDF from definition");
+    
     // Generate PDF - with proper error handling
     return new Promise<{pdfBlob: Blob, pdfUrl: string}>((resolve, reject) => {
       try {
         const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+        console.log("PDF document created, getting blob");
         
         // Get PDF as blob with error handling
         pdfDocGenerator.getBlob((blob: Blob) => {
           try {
-            if (!blob) {
+            console.log("PDF blob generated, size:", blob.size);
+            if (!blob || blob.size === 0) {
               reject(new Error("PDF generation resulted in empty blob"));
               return;
             }
             
             // Create URL for the blob
             const pdfUrl = URL.createObjectURL(blob);
+            console.log("PDF URL created successfully");
             resolve({pdfBlob: blob, pdfUrl});
           } catch (error) {
             console.error('Error creating PDF URL', error);
@@ -224,7 +250,12 @@ export const generateVisitorBadgePdf = async (visitor: Visitor) => {
  * Opens a PDF in a new browser tab
  */
 export function openPdfInNewTab(pdfUrl: string) {
-  window.open(pdfUrl, '_blank');
+  try {
+    window.open(pdfUrl, '_blank');
+  } catch (error) {
+    console.error("Error opening PDF in new tab:", error);
+    throw error;
+  }
 }
 
 /**
