@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,9 +9,10 @@ import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
 import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import { useTranslation } from '@/locale/translations';
-import { ArrowLeft, Timer, Printer } from 'lucide-react';
+import { ArrowLeft, Timer, Printer, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateVisitorBadgePdf, printPdf } from '@/lib/pdfBadgeGenerator';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const COUNTDOWN_SECONDS = 10; // 10 Sekunden Countdown
 
@@ -31,6 +33,7 @@ const CheckInStep3 = () => {
   // Countdown Timer
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
   const [printInitiated, setPrintInitiated] = useState(false);
+  const [printError, setPrintError] = useState<string | null>(null);
   
   // Find the current visitor
   const visitor = visitors.find(v => v.id === id);
@@ -74,26 +77,41 @@ const CheckInStep3 = () => {
       
       // Show a confirmation toast
       toast({
-        title: language === 'de' ? "Besucherausweis wird gedruckt" : "Printing visitor badge",
+        title: language === 'de' ? "Besucherausweis wird erstellt" : "Creating visitor badge",
         description: language === 'de' 
-          ? `Besucherausweis für ${visitor.name} (${visitor.visitorNumber}) wird gedruckt` 
-          : `Printing visitor badge for ${visitor.name} (${visitor.visitorNumber})`,
+          ? `Besucherausweis für ${visitor.name} (${visitor.visitorNumber}) wird generiert` 
+          : `Creating visitor badge for ${visitor.name} (${visitor.visitorNumber})`,
       });
       
       // Generate and print PDF badge with error handling
       (async () => {
         try {
+          console.log("Starting PDF generation in CheckInStep3");
           const { pdfBlob, pdfUrl } = await generateVisitorBadgePdf(visitor);
+          console.log("PDF generated successfully, saving URL to visitor");
           
           // Save PDF URL to visitor record
           updateVisitor(visitor.id, { badgePdfUrl: pdfUrl });
           
           // Print the PDF
+          toast({
+            title: language === 'de' ? "Besucherausweis wird gedruckt" : "Printing visitor badge",
+            description: language === 'de' 
+              ? `Besucherausweis für ${visitor.name} (${visitor.visitorNumber}) wird gedruckt` 
+              : `Printing visitor badge for ${visitor.name} (${visitor.visitorNumber})`,
+          });
+          
           setTimeout(() => {
-            printPdf(pdfUrl);
+            try {
+              printPdf(pdfUrl);
+            } catch (printError) {
+              console.error("Error during print:", printError);
+              setPrintError("Beim Drucken ist ein Fehler aufgetreten.");
+            }
           }, 300);
         } catch (error) {
           console.error("Error generating PDF badge:", error);
+          setPrintError("Besucherausweis konnte nicht erstellt werden.");
           toast({
             title: language === 'de' ? "Fehler beim Drucken" : "Printing Error",
             description: language === 'de' 
@@ -130,6 +148,8 @@ const CheckInStep3 = () => {
   const handlePrintBadge = async () => {
     if (!visitor) return;
     
+    setPrintError(null);
+    
     toast({
       title: language === 'de' ? "Druckvorgang gestartet" : "Print process started",
       description: language === 'de' 
@@ -138,6 +158,7 @@ const CheckInStep3 = () => {
     });
     
     try {
+      console.log("Starting manual PDF generation");
       // Generate PDF badge
       const { pdfBlob, pdfUrl } = await generateVisitorBadgePdf(visitor);
       
@@ -146,8 +167,16 @@ const CheckInStep3 = () => {
       
       // Print the PDF
       printPdf(pdfUrl);
+      
+      toast({
+        title: language === 'de' ? "Drucken" : "Printing",
+        description: language === 'de'
+          ? "Besucherausweis wird gedruckt..."
+          : "Visitor badge is being printed...",
+      });
     } catch (error) {
       console.error("Error printing badge:", error);
+      setPrintError("Beim Drucken ist ein Fehler aufgetreten.");
       toast({
         title: language === 'de' ? "Fehler" : "Error",
         description: language === 'de'
@@ -187,13 +216,21 @@ const CheckInStep3 = () => {
               </p>
             </Card>
             
-            {printInitiated && (
+            {printError && (
+              <Alert variant="destructive" className="mt-2">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>{language === 'de' ? 'Druckfehler' : 'Print Error'}</AlertTitle>
+                <AlertDescription>{printError}</AlertDescription>
+              </Alert>
+            )}
+            
+            {printInitiated && !printError && (
               <div className="text-sm text-muted-foreground">
                 {language === 'de' ? 'Besucherausweis wird gedruckt...' : 'Printing visitor badge...'}
               </div>
             )}
             
-            {!printInitiated && (
+            {(!printInitiated || printError) && (
               <Button 
                 onClick={handlePrintBadge}
                 variant="outline" 

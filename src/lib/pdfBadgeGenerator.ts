@@ -185,21 +185,34 @@ export const generateVisitorBadgePdf = async (visitor: Visitor) => {
       ]
     };
     
-    // Generate PDF
-    const pdfDocGenerator = pdfMake.createPdf(docDefinition);
-    
-    // Get PDF as blob
+    // Generate PDF - with proper error handling
     return new Promise<{pdfBlob: Blob, pdfUrl: string}>((resolve, reject) => {
-      pdfDocGenerator.getBlob((blob: Blob) => {
-        try {
-          // Create URL for the blob
-          const pdfUrl = URL.createObjectURL(blob);
-          resolve({pdfBlob: blob, pdfUrl});
-        } catch (error) {
-          console.error('Error creating PDF URL', error);
+      try {
+        const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+        
+        // Get PDF as blob with error handling
+        pdfDocGenerator.getBlob((blob: Blob) => {
+          try {
+            if (!blob) {
+              reject(new Error("PDF generation resulted in empty blob"));
+              return;
+            }
+            
+            // Create URL for the blob
+            const pdfUrl = URL.createObjectURL(blob);
+            resolve({pdfBlob: blob, pdfUrl});
+          } catch (error) {
+            console.error('Error creating PDF URL', error);
+            reject(error);
+          }
+        }, (error: any) => {
+          console.error("Error in PDF blob generation:", error);
           reject(error);
-        }
-      });
+        });
+      } catch (error) {
+        console.error("Error creating PDF document:", error);
+        reject(error);
+      }
     });
   } catch (error) {
     console.error('Error generating PDF', error);
@@ -218,37 +231,62 @@ export function openPdfInNewTab(pdfUrl: string) {
  * Triggers printing of a PDF
  */
 export function printPdf(pdfUrl: string) {
-  const iframe = document.createElement('iframe');
-  iframe.style.display = 'none';
-  iframe.src = pdfUrl;
-  
-  iframe.onload = () => {
-    if (iframe.contentWindow) {
-      iframe.contentWindow.print();
-      
-      // Remove iframe after print dialog is closed (with delay)
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-      }, 2000);
-    }
-  };
-  
-  document.body.appendChild(iframe);
+  try {
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = pdfUrl;
+    
+    iframe.onload = () => {
+      try {
+        if (iframe.contentWindow) {
+          iframe.contentWindow.print();
+          
+          // Remove iframe after print dialog is closed (with delay)
+          setTimeout(() => {
+            if (document.body.contains(iframe)) {
+              document.body.removeChild(iframe);
+            }
+          }, 2000);
+        }
+      } catch (error) {
+        console.error("Error during print process:", error);
+      }
+    };
+    
+    // Handle loading errors
+    iframe.onerror = (error) => {
+      console.error("Error loading PDF in iframe:", error);
+      document.body.removeChild(iframe);
+    };
+    
+    document.body.appendChild(iframe);
+  } catch (error) {
+    console.error("Error in printPdf function:", error);
+  }
 }
 
 /**
  * Saves the badge PDF to the user's device
  */
 export function saveBadgePdf(blob: Blob, visitor: Visitor) {
-  // Create a download link
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `visitor_badge_${visitor.visitorNumber}.pdf`;
-  
-  // Trigger download
-  document.body.appendChild(link);
-  link.click();
-  
-  // Clean up
-  document.body.removeChild(link);
+  try {
+    // Create a download link
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `visitor_badge_${visitor.visitorNumber}.pdf`;
+    
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    
+    // Clean up
+    setTimeout(() => {
+      if (document.body.contains(link)) {
+        document.body.removeChild(link);
+      }
+      URL.revokeObjectURL(link.href); // Free memory
+    }, 100);
+  } catch (error) {
+    console.error("Error in saveBadgePdf function:", error);
+  }
 }
