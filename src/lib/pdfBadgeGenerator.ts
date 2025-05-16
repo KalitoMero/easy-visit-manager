@@ -5,19 +5,31 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { logDebug, testBlobFunctionality, isPdfMakeInitialized } from './debugUtils';
 import pdfMake from 'pdfmake/build/pdfmake';
-import pdfFonts from 'pdfmake/build/vfs_fonts';
+
+// Special import for pdfMake fonts
+// Note: vfs_fonts doesn't have a default export, so we need to import it differently
+import 'pdfmake/build/vfs_fonts';
 
 // Initialize pdfMake with fonts
 if (typeof window !== 'undefined') {
   // Ensure pdfMake is available globally
   window.pdfMake = pdfMake;
   
-  // Set virtual file system for fonts
-  if (pdfFonts && pdfFonts.pdfMake && pdfFonts.pdfMake.vfs) {
-    window.pdfMake.vfs = pdfFonts.pdfMake.vfs;
-    logDebug('PDF', 'pdfMake initialized with fonts in window object');
+  // Check if vfs is available from pdfMake global (it's loaded in the correct order via script imports)
+  if (window.pdfMake && typeof window.pdfMake.vfs === 'undefined') {
+    try {
+      // vfs_fonts.js should set pdfMake.vfs when loaded
+      logDebug('PDF', 'Setting up pdfMake.vfs - checking if available');
+      if (typeof window.pdfMake.vfs === 'undefined') {
+        logDebug('PDF', 'WARNING: pdfMake.vfs is still undefined after vfs_fonts import');
+      } else {
+        logDebug('PDF', 'pdfMake initialized with fonts in window object');
+      }
+    } catch (e) {
+      logDebug('PDF', 'ERROR: Could not set up pdfMake fonts', e);
+    }
   } else {
-    logDebug('PDF', 'ERROR: pdfFonts.pdfMake.vfs is not available');
+    logDebug('PDF', 'pdfMake already has vfs initialized');
   }
 }
 
