@@ -3,14 +3,23 @@ import { Visitor } from '@/hooks/useVisitorStore';
 import { generateQRCodeDataUrl } from './qrCodeUtils';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { logDebug, testBlobFunctionality } from './debugUtils';
+import { logDebug, testBlobFunctionality, isPdfMakeInitialized } from './debugUtils';
+import pdfMake from 'pdfmake/build/pdfmake';
+import pdfFonts from 'pdfmake/build/vfs_fonts';
 
-// State to track initialization
-let pdfMakeInitialized = false;
-let pdfMakeInitializing = false;
-let pdfMakeInitError: Error | null = null;
-let pdfMake: any = null;
-let pdfFonts: any = null;
+// Initialize pdfMake with fonts
+if (typeof window !== 'undefined') {
+  // Ensure pdfMake is available globally
+  window.pdfMake = pdfMake;
+  
+  // Set virtual file system for fonts
+  if (pdfFonts && pdfFonts.pdfMake && pdfFonts.pdfMake.vfs) {
+    window.pdfMake.vfs = pdfFonts.pdfMake.vfs;
+    logDebug('PDF', 'pdfMake initialized with fonts in window object');
+  } else {
+    logDebug('PDF', 'ERROR: pdfFonts.pdfMake.vfs is not available');
+  }
+}
 
 // Configure page size for A6 in portrait (105mm x 148mm)
 const PAGE_WIDTH = 105; // mm
@@ -25,94 +34,17 @@ const MM_TO_PT = 2.83465;
 const mmToPt = (mm: number) => mm * MM_TO_PT;
 
 /**
- * Initialize pdfMake with dynamic import and proper error handling
+ * Verifies that pdfMake is properly initialized
+ * @throws Error if pdfMake is not initialized
  */
-async function initPdfMake(retryCount = 0): Promise<any> {
-  // Return cached instance if already initialized
-  if (pdfMake && pdfMakeInitialized) {
-    logDebug('PDF', 'pdfMake already initialized, using cached instance');
-    return pdfMake;
+function verifyPdfMakeAvailable() {
+  if (!isPdfMakeInitialized()) {
+    const errorMessage = 'PDF library is not properly initialized';
+    logDebug('PDF', errorMessage);
+    throw new Error(errorMessage);
   }
   
-  // Check if initialization is in progress
-  if (pdfMakeInitializing) {
-    logDebug('PDF', 'pdfMake initialization already in progress, waiting...');
-    // Wait for initialization to complete
-    await new Promise(resolve => setTimeout(resolve, 300));
-    if (pdfMakeInitialized) {
-      return pdfMake;
-    }
-  }
-  
-  // Check for previous error
-  if (pdfMakeInitError && retryCount === 0) {
-    logDebug('PDF', 'Previous pdfMake initialization failed, retrying...', pdfMakeInitError);
-  }
-  
-  // Start initialization
-  pdfMakeInitializing = true;
-  pdfMakeInitError = null;
-  
-  try {
-    logDebug('PDF', `Starting pdfMake initialization (attempt ${retryCount + 1})`);
-    
-    // Test browser Blob functionality first
-    const blobFunctional = await testBlobFunctionality();
-    if (!blobFunctional) {
-      throw new Error('Browser Blob functionality test failed');
-    }
-    
-    // Dynamically import pdfmake modules
-    logDebug('PDF', 'Importing pdfMake modules');
-    const pdfMakeModule = await import('pdfmake/build/pdfmake');
-    logDebug('PDF', 'pdfMake core module imported successfully');
-    
-    const pdfFontsModule = await import('pdfmake/build/vfs_fonts');
-    logDebug('PDF', 'pdfMake fonts module imported successfully');
-    
-    // Store modules
-    pdfMake = pdfMakeModule.default;
-    pdfFonts = pdfFontsModule.default;
-    
-    // Check that we have what we need
-    if (!pdfMake) {
-      throw new Error('pdfMake module did not provide a default export');
-    }
-    
-    if (!pdfFonts || !pdfFonts.pdfMake || !pdfFonts.pdfMake.vfs) {
-      throw new Error('pdfMake fonts not properly loaded');
-    }
-    
-    // Initialize fonts
-    logDebug('PDF', 'Initializing pdfMake fonts');
-    pdfMake.vfs = pdfFonts.pdfMake.vfs;
-    
-    // Mark as initialized
-    pdfMakeInitialized = true;
-    pdfMakeInitializing = false;
-    logDebug('PDF', 'pdfMake initialized successfully');
-    
-    return pdfMake;
-  } catch (error) {
-    // Handle initialization failure
-    pdfMakeInitializing = false;
-    pdfMakeInitialized = false;
-    pdfMakeInitError = error instanceof Error ? error : new Error(String(error));
-    
-    logDebug('PDF', 'pdfMake initialization failed', {
-      error: pdfMakeInitError.message,
-      stack: pdfMakeInitError.stack
-    });
-    
-    // Retry logic for transient errors
-    if (retryCount < 2) {
-      logDebug('PDF', `Retrying pdfMake initialization (attempt ${retryCount + 2})`);
-      await new Promise(resolve => setTimeout(resolve, 500)); // Wait before retry
-      return initPdfMake(retryCount + 1);
-    }
-    
-    throw new Error(`Could not initialize PDF generation library: ${pdfMakeInitError.message}`);
-  }
+  logDebug('PDF', 'PDF library verification passed successfully');
 }
 
 /**
@@ -124,10 +56,16 @@ export const generateVisitorBadgePdf = async (visitor: Visitor) => {
   logDebug('PDF', "Starting PDF generation for visitor:", visitor.visitorNumber);
   
   try {
-    // Initialize pdfMake
-    const pdfMake = await initPdfMake();
+    // Verify pdfMake is available before proceeding
+    verifyPdfMakeAvailable();
     
-    logDebug('PDF', "PDF library initialized, generating QR code");
+    // Test browser Blob functionality
+    const blobFunctional = await testBlobFunctionality();
+    if (!blobFunctional) {
+      throw new Error('Browser Blob functionality test failed');
+    }
+    
+    logDebug('PDF', "Generating QR code for badge");
     
     // Generate QR code for checkout - with more detailed error handling
     let qrCodeUrl;
@@ -276,7 +214,12 @@ export const generateVisitorBadgePdf = async (visitor: Visitor) => {
     // Generate PDF with proper error handling
     return new Promise<{pdfBlob: Blob, pdfUrl: string}>((resolve, reject) => {
       try {
-        const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+        if (!window.pdfMake) {
+          reject(new Error("pdfMake not available in window object"));
+          return;
+        }
+        
+        const pdfDocGenerator = window.pdfMake.createPdf(docDefinition);
         logDebug('PDF', "PDF document created, getting blob");
         
         pdfDocGenerator.getBlob(
@@ -415,5 +358,12 @@ export function saveBadgePdf(blob: Blob, visitor: Visitor) {
   } catch (error) {
     logDebug('PDF', "Error in saveBadgePdf function", error);
     throw error;
+  }
+}
+
+// Add TypeScript declaration for pdfMake in window
+declare global {
+  interface Window {
+    pdfMake: any;
   }
 }

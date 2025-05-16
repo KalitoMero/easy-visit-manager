@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Visitor } from '@/hooks/useVisitorStore';
@@ -8,7 +9,7 @@ import {
   openPdfInNewTab, 
   saveBadgePdf 
 } from '@/lib/pdfBadgeGenerator';
-import { logDebug, testBlobFunctionality } from '@/lib/debugUtils';
+import { logDebug, isPdfMakeInitialized } from '@/lib/debugUtils';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -29,6 +30,7 @@ const VisitorPdfBadge = ({ visitor, onPdfGenerated }: VisitorPdfBadgeProps) => {
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   const [browserInfo, setBrowserInfo] = useState<Record<string, any>>({});
   const [diagnosticLogs, setDiagnosticLogs] = useState<string[]>([]);
+  const [isPdfLibraryReady, setIsPdfLibraryReady] = useState(false);
 
   // Run browser checks on mount
   useEffect(() => {
@@ -46,10 +48,11 @@ const VisitorPdfBadge = ({ visitor, onPdfGenerated }: VisitorPdfBadgeProps) => {
           windowInnerWidth: window.innerWidth,
           windowInnerHeight: window.innerHeight,
           isSecureContext: window.isSecureContext,
+          hasPdfMake: typeof window.pdfMake !== 'undefined',
+          hasPdfMakeFonts: (typeof window.pdfMake !== 'undefined') && (typeof window.pdfMake.vfs !== 'undefined'),
         };
         
-        // Test Blob functionality
-        info.blobFunctional = await testBlobFunctionality();
+        setIsPdfLibraryReady(isPdfMakeInitialized());
         
         setBrowserInfo(info);
         logDebug('Browser', 'Browser information collected', info);
@@ -87,6 +90,17 @@ const VisitorPdfBadge = ({ visitor, onPdfGenerated }: VisitorPdfBadgeProps) => {
     }
     
     try {
+      // Check PDF library availability first
+      if (!isPdfMakeInitialized()) {
+        setError("PDF-Bibliothek ist nicht richtig initialisiert. Bitte laden Sie die Seite neu.");
+        toast({
+          title: "Fehler",
+          description: "PDF-Bibliothek ist nicht initialisiert.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       setIsGenerating(true);
       setError(null);
       
@@ -187,6 +201,16 @@ const VisitorPdfBadge = ({ visitor, onPdfGenerated }: VisitorPdfBadgeProps) => {
     <Card className="overflow-hidden">
       <CardContent className="p-4">
         <div className="flex flex-col gap-2">
+          {!isPdfLibraryReady && (
+            <Alert variant="destructive" className="mb-2">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>PDF-Library nicht initialisiert</AlertTitle>
+              <AlertDescription>
+                Die PDF-Bibliothek konnte nicht geladen werden. Bitte laden Sie die Seite neu oder verwenden Sie einen anderen Browser.
+              </AlertDescription>
+            </Alert>
+          )}
+          
           {error && (
             <Alert variant="destructive" className="mb-2">
               <AlertTriangle className="h-4 w-4" />
@@ -245,6 +269,7 @@ const VisitorPdfBadge = ({ visitor, onPdfGenerated }: VisitorPdfBadgeProps) => {
                               <p>Wiederholungsversuche: {retryCount}</p>
                               <p>URL: {generatedPdfUrl ? 'Verfügbar' : 'Nicht verfügbar'}</p>
                               <p>Blob: {pdfBlob ? `Verfügbar (${pdfBlob.size} bytes)` : 'Nicht verfügbar'}</p>
+                              <p>PDF Library: {isPdfLibraryReady ? 'Initialisiert' : 'Nicht initialisiert'}</p>
                             </div>
                           </AccordionContent>
                         </AccordionItem>
@@ -259,7 +284,7 @@ const VisitorPdfBadge = ({ visitor, onPdfGenerated }: VisitorPdfBadgeProps) => {
           {!generatedPdfUrl ? (
             <Button 
               onClick={() => generateBadge()}
-              disabled={isGenerating}
+              disabled={isGenerating || !isPdfLibraryReady}
               variant="outline"
               className="w-full"
             >
@@ -289,7 +314,7 @@ const VisitorPdfBadge = ({ visitor, onPdfGenerated }: VisitorPdfBadgeProps) => {
                   variant="outline" 
                   size="sm" 
                   className="flex items-center gap-1"
-                  disabled={isGenerating}
+                  disabled={isGenerating || !isPdfLibraryReady}
                 >
                   <RefreshCw className={`h-4 w-4 ${isGenerating ? 'animate-spin' : ''}`} />
                   <span>Neu generieren</span>

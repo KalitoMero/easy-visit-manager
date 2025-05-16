@@ -31,6 +31,25 @@ export const checkFeature = (featureName: string, feature: any) => {
 };
 
 /**
+ * Checks if pdfMake is properly initialized in the window object
+ * @returns True if pdfMake is available and properly initialized
+ */
+export const isPdfMakeInitialized = () => {
+  try {
+    const hasPdfMake = typeof window.pdfMake !== 'undefined';
+    const hasVfs = hasPdfMake && typeof window.pdfMake.vfs !== 'undefined';
+    
+    logDebug('PDF', `pdfMake availability check: ${hasPdfMake ? 'Available' : 'Not available'}`);
+    logDebug('PDF', `pdfMake fonts (VFS) check: ${hasVfs ? 'Available' : 'Not available'}`);
+    
+    return hasPdfMake && hasVfs;
+  } catch (error) {
+    logDebug('PDF', 'Error checking pdfMake initialization', error);
+    return false;
+  }
+};
+
+/**
  * Checks the Blob functionality of the browser
  * @returns True if Blob functionality works correctly
  */

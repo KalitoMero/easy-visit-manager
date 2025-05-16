@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +12,7 @@ import { useTranslation } from '@/locale/translations';
 import { ArrowLeft, Timer, Printer, AlertTriangle, Bug } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateVisitorBadgePdf, printPdf } from '@/lib/pdfBadgeGenerator';
-import { logDebug } from '@/lib/debugUtils';
+import { logDebug, isPdfMakeInitialized } from '@/lib/debugUtils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
@@ -38,6 +39,7 @@ const CheckInStep3 = () => {
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   const [pdfGenerateAttempts, setPdfGenerateAttempts] = useState(0);
   const [diagnosticLogs, setDiagnosticLogs] = useState<string[]>([]);
+  const [isPdfLibraryReady, setIsPdfLibraryReady] = useState(false);
   
   // Find the current visitor
   const visitor = visitors.find(v => v.id === id);
@@ -58,6 +60,10 @@ const CheckInStep3 = () => {
         });
       }
     };
+    
+    // Check if PDF library is available
+    setIsPdfLibraryReady(isPdfMakeInitialized());
+    logDebug('Page', `PDF library availability: ${isPdfMakeInitialized() ? 'Ready' : 'Not Ready'}`);
     
     return () => {
       console.log = originalLog;
@@ -97,7 +103,7 @@ const CheckInStep3 = () => {
     }
     
     // Handle automatic printing (with PDF generation)
-    if (enableAutomaticPrinting && !printInitiated && visitor.policyAccepted) {
+    if (enableAutomaticPrinting && !printInitiated && visitor.policyAccepted && isPdfLibraryReady) {
       logDebug('Page', "Initiating automatic PDF printing for visitor:", visitor.visitorNumber);
       setPrintInitiated(true);
       
@@ -149,8 +155,11 @@ const CheckInStep3 = () => {
           });
         }
       })();
+    } else if (enableAutomaticPrinting && !printInitiated && !isPdfLibraryReady) {
+      logDebug('Page', "Automatic printing requested but PDF library not ready");
+      setPrintError("PDF-Bibliothek ist nicht initialisiert. Bitte laden Sie die Seite neu.");
     }
-  }, [visitor, navigate, updateVisitor, enableAutomaticPrinting, id, location, printInitiated, toast, language, pdfGenerateAttempts]);
+  }, [visitor, navigate, updateVisitor, enableAutomaticPrinting, id, location, printInitiated, toast, language, pdfGenerateAttempts, isPdfLibraryReady]);
 
   // Countdown-Timer Effekt
   useEffect(() => {
@@ -175,6 +184,18 @@ const CheckInStep3 = () => {
   // Manually print badge function
   const handlePrintBadge = async () => {
     if (!visitor) return;
+    
+    if (!isPdfLibraryReady) {
+      setPrintError("PDF-Bibliothek ist nicht initialisiert. Bitte laden Sie die Seite neu.");
+      toast({
+        title: language === 'de' ? "Fehler" : "Error",
+        description: language === 'de'
+          ? "PDF-Bibliothek ist nicht initialisiert."
+          : "PDF library is not initialized.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setPrintError(null);
     setPdfGenerateAttempts(prev => prev + 1);
@@ -245,6 +266,18 @@ const CheckInStep3 = () => {
               </p>
             </Card>
             
+            {!isPdfLibraryReady && (
+              <Alert variant="destructive" className="mt-2">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>{language === 'de' ? 'PDF-Bibliothek nicht initialisiert' : 'PDF Library Not Initialized'}</AlertTitle>
+                <AlertDescription>
+                  {language === 'de' 
+                    ? 'Die PDF-Bibliothek konnte nicht geladen werden. Ausweis kann nicht gedruckt werden.'
+                    : 'The PDF library could not be loaded. Badge cannot be printed.'}
+                </AlertDescription>
+              </Alert>
+            )}
+            
             {printError && (
               <Alert variant="destructive" className="mt-2">
                 <AlertTriangle className="h-4 w-4" />
@@ -273,6 +306,7 @@ const CheckInStep3 = () => {
                           <div className="text-xs bg-slate-100 p-2 rounded">
                             <p>{language === 'de' ? 'Versuche:' : 'Attempts:'} {pdfGenerateAttempts}</p>
                             <p>{language === 'de' ? 'Automatisches Drucken:' : 'Automatic printing:'} {enableAutomaticPrinting ? 'Aktiviert' : 'Deaktiviert'}</p>
+                            <p>{language === 'de' ? 'PDF-Bibliothek:' : 'PDF Library:'} {isPdfLibraryReady ? 'Initialisiert' : 'Nicht initialisiert'}</p>
                           </div>
                         </AccordionContent>
                       </AccordionItem>
@@ -334,6 +368,7 @@ const CheckInStep3 = () => {
                 onClick={handlePrintBadge}
                 variant="outline" 
                 className="mt-2"
+                disabled={!isPdfLibraryReady}
               >
                 <Printer className="h-4 w-4 mr-2" />
                 {language === 'de' ? 'Besucherausweis drucken' : 'Print visitor badge'}
