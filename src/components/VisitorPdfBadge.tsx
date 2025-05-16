@@ -1,17 +1,18 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Visitor } from '@/hooks/useVisitorStore';
-import { Printer, Eye, Download, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Printer, Eye, Download, AlertTriangle, RefreshCw, Bug } from 'lucide-react';
 import { 
   generateVisitorBadgePdf, 
   printPdf, 
   openPdfInNewTab, 
   saveBadgePdf 
 } from '@/lib/pdfBadgeGenerator';
+import { logDebug, testBlobFunctionality } from '@/lib/debugUtils';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 interface VisitorPdfBadgeProps {
   visitor: Visitor;
@@ -26,6 +27,59 @@ const VisitorPdfBadge = ({ visitor, onPdfGenerated }: VisitorPdfBadgeProps) => {
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [showDebugInfo, setShowDebugInfo] = useState(false);
+  const [browserInfo, setBrowserInfo] = useState<Record<string, any>>({});
+  const [diagnosticLogs, setDiagnosticLogs] = useState<string[]>([]);
+
+  // Run browser checks on mount
+  useEffect(() => {
+    const runBrowserChecks = async () => {
+      try {
+        const info: Record<string, any> = {
+          userAgent: navigator.userAgent,
+          platform: navigator.platform,
+          vendor: navigator.vendor,
+          hasBlob: typeof Blob !== 'undefined',
+          hasURL: typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function',
+          hasPromise: typeof Promise !== 'undefined',
+          windowOuterWidth: window.outerWidth,
+          windowOuterHeight: window.outerHeight,
+          windowInnerWidth: window.innerWidth,
+          windowInnerHeight: window.innerHeight,
+          isSecureContext: window.isSecureContext,
+        };
+        
+        // Test Blob functionality
+        info.blobFunctional = await testBlobFunctionality();
+        
+        setBrowserInfo(info);
+        logDebug('Browser', 'Browser information collected', info);
+      } catch (e) {
+        logDebug('Browser', 'Error collecting browser info', e);
+      }
+    };
+    
+    runBrowserChecks();
+    
+    // Setup log capture
+    const originalLog = console.log;
+    console.log = (...args) => {
+      originalLog(...args);
+      if (args[0] && typeof args[0] === 'string' && args[0].includes('[')) {
+        // Capture only our formatted debug logs
+        setDiagnosticLogs(prev => {
+          const newLogs = [...prev, args.map(a => 
+            typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a)
+          ).join(' ')];
+          // Keep last 50 logs
+          return newLogs.slice(Math.max(0, newLogs.length - 50));
+        });
+      }
+    };
+    
+    return () => {
+      console.log = originalLog;
+    };
+  }, []);
 
   const generateBadge = async (retry = false) => {
     if (retry) {
@@ -36,10 +90,10 @@ const VisitorPdfBadge = ({ visitor, onPdfGenerated }: VisitorPdfBadgeProps) => {
       setIsGenerating(true);
       setError(null);
       
-      console.log("Starting PDF generation for visitor:", visitor.visitorNumber);
+      logDebug('Badge', "Starting PDF generation for visitor:", visitor.visitorNumber);
       const { pdfBlob, pdfUrl } = await generateVisitorBadgePdf(visitor);
       
-      console.log("PDF generated successfully, blob size:", pdfBlob.size, "setting state");
+      logDebug('Badge', "PDF generated successfully", { blobSize: pdfBlob.size });
       setGeneratedPdfUrl(pdfUrl);
       setPdfBlob(pdfBlob);
       
@@ -52,8 +106,9 @@ const VisitorPdfBadge = ({ visitor, onPdfGenerated }: VisitorPdfBadgeProps) => {
         description: `Besucherausweis für ${visitor.name} wurde generiert.`
       });
     } catch (error) {
-      console.error("Error generating PDF:", error);
-      setError(`PDF konnte nicht generiert werden. ${error instanceof Error ? error.message : 'Unbekannter Fehler'}. Bitte versuchen Sie es erneut.`);
+      logDebug('Badge', "Error generating PDF", error);
+      const errorMsg = error instanceof Error ? error.message : 'Unbekannter Fehler';
+      setError(`PDF konnte nicht generiert werden. ${errorMsg}. Bitte versuchen Sie es erneut.`);
       toast({
         title: "Fehler",
         description: "PDF konnte nicht generiert werden.",
@@ -67,13 +122,14 @@ const VisitorPdfBadge = ({ visitor, onPdfGenerated }: VisitorPdfBadgeProps) => {
   const handlePrint = () => {
     if (generatedPdfUrl) {
       try {
+        logDebug('Badge', "Printing PDF", generatedPdfUrl);
         printPdf(generatedPdfUrl);
         toast({
           title: "Drucken",
           description: "Besucherausweis wird gedruckt..."
         });
       } catch (error) {
-        console.error("Print error:", error);
+        logDebug('Badge', "Print error", error);
         toast({
           title: "Druckfehler",
           description: "Beim Drucken ist ein Fehler aufgetreten.",
@@ -86,9 +142,10 @@ const VisitorPdfBadge = ({ visitor, onPdfGenerated }: VisitorPdfBadgeProps) => {
   const handleView = () => {
     if (generatedPdfUrl) {
       try {
+        logDebug('Badge', "Opening PDF in new tab", generatedPdfUrl);
         openPdfInNewTab(generatedPdfUrl);
       } catch (error) {
-        console.error("View error:", error);
+        logDebug('Badge', "View error", error);
         toast({
           title: "Anzeigefehler",
           description: "PDF konnte nicht angezeigt werden.",
@@ -101,9 +158,10 @@ const VisitorPdfBadge = ({ visitor, onPdfGenerated }: VisitorPdfBadgeProps) => {
   const handleDownload = () => {
     if (pdfBlob) {
       try {
+        logDebug('Badge', "Downloading PDF", { blobSize: pdfBlob.size });
         saveBadgePdf(pdfBlob, visitor);
       } catch (error) {
-        console.error("Download error:", error);
+        logDebug('Badge', "Download error", error);
         toast({
           title: "Downloadfehler",
           description: "PDF konnte nicht heruntergeladen werden.",
@@ -112,12 +170,13 @@ const VisitorPdfBadge = ({ visitor, onPdfGenerated }: VisitorPdfBadgeProps) => {
       }
     } else if (generatedPdfUrl) {
       // If we only have the URL but not the blob, regenerate the PDF
+      logDebug('Badge', "Missing PDF blob, regenerating before download");
       generateBadge(true).then(() => {
         if (pdfBlob) {
           try {
             saveBadgePdf(pdfBlob, visitor);
           } catch (error) {
-            console.error("Download error after regeneration:", error);
+            logDebug('Badge', "Download error after regeneration", error);
           }
         }
       });
@@ -134,7 +193,7 @@ const VisitorPdfBadge = ({ visitor, onPdfGenerated }: VisitorPdfBadgeProps) => {
               <AlertTitle>Fehler</AlertTitle>
               <AlertDescription className="space-y-2">
                 <p>{error}</p>
-                {retryCount >= 2 && (
+                {retryCount >= 1 && (
                   <div>
                     <Button 
                       variant="outline" 
@@ -142,14 +201,54 @@ const VisitorPdfBadge = ({ visitor, onPdfGenerated }: VisitorPdfBadgeProps) => {
                       className="mt-1"
                       onClick={() => setShowDebugInfo(!showDebugInfo)}
                     >
+                      <Bug className="h-4 w-4 mr-1" />
                       Debug-Information {showDebugInfo ? 'ausblenden' : 'anzeigen'}
                     </Button>
+                    
                     {showDebugInfo && (
-                      <pre className="text-xs mt-2 bg-slate-100 p-2 rounded overflow-auto max-h-40">
-                        Visitor: {JSON.stringify(visitor, null, 2)}
-                        <br/>
-                        Retry count: {retryCount}
-                      </pre>
+                      <Accordion type="single" collapsible className="mt-2">
+                        <AccordionItem value="visitor-info">
+                          <AccordionTrigger className="text-xs py-1">Besucher-Information</AccordionTrigger>
+                          <AccordionContent>
+                            <pre className="text-xs bg-slate-100 p-2 rounded overflow-auto max-h-40">
+                              {JSON.stringify(visitor, null, 2)}
+                            </pre>
+                          </AccordionContent>
+                        </AccordionItem>
+                        
+                        <AccordionItem value="browser-info">
+                          <AccordionTrigger className="text-xs py-1">Browser-Information</AccordionTrigger>
+                          <AccordionContent>
+                            <pre className="text-xs bg-slate-100 p-2 rounded overflow-auto max-h-40">
+                              {JSON.stringify(browserInfo, null, 2)}
+                            </pre>
+                          </AccordionContent>
+                        </AccordionItem>
+                        
+                        <AccordionItem value="diagnostic-logs">
+                          <AccordionTrigger className="text-xs py-1">Diagnose-Protokolle</AccordionTrigger>
+                          <AccordionContent>
+                            <div className="text-xs bg-slate-100 p-2 rounded overflow-auto max-h-40 font-mono whitespace-pre-wrap">
+                              {diagnosticLogs.map((log, i) => (
+                                <div key={i} className="py-0.5 border-b border-slate-200 last:border-0">
+                                  {log}
+                                </div>
+                              ))}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                        
+                        <AccordionItem value="retry-info">
+                          <AccordionTrigger className="text-xs py-1">Wiederholungs-Information</AccordionTrigger>
+                          <AccordionContent>
+                            <div className="text-xs bg-slate-100 p-2 rounded">
+                              <p>Wiederholungsversuche: {retryCount}</p>
+                              <p>URL: {generatedPdfUrl ? 'Verfügbar' : 'Nicht verfügbar'}</p>
+                              <p>Blob: {pdfBlob ? `Verfügbar (${pdfBlob.size} bytes)` : 'Nicht verfügbar'}</p>
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
                     )}
                   </div>
                 )}
