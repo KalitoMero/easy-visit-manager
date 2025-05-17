@@ -3,6 +3,10 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
+// Import pdfMake to ensure it's available globally
+import pdfMake from 'pdfmake/build/pdfmake';
+import 'pdfmake/build/vfs_fonts';
+
 // TypeScript declarations for Electron
 declare global {
   interface Window {
@@ -16,7 +20,13 @@ declare global {
       importVisitors: () => Promise<{success: boolean, visitors?: any[], message?: string}>;
       getVersion: () => string;
     };
+    pdfMake?: typeof pdfMake;
   }
+}
+
+// Make sure pdfMake is available globally
+if (typeof window !== 'undefined') {
+  window.pdfMake = pdfMake;
 }
 
 createRoot(document.getElementById("root")!).render(<App />);

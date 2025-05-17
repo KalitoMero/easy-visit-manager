@@ -1,4 +1,3 @@
-
 import { Visitor } from '@/hooks/useVisitorStore';
 import { generateQRCodeDataUrl } from './qrCodeUtils';
 import { format } from 'date-fns';
@@ -6,32 +5,9 @@ import { de } from 'date-fns/locale';
 import { logDebug, testBlobFunctionality, isPdfMakeInitialized } from './debugUtils';
 import pdfMake from 'pdfmake/build/pdfmake';
 
-// Special import for pdfMake fonts
-// Note: vfs_fonts doesn't have a default export, so we need to import it differently
+// Import fonts without assignment - this will execute the script
+// which sets up pdfMake.vfs globally
 import 'pdfmake/build/vfs_fonts';
-
-// Initialize pdfMake with fonts
-if (typeof window !== 'undefined') {
-  // Ensure pdfMake is available globally
-  window.pdfMake = pdfMake;
-  
-  // Check if vfs is available from pdfMake global (it's loaded in the correct order via script imports)
-  if (window.pdfMake && typeof window.pdfMake.vfs === 'undefined') {
-    try {
-      // vfs_fonts.js should set pdfMake.vfs when loaded
-      logDebug('PDF', 'Setting up pdfMake.vfs - checking if available');
-      if (typeof window.pdfMake.vfs === 'undefined') {
-        logDebug('PDF', 'WARNING: pdfMake.vfs is still undefined after vfs_fonts import');
-      } else {
-        logDebug('PDF', 'pdfMake initialized with fonts in window object');
-      }
-    } catch (e) {
-      logDebug('PDF', 'ERROR: Could not set up pdfMake fonts', e);
-    }
-  } else {
-    logDebug('PDF', 'pdfMake already has vfs initialized');
-  }
-}
 
 // Configure page size for A6 in portrait (105mm x 148mm)
 const PAGE_WIDTH = 105; // mm
@@ -50,13 +26,29 @@ const mmToPt = (mm: number) => mm * MM_TO_PT;
  * @throws Error if pdfMake is not initialized
  */
 function verifyPdfMakeAvailable() {
-  if (!isPdfMakeInitialized()) {
-    const errorMessage = 'PDF library is not properly initialized';
-    logDebug('PDF', errorMessage);
-    throw new Error(errorMessage);
-  }
+  // Only check if we're in a browser environment
+  if (typeof window === 'undefined') return;
   
-  logDebug('PDF', 'PDF library verification passed successfully');
+  const hasPdfMake = typeof window.pdfMake !== 'undefined';
+  const hasVfs = hasPdfMake && typeof window.pdfMake.vfs !== 'undefined';
+  
+  logDebug('PDF', `PDF library check - pdfMake: ${hasPdfMake ? 'Available' : 'Not available'}`);
+  logDebug('PDF', `PDF library check - VFS fonts: ${hasVfs ? 'Available' : 'Not available'}`);
+  
+  // Don't throw here, just log the issue
+  if (!hasPdfMake || !hasVfs) {
+    logDebug('PDF', 'PDF library not properly initialized');
+  }
+}
+
+// Try to initialize on load, but don't block rendering if it fails
+try {
+  if (typeof window !== 'undefined') {
+    logDebug('PDF', 'Checking pdfMake initialization status');
+    verifyPdfMakeAvailable();
+  }
+} catch (e) {
+  logDebug('PDF', 'Error during pdfMake initialization check:', e);
 }
 
 /**

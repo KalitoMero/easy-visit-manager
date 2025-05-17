@@ -10,13 +10,18 @@
  * @param data Additional data to log
  */
 export const logDebug = (category: string, message: string, data?: any) => {
-  const timestamp = new Date().toISOString().split('T')[1].split('.')[0]; // HH:MM:SS
-  const prefix = `[${timestamp}][${category}]`;
-  
-  if (data !== undefined) {
-    console.log(`${prefix} ${message}`, data);
-  } else {
-    console.log(`${prefix} ${message}`);
+  try {
+    const timestamp = new Date().toISOString().split('T')[1].split('.')[0]; // HH:MM:SS
+    const prefix = `[${timestamp}][${category}]`;
+    
+    if (data !== undefined) {
+      console.log(`${prefix} ${message}`, data);
+    } else {
+      console.log(`${prefix} ${message}`);
+    }
+  } catch (e) {
+    // Fail silently - logging should never break the app
+    console.log('Error in logging utility:', e);
   }
 };
 
@@ -26,8 +31,13 @@ export const logDebug = (category: string, message: string, data?: any) => {
  * @param feature Feature to check
  */
 export const checkFeature = (featureName: string, feature: any) => {
-  logDebug('Environment', `Checking feature: ${featureName}`, !!feature ? 'Available' : 'Not available');
-  return !!feature;
+  try {
+    logDebug('Environment', `Checking feature: ${featureName}`, !!feature ? 'Available' : 'Not available');
+    return !!feature;
+  } catch (e) {
+    logDebug('Environment', `Error checking feature: ${featureName}`, e);
+    return false;
+  }
 };
 
 /**
@@ -36,11 +46,17 @@ export const checkFeature = (featureName: string, feature: any) => {
  */
 export const isPdfMakeInitialized = () => {
   try {
+    // Handle non-browser environment gracefully
+    if (typeof window === 'undefined') return false;
+    
     const hasPdfMake = typeof window.pdfMake !== 'undefined';
     const hasVfs = hasPdfMake && typeof window.pdfMake.vfs !== 'undefined';
     
-    logDebug('PDF', `pdfMake availability check: ${hasPdfMake ? 'Available' : 'Not available'}`);
-    logDebug('PDF', `pdfMake fonts (VFS) check: ${hasVfs ? 'Available' : 'Not available'}`);
+    logDebug('PDF', `pdfMake availability: ${hasPdfMake ? 'Available' : 'Not available'}`);
+    
+    if (hasPdfMake) {
+      logDebug('PDF', `pdfMake fonts (VFS): ${hasVfs ? 'Available' : 'Not available'}`);
+    }
     
     return hasPdfMake && hasVfs;
   } catch (error) {
