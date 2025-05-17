@@ -164,7 +164,8 @@ const CheckInStep3 = () => {
         </Card>
       </div>
       
-      <style jsx>{`
+      <style>
+        {`
         .check-icon-wrapper {
           width: 80px;
           height: 80px;
@@ -179,7 +180,8 @@ const CheckInStep3 = () => {
           font-size: 40px;
           font-weight: bold;
         }
-      `}</style>
+        `}
+      </style>
     </div>
   );
 };
