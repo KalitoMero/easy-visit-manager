@@ -37,8 +37,8 @@ export const navigateToPrintPreview = (
     return;
   }
   
-  logDebug('Print', `Navigating to badge print preview for visitor ${visitor.visitorNumber}`);
-  navigate(`/badge-print-preview/${visitor.id}`);
+  logDebug('Print', `Navigating to print badge preview for visitor ${visitor.visitorNumber}`);
+  navigate(`/print-badge/${visitor.id}`);
 };
 
 /**
