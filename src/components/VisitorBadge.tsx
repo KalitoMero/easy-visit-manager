@@ -156,9 +156,9 @@ const VisitorBadge = ({
   return (
     <div className={cn(
       "visitor-badge bg-white border border-gray-300 rounded-md p-2 flex flex-col box-border",
-      "max-h-[74mm] overflow-hidden print:shadow-none",
-      "w-full print:w-[105mm]", // Ensure full width usage for print
-      "print:h-[74mm] print:max-h-[74mm]", // Optimize height for print
+      "print:shadow-none print:border-0",
+      "print:w-[60mm] print:h-[90mm]", // Exact dimensions for printing: 6cm x 9cm
+      "w-full h-full", // Full width/height for screen display
       "print:p-1", // Reduce padding when printing
       className
     )}>

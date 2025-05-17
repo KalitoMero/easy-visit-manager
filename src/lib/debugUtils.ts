@@ -5,7 +5,7 @@
 
 /**
  * Enhanced console logging with timestamp and category
- * @param category Log category (e.g., 'PDF', 'Print')
+ * @param category Log category (e.g., 'Print', 'Badge')
  * @param message Main log message
  * @param data Additional data to log
  */
@@ -41,56 +41,14 @@ export const checkFeature = (featureName: string, feature: any) => {
 };
 
 /**
- * Checks if pdfMake is properly initialized in the window object
- * @returns True if pdfMake is available and properly initialized
+ * Tests basic print functionality of the browser
  */
-export const isPdfMakeInitialized = () => {
+export const testPrintFunctionality = (): boolean => {
   try {
-    // Handle non-browser environment gracefully
-    if (typeof window === 'undefined') return false;
-    
-    const hasPdfMake = typeof window.pdfMake !== 'undefined';
-    const hasVfs = hasPdfMake && typeof window.pdfMake.vfs !== 'undefined';
-    
-    logDebug('PDF', `pdfMake availability: ${hasPdfMake ? 'Available' : 'Not available'}`);
-    
-    if (hasPdfMake) {
-      logDebug('PDF', `pdfMake fonts (VFS): ${hasVfs ? 'Available' : 'Not available'}`);
-    }
-    
-    return hasPdfMake && hasVfs;
+    logDebug('Print', 'Testing print functionality');
+    return typeof window !== 'undefined' && typeof window.print === 'function';
   } catch (error) {
-    logDebug('PDF', 'Error checking pdfMake initialization', error);
-    return false;
-  }
-};
-
-/**
- * Checks the Blob functionality of the browser
- * @returns True if Blob functionality works correctly
- */
-export const testBlobFunctionality = async (): Promise<boolean> => {
-  try {
-    logDebug('Blob', 'Testing Blob functionality');
-    
-    // Create a simple blob
-    const testBlob = new Blob(['test content'], { type: 'text/plain' });
-    logDebug('Blob', 'Created test blob', { size: testBlob.size, type: testBlob.type });
-    
-    // Create object URL
-    const testUrl = URL.createObjectURL(testBlob);
-    logDebug('Blob', 'Created object URL', testUrl);
-    
-    // Attempt to read the blob
-    const text = await testBlob.text();
-    logDebug('Blob', 'Successfully read blob content', text);
-    
-    // Clean up
-    URL.revokeObjectURL(testUrl);
-    
-    return true;
-  } catch (error) {
-    logDebug('Blob', 'Blob functionality test failed', error);
+    logDebug('Print', 'Print functionality test failed', error);
     return false;
   }
 };

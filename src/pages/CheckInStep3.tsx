@@ -9,14 +9,13 @@ import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
 import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import { useTranslation } from '@/locale/translations';
-import { ArrowLeft, Timer, Printer, AlertTriangle, Bug } from 'lucide-react';
+import { ArrowLeft, Timer, Printer, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { generateVisitorBadgePdf, printPdf } from '@/lib/pdfBadgeGenerator';
-import { logDebug, isPdfMakeInitialized } from '@/lib/debugUtils';
+import { logDebug } from '@/lib/debugUtils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { navigateToPrintPreview } from '@/lib/htmlBadgePrinter';
 
-const COUNTDOWN_SECONDS = 10; // 10 Sekunden Countdown
+const COUNTDOWN_SECONDS = 10; // 10 seconds countdown
 
 const CheckInStep3 = () => {
   const { id } = useParams<{ id: string }>();
@@ -34,42 +33,12 @@ const CheckInStep3 = () => {
   
   // Countdown Timer
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
-  const [printInitiated, setPrintInitiated] = useState(false);
   const [printError, setPrintError] = useState<string | null>(null);
-  const [showDebugInfo, setShowDebugInfo] = useState(false);
-  const [pdfGenerateAttempts, setPdfGenerateAttempts] = useState(0);
-  const [diagnosticLogs, setDiagnosticLogs] = useState<string[]>([]);
-  const [isPdfLibraryReady, setIsPdfLibraryReady] = useState(false);
+  const [printInitiated, setPrintInitiated] = useState(false);
   
   // Find the current visitor
   const visitor = visitors.find(v => v.id === id);
 
-  // Set up log capture for debugging
-  useEffect(() => {
-    const originalLog = console.log;
-    console.log = (...args) => {
-      originalLog(...args);
-      if (args[0] && typeof args[0] === 'string' && args[0].includes('[')) {
-        // Capture only our formatted debug logs
-        setDiagnosticLogs(prev => {
-          const newLogs = [...prev, args.map(a => 
-            typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a)
-          ).join(' ')];
-          // Keep last 50 logs
-          return newLogs.slice(Math.max(0, newLogs.length - 50));
-        });
-      }
-    };
-    
-    // Check if PDF library is available
-    setIsPdfLibraryReady(isPdfMakeInitialized());
-    logDebug('Page', `PDF library availability: ${isPdfMakeInitialized() ? 'Ready' : 'Not Ready'}`);
-    
-    return () => {
-      console.log = originalLog;
-    };
-  }, []);
-  
   useEffect(() => {
     // Ensure we have a visitor before proceeding
     if (!visitor) {
@@ -86,7 +55,6 @@ const CheckInStep3 = () => {
       checkInTime: visitor.checkInTime,
       checkOutTime: visitor.checkOutTime,
       policyAccepted: visitor.policyAccepted,
-      signature: visitor.signature ? "exists" : "none"
     });
     
     if (!visitor.policyAccepted) {
@@ -102,103 +70,61 @@ const CheckInStep3 = () => {
       updateVisitor(visitor.id, { checkOutTime: null });
     }
     
-    // Handle automatic printing (with PDF generation)
-    if (enableAutomaticPrinting && !printInitiated && visitor.policyAccepted && isPdfLibraryReady) {
-      logDebug('Page', "Initiating automatic PDF printing for visitor:", visitor.visitorNumber);
+    // Handle automatic printing
+    if (enableAutomaticPrinting && !printInitiated && visitor.policyAccepted) {
+      logDebug('Page', "Initiating automatic HTML badge printing for visitor:", visitor.visitorNumber);
       setPrintInitiated(true);
       
       // Show a confirmation toast
       toast({
-        title: language === 'de' ? "Besucherausweis wird erstellt" : "Creating visitor badge",
+        title: language === 'de' ? "Besucherausweis wird vorbereitet" : "Preparing visitor badge",
         description: language === 'de' 
-          ? `Besucherausweis für ${visitor.name} (${visitor.visitorNumber}) wird generiert` 
-          : `Creating visitor badge for ${visitor.name} (${visitor.visitorNumber})`,
+          ? `Besucherausweis für ${visitor.name} (${visitor.visitorNumber}) wird vorbereitet` 
+          : `Preparing visitor badge for ${visitor.name} (${visitor.visitorNumber})`,
       });
       
-      // Generate and print PDF badge with error handling
-      (async () => {
-        try {
-          setPdfGenerateAttempts(prev => prev + 1);
-          logDebug('Page', "Starting PDF generation in CheckInStep3 (attempt " + (pdfGenerateAttempts + 1) + ")");
-          
-          const { pdfBlob, pdfUrl } = await generateVisitorBadgePdf(visitor);
-          logDebug('Page', "PDF generated successfully, saving URL to visitor");
-          
-          // Save PDF URL to visitor record
-          updateVisitor(visitor.id, { badgePdfUrl: pdfUrl });
-          
-          // Print the PDF
-          toast({
-            title: language === 'de' ? "Besucherausweis wird gedruckt" : "Printing visitor badge",
-            description: language === 'de' 
-              ? `Besucherausweis für ${visitor.name} (${visitor.visitorNumber}) wird gedruckt` 
-              : `Printing visitor badge for ${visitor.name} (${visitor.visitorNumber})`,
-          });
-          
-          setTimeout(() => {
-            try {
-              printPdf(pdfUrl);
-            } catch (printError) {
-              logDebug('Page', "Error during print:", printError);
-              setPrintError("Beim Drucken ist ein Fehler aufgetreten.");
-            }
-          }, 300);
-        } catch (error) {
-          logDebug('Page', "Error generating PDF badge:", error);
-          setPrintError("Besucherausweis konnte nicht erstellt werden.");
-          toast({
-            title: language === 'de' ? "Fehler beim Drucken" : "Printing Error",
-            description: language === 'de' 
-              ? "Besucherausweis konnte nicht erstellt werden." 
-              : "Could not generate visitor badge.",
-            variant: "destructive"
-          });
-        }
-      })();
-    } else if (enableAutomaticPrinting && !printInitiated && !isPdfLibraryReady) {
-      logDebug('Page', "Automatic printing requested but PDF library not ready");
-      setPrintError("PDF-Bibliothek ist nicht initialisiert. Bitte laden Sie die Seite neu.");
+      try {
+        // Navigate to the print preview page
+        navigateToPrintPreview(visitor, navigate);
+      } catch (error) {
+        logDebug('Page', "Error navigating to print preview:", error);
+        setPrintError("Fehler beim Erstellen des Besucherausweises.");
+        toast({
+          title: language === 'de' ? "Fehler" : "Error",
+          description: language === 'de' 
+            ? "Der Besucherausweis konnte nicht erstellt werden." 
+            : "Could not create visitor badge.",
+          variant: "destructive"
+        });
+      }
     }
-  }, [visitor, navigate, updateVisitor, enableAutomaticPrinting, id, location, printInitiated, toast, language, pdfGenerateAttempts, isPdfLibraryReady]);
+  }, [visitor, navigate, updateVisitor, enableAutomaticPrinting, id, printInitiated, toast, language]);
 
-  // Countdown-Timer Effekt
+  // Countdown Timer Effect
   useEffect(() => {
-    // Starte den Countdown nur, wenn wir einen Besucher haben
+    // Only start countdown if we have a visitor
     if (visitor) {
       const timer = setInterval(() => {
         setCountdown((prevCount) => {
           if (prevCount <= 1) {
             clearInterval(timer);
-            navigate('/'); // Zurück zur Startseite nach Ablauf des Countdowns
+            navigate('/'); // Return to home page when countdown ends
             return 0;
           }
           return prevCount - 1;
         });
       }, 1000);
       
-      // Bereinigungsfunktion
+      // Cleanup function
       return () => clearInterval(timer);
     }
   }, [visitor, navigate]);
 
-  // Manually print badge function
-  const handlePrintBadge = async () => {
+  // Manual badge print function
+  const handlePrintBadge = () => {
     if (!visitor) return;
     
-    if (!isPdfLibraryReady) {
-      setPrintError("PDF-Bibliothek ist nicht initialisiert. Bitte laden Sie die Seite neu.");
-      toast({
-        title: language === 'de' ? "Fehler" : "Error",
-        description: language === 'de'
-          ? "PDF-Bibliothek ist nicht initialisiert."
-          : "PDF library is not initialized.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
     setPrintError(null);
-    setPdfGenerateAttempts(prev => prev + 1);
     
     toast({
       title: language === 'de' ? "Druckvorgang gestartet" : "Print process started",
@@ -208,30 +134,17 @@ const CheckInStep3 = () => {
     });
     
     try {
-      logDebug('Page', "Starting manual PDF generation (attempt " + (pdfGenerateAttempts + 1) + ")");
-      // Generate PDF badge
-      const { pdfBlob, pdfUrl } = await generateVisitorBadgePdf(visitor);
-      
-      // Save PDF URL to visitor record
-      updateVisitor(visitor.id, { badgePdfUrl: pdfUrl });
-      
-      // Print the PDF
-      printPdf(pdfUrl);
-      
-      toast({
-        title: language === 'de' ? "Drucken" : "Printing",
-        description: language === 'de'
-          ? "Besucherausweis wird gedruckt..."
-          : "Visitor badge is being printed...",
-      });
+      logDebug('Page', "Starting manual badge printing navigation");
+      // Navigate to print preview page
+      navigateToPrintPreview(visitor, navigate);
     } catch (error) {
-      logDebug('Page', "Error printing badge:", error);
-      setPrintError("Beim Drucken ist ein Fehler aufgetreten.");
+      logDebug('Page', "Error navigating to print preview:", error);
+      setPrintError("Fehler beim Erstellen des Besucherausweises.");
       toast({
         title: language === 'de' ? "Fehler" : "Error",
         description: language === 'de'
-          ? "Beim Drucken ist ein Fehler aufgetreten."
-          : "An error occurred while printing.",
+          ? "Der Besucherausweis konnte nicht erstellt werden."
+          : "Could not create visitor badge.",
         variant: "destructive"
       });
     }
@@ -266,101 +179,14 @@ const CheckInStep3 = () => {
               </p>
             </Card>
             
-            {!isPdfLibraryReady && (
-              <Alert variant="destructive" className="mt-2">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>{language === 'de' ? 'PDF-Bibliothek nicht initialisiert' : 'PDF Library Not Initialized'}</AlertTitle>
-                <AlertDescription>
-                  {language === 'de' 
-                    ? 'Die PDF-Bibliothek konnte nicht geladen werden. Ausweis kann nicht gedruckt werden.'
-                    : 'The PDF library could not be loaded. Badge cannot be printed.'}
-                </AlertDescription>
-              </Alert>
-            )}
-            
             {printError && (
               <Alert variant="destructive" className="mt-2">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>{language === 'de' ? 'Druckfehler' : 'Print Error'}</AlertTitle>
-                <AlertDescription className="space-y-2">
+                <AlertDescription>
                   <p>{printError}</p>
-                  
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="mt-1" 
-                    onClick={() => setShowDebugInfo(!showDebugInfo)}
-                  >
-                    <Bug className="h-4 w-4 mr-1" />
-                    {language === 'de' ? 'Debug-Information ' : 'Debug Information '}
-                    {showDebugInfo ? (language === 'de' ? 'ausblenden' : 'hide') : (language === 'de' ? 'anzeigen' : 'show')}
-                  </Button>
-                  
-                  {showDebugInfo && (
-                    <Accordion type="single" collapsible className="mt-2">
-                      <AccordionItem value="attempt-info">
-                        <AccordionTrigger className="text-xs py-1">
-                          {language === 'de' ? 'Versuchsinformationen' : 'Attempt Information'}
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <div className="text-xs bg-slate-100 p-2 rounded">
-                            <p>{language === 'de' ? 'Versuche:' : 'Attempts:'} {pdfGenerateAttempts}</p>
-                            <p>{language === 'de' ? 'Automatisches Drucken:' : 'Automatic printing:'} {enableAutomaticPrinting ? 'Aktiviert' : 'Deaktiviert'}</p>
-                            <p>{language === 'de' ? 'PDF-Bibliothek:' : 'PDF Library:'} {isPdfLibraryReady ? 'Initialisiert' : 'Nicht initialisiert'}</p>
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                      
-                      <AccordionItem value="visitor-info">
-                        <AccordionTrigger className="text-xs py-1">
-                          {language === 'de' ? 'Besucherinformationen' : 'Visitor Information'}
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <pre className="text-xs bg-slate-100 p-2 rounded overflow-auto max-h-40">
-                            {JSON.stringify({
-                              id: visitor.id,
-                              name: visitor.name,
-                              company: visitor.company,
-                              contact: visitor.contact,
-                              visitorNumber: visitor.visitorNumber,
-                              checkInTime: visitor.checkInTime,
-                              checkOutTime: visitor.checkOutTime,
-                              policyAccepted: visitor.policyAccepted,
-                              hasSignature: !!visitor.signature,
-                              hasBadgePdf: !!visitor.badgePdfUrl,
-                            }, null, 2)}
-                          </pre>
-                        </AccordionContent>
-                      </AccordionItem>
-                      
-                      <AccordionItem value="diagnostics">
-                        <AccordionTrigger className="text-xs py-1">
-                          {language === 'de' ? 'Diagnoseprotokolle' : 'Diagnostic Logs'}
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <div className="text-xs bg-slate-100 p-2 rounded overflow-auto max-h-40 font-mono whitespace-pre-wrap">
-                            {diagnosticLogs.length > 0 ? (
-                              diagnosticLogs.map((log, i) => (
-                                <div key={i} className="py-0.5 border-b border-slate-200 last:border-0">
-                                  {log}
-                                </div>
-                              ))
-                            ) : (
-                              <p>{language === 'de' ? 'Keine Protokolle verfügbar' : 'No logs available'}</p>
-                            )}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
-                  )}
                 </AlertDescription>
               </Alert>
-            )}
-            
-            {printInitiated && !printError && (
-              <div className="text-sm text-muted-foreground">
-                {language === 'de' ? 'Besucherausweis wird gedruckt...' : 'Printing visitor badge...'}
-              </div>
             )}
             
             {(!printInitiated || printError) && (
@@ -368,7 +194,6 @@ const CheckInStep3 = () => {
                 onClick={handlePrintBadge}
                 variant="outline" 
                 className="mt-2"
-                disabled={!isPdfLibraryReady}
               >
                 <Printer className="h-4 w-4 mr-2" />
                 {language === 'de' ? 'Besucherausweis drucken' : 'Print visitor badge'}

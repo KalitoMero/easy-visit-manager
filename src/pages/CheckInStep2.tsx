@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,7 +26,6 @@ const CheckInStep2 = () => {
   
   // Get printer settings for automatic printing
   const enableAutomaticPrinting = usePrinterSettings(state => state.enableAutomaticPrinting);
-  const printDelay = usePrinterSettings(state => state.printDelay);
   
   // Use separate selectors to prevent re-renders
   const acceptPolicy = useVisitorStore(state => state.acceptPolicy);

@@ -19,8 +19,7 @@ export type Visitor = {
   additionalVisitorCount: number;
   notes?: string;
   policyAccepted?: boolean;
-  signature?: string | null; // Signatur als Base64-String
-  badgePdfUrl?: string; // URL to the generated PDF badge
+  signature?: string | null; // Signature as Base64 string
 };
 
 type DeletionSchedule = {
@@ -71,14 +70,14 @@ export const initializeAutoCheckout = () => {
   return () => clearInterval(timer);
 };
 
-// Konstanten für Standardwerte
+// Default values
 const DEFAULT_VISITOR_COUNTER = 100;
 
 export const useVisitorStore = create<VisitorStore>()(
   persist(
     (set, get) => ({
       visitors: [],
-      visitorCounter: DEFAULT_VISITOR_COUNTER, // Start bei 100 statt 1000
+      visitorCounter: DEFAULT_VISITOR_COUNTER,
       deletionSchedule: {
         enabled: false,
         dayOfWeek: 0, // Sunday
@@ -96,7 +95,7 @@ export const useVisitorStore = create<VisitorStore>()(
           visitorNumber: visitorCounter,
           checkInTime: new Date().toISOString(),
           additionalVisitorCount: 0,
-          checkOutTime: null, // Explizit auf null setzen, damit der Besucher als aktiv erkannt wird
+          checkOutTime: null, // Explicitly set to null to mark visitor as active
         };
         
         console.log("Adding new visitor:", newVisitor);
@@ -133,7 +132,7 @@ export const useVisitorStore = create<VisitorStore>()(
           checkInTime: new Date().toISOString(),
           additionalVisitors,
           additionalVisitorCount: additionalVisitors.length,
-          checkOutTime: null, // Explizit auf null setzen, damit der Besucher als aktiv erkannt wird
+          checkOutTime: null, // Explicitly set to null to mark visitor as active
         };
         
         console.log("Adding new group visitor:", newVisitor);
@@ -213,7 +212,7 @@ export const useVisitorStore = create<VisitorStore>()(
       },
       
       clearVisitors: () => {
-        set({ visitors: [], visitorCounter: DEFAULT_VISITOR_COUNTER }); // Reset auf 100
+        set({ visitors: [], visitorCounter: DEFAULT_VISITOR_COUNTER });
       },
       
       searchVisitors: (query) => {
@@ -282,7 +281,7 @@ export const useVisitorStore = create<VisitorStore>()(
         set({ visitorCounter: newCounter });
       },
 
-      // Neue Funktionen zur besseren Trennung von aktiven und inaktiven Besuchern
+      // Functions for better separation of active and inactive visitors
       getActiveVisitors: () => {
         return get().visitors.filter(visitor => visitor.checkOutTime === null);
       },
@@ -291,15 +290,15 @@ export const useVisitorStore = create<VisitorStore>()(
         return get().visitors.filter(visitor => visitor.checkOutTime !== null);
       },
       
-      // Funktion zum Herunterladen der Unterschrift
+      // Function to download the signature
       downloadSignature: (id) => {
         const visitor = get().visitors.find(v => v.id === id);
         if (!visitor || !visitor.signature) return;
         
-        // Dateiname generieren
+        // Generate filename
         const fileName = `signature_${visitor.name.replace(/\s+/g, '_')}_${visitor.visitorNumber}.png`;
         
-        // Link erstellen und klicken
+        // Create link and trigger download
         const link = document.createElement('a');
         link.href = visitor.signature;
         link.download = fileName;
@@ -311,7 +310,7 @@ export const useVisitorStore = create<VisitorStore>()(
     {
       name: 'visitor-storage',
       onRehydrateStorage: (state) => {
-        // Stelle sicher, dass der Besucherzähler bei der Initialisierung mindestens beim Standardwert beginnt
+        // Ensure visitor counter starts at least at the default value during initialization
         return (rehydratedState, error) => {
           if (!error && rehydratedState && rehydratedState.visitorCounter < DEFAULT_VISITOR_COUNTER) {
             console.log(`Correcting visitor counter from ${rehydratedState.visitorCounter} to ${DEFAULT_VISITOR_COUNTER}`);
