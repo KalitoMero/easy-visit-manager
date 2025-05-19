@@ -36,6 +36,7 @@ const BadgePrintPreview = () => {
   const printAttemptedRef = useRef(false);
   const printInProgressRef = useRef(false);
   const printTimestamp = useRef(new Date()).current;
+  const redirectAttemptedRef = useRef(false);
   
   const [qrCodesLoaded, setQrCodesLoaded] = useState(false);
   const [qrLoadingAttempts, setQrLoadingAttempts] = useState(0);
@@ -67,6 +68,21 @@ const BadgePrintPreview = () => {
       setManualPrintEnabled(true);
     }
   }, [qrCodesLoaded, qrLoadingAttempts, visitor, manualPrintEnabled]);
+
+  // Redirect after printing is completed
+  useEffect(() => {
+    if (printingCompleted && visitor && !redirectAttemptedRef.current) {
+      redirectAttemptedRef.current = true;
+      
+      // Set a timer to redirect back to the success page
+      const redirectTimer = setTimeout(() => {
+        logDebug('Print', "Redirecting to success page after printing");
+        navigate(`/checkin/step3/${visitor.id}`);
+      }, 800); // Give a short delay to ensure print dialog has time to process
+      
+      return () => clearTimeout(redirectTimer);
+    }
+  }, [printingCompleted, visitor, navigate]);
   
   // Add print styles
   useEffect(() => {
