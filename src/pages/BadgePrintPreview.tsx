@@ -327,7 +327,7 @@ const BadgePrintPreview = () => {
             <div style={{
               transform: `translate(${badgeOffsetX}mm, ${badgeOffsetY}mm) rotate(${badgeRotation}deg)`,
               width: '60mm', /* 6cm */
-              height: '90mm', /* 9cm */
+              height: '72mm', /* 9cm */
               boxSizing: 'border-box'
             }}>
               <VisitorBadge 
@@ -358,7 +358,7 @@ const BadgePrintPreview = () => {
             <div style={{
               transform: `translate(${secondBadgeOffsetX}mm, ${secondBadgeOffsetY}mm) rotate(${secondBadgeRotation}deg)`,
               width: '60mm', /* 6cm */
-              height: '90mm', /* 9cm */
+              height: '72mm', /* 9cm */
               boxSizing: 'border-box'
             }}>
               <VisitorBadge 
@@ -403,7 +403,7 @@ const BadgePrintPreview = () => {
                 transition: 'transform 0.2s ease-in-out',
                 scale: '0.7',
                 width: '60mm',
-                height: '90mm',
+                height: '72mm',
                 boxSizing: 'border-box'
               }}>
                 <VisitorBadge 
@@ -443,7 +443,7 @@ const BadgePrintPreview = () => {
                 transition: 'transform 0.2s ease-in-out',
                 scale: '0.7',
                 width: '60mm',
-                height: '90mm',
+                height: '72mm',
                 boxSizing: 'border-box'
               }}>
                 <VisitorBadge 
