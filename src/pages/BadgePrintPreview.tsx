@@ -315,7 +315,7 @@ const BadgePrintPreview = () => {
             top: '0',
             left: '0',
             width: '100%',
-            height: '90mm', /* 9cm */
+            height: '72mm', /* 9cm */
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
@@ -343,10 +343,10 @@ const BadgePrintPreview = () => {
           {/* Bottom badge - exactly 6cm × 9cm */}
           <div style={{
             position: 'absolute',
-            top: '90mm', /* Position below the first badge */
+            top: '72mm', /* Position below the first badge */
             left: '0',
             width: '100%',
-            height: '90mm', /* 9cm */
+            height: '72mm', /* 9cm */
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
