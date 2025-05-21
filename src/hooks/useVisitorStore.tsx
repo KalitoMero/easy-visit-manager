@@ -1,16 +1,17 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export type AdditionalVisitor = {
   id: string;
   name: string;
+  firstName?: string; // Add firstName field
   visitorNumber: number;
 };
 
 export type Visitor = {
   id: string;
   name: string;
+  firstName?: string; // Add firstName field
   company: string;
   contact: string;
   visitorNumber: number;
@@ -43,8 +44,8 @@ type VisitorStore = {
   visitorCounter: number;
   deletionSchedule: DeletionSchedule;
   autoCheckoutSchedule: AutoCheckoutSchedule;
-  addVisitor: (name: string, company: string, contact: string) => Visitor;
-  addGroupVisitor: (visitors: Array<{ name: string }>, company: string, contact: string) => Visitor;
+  addVisitor: (firstName: string, name: string, company: string, contact: string) => Visitor;
+  addGroupVisitor: (visitors: Array<{ name: string, firstName?: string }>, company: string, contact: string) => Visitor;
   checkOutVisitor: (id: string) => void;
   getVisitor: (id: string) => Visitor | undefined;
   getVisitorByNumber: (visitorNumber: number) => Visitor | undefined;
@@ -114,11 +115,12 @@ export const useVisitorStore = create<VisitorStore>()(
         lastRun: undefined
       },
       
-      addVisitor: (name, company, contact) => {
+      addVisitor: (firstName, name, company, contact) => {
         const { visitors, visitorCounter } = get();
         const newVisitor: Visitor = {
           id: crypto.randomUUID ? crypto.randomUUID() : `visitor-${Date.now()}`,
           name,
+          firstName,
           company,
           contact,
           visitorNumber: visitorCounter,
@@ -148,6 +150,7 @@ export const useVisitorStore = create<VisitorStore>()(
           return {
             id: crypto.randomUUID ? crypto.randomUUID() : `visitor-add-${Date.now()}-${index}`,
             name: visitor.name,
+            firstName: visitor.firstName,
             visitorNumber: currentVisitorNumber
           };
         });
@@ -155,6 +158,7 @@ export const useVisitorStore = create<VisitorStore>()(
         const newVisitor: Visitor = {
           id: crypto.randomUUID ? crypto.randomUUID() : `visitor-${Date.now()}`,
           name: mainVisitor.name,
+          firstName: mainVisitor.firstName,
           company,
           contact,
           visitorNumber: visitorCounter,

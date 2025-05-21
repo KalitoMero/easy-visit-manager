@@ -1,6 +1,7 @@
 
 import { Visitor } from '@/hooks/useVisitorStore';
 import { logDebug } from './debugUtils';
+import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 
 /**
  * Prints the current page containing the visitor badge(s)
@@ -24,21 +25,46 @@ export const printVisitorBadge = async (): Promise<void> => {
 };
 
 /**
- * Navigates to the badge print preview page
+ * Navigates to the badge print preview page or directly prints without preview
  * @param visitor The visitor to print a badge for
  * @param navigate The navigation function from react-router
+ * @param skipPreview Whether to skip preview and print directly
  */
 export const navigateToPrintPreview = (
   visitor: Visitor, 
-  navigate: (path: string) => void
+  navigate: (path: string) => void,
+  skipPreview?: boolean
 ): void => {
   if (!visitor || !visitor.id) {
     logDebug('Print', 'Cannot navigate to print preview: invalid visitor data');
     return;
   }
   
-  logDebug('Print', `Navigating to print badge preview for visitor ${visitor.visitorNumber}`);
-  navigate(`/print-badge/${visitor.id}`);
+  // Get the skipPrintPreview setting from the printer settings
+  const useSkipPreview = skipPreview ?? 
+    (typeof window !== 'undefined' && 
+     window.localStorage && 
+     JSON.parse(window.localStorage.getItem('printer-settings') || '{}')?.state?.skipPrintPreview);
+  
+  if (useSkipPreview) {
+    // If skip preview is enabled, print directly
+    logDebug('Print', `Skipping preview and printing badge directly for visitor ${visitor.visitorNumber}`);
+    
+    // Open the print page in a new window for direct printing
+    const printWindow = window.open(`/print-badge/${visitor.id}?direct=true`, '_blank');
+    
+    // After a short delay, focus and print the new window
+    if (printWindow) {
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+      }, 1000);
+    }
+  } else {
+    // Navigate to print preview as usual
+    logDebug('Print', `Navigating to print badge preview for visitor ${visitor.visitorNumber}`);
+    navigate(`/print-badge/${visitor.id}`);
+  }
 };
 
 /**

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { Visitor } from '@/hooks/useVisitorStore';
 import { generateCheckoutEmailUrl, generateQRCodeDataUrl } from '@/lib/qrCodeUtils';
@@ -11,6 +10,7 @@ import { cn } from '@/lib/utils';
 interface VisitorBadgeProps {
   visitor: Visitor;
   name?: string; // Optional name for group visitors
+  firstName?: string; // Optional firstName for group visitors
   visitorNumber?: number; // Optional visitor number override for additional visitors
   className?: string; // Optional className for styling
   printTimestamp?: Date; // Optional timestamp for when the badge was printed
@@ -21,6 +21,7 @@ interface VisitorBadgeProps {
 const VisitorBadge = ({ 
   visitor, 
   name, 
+  firstName,
   visitorNumber, 
   className = '',
   printTimestamp = new Date(), // Default to current time if not provided
@@ -29,6 +30,8 @@ const VisitorBadge = ({
 }: VisitorBadgeProps) => {
   // Use the provided name (for group visitors) or the primary visitor name
   const displayName = name || visitor.name;
+  // Use the provided firstName (for group visitors) or the primary visitor firstName
+  const displayFirstName = firstName || visitor.firstName;
   // Use the provided visitor number override or the primary visitor number
   const displayVisitorNumber = visitorNumber || visitor.visitorNumber;
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
@@ -183,6 +186,11 @@ const VisitorBadge = ({
           <div className="salutation text-sm text-muted-foreground">
             Herr / Frau / Div
           </div>
+          {displayFirstName && (
+            <div className={`first-name font-medium ${nameFontClass} truncate max-w-full text-center`}>
+              {displayFirstName}
+            </div>
+          )}
           <div className={`name font-bold ${nameFontClass} truncate max-w-full text-center`}>
             {displayName}
           </div>

@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
@@ -6,6 +5,7 @@ type PrinterSettingsState = {
   // Grundlegende Einstellungen
   enableAutomaticPrinting: boolean;
   printWithoutDialog: boolean;
+  skipPrintPreview: boolean; // New setting to skip print preview
   printDelay: number; // Verzögerung in Millisekunden
   selectedPrinterName: string | null; // Name des ausgewählten Druckers
   printCopies: number; // Anzahl der Kopien
@@ -34,14 +34,19 @@ type PrinterSettingsState = {
     qrCodePosition: 'right' | 'center'; // Position des QR-Codes
   };
 
+  // Company branding
+  companyLogo: string | null; // Base64 encoded logo image
+  showBuiltByText: boolean; // Whether to show "Built by" text with logo
+
   // Aktionen
   setEnableAutomaticPrinting: (value: boolean) => void;
   setPrintWithoutDialog: (value: boolean) => void;
+  setSkipPrintPreview: (value: boolean) => void; // New setter for skip preview
   setPrintDelay: (value: number) => void;
   setSelectedPrinterName: (value: string | null) => void;
   setPrintCopies: (value: number) => void;
   setShowBrandingOnPrint: (value: boolean) => void;
-  setBottomMargin: (value: number) => void; // Neue Funktion für unteren Rand
+  setBottomMargin: (value: number) => void;
   setBadgeRotation: (value: 0 | 90 | 180 | 270) => void;
   setBadgeOffsetX: (value: number) => void;
   setBadgeOffsetY: (value: number) => void;
@@ -51,6 +56,10 @@ type PrinterSettingsState = {
   
   // Layout-Anpassungsaktionen
   setBadgeLayout: (layoutSettings: Partial<PrinterSettingsState['badgeLayout']>) => void;
+  
+  // Logo actions
+  setCompanyLogo: (logo: string | null) => void;
+  setShowBuiltByText: (value: boolean) => void;
 };
 
 // Helper function to check if we're running in Electron
@@ -91,11 +100,12 @@ export const usePrinterSettings = create<PrinterSettingsState>()(
       // Standardwerte
       enableAutomaticPrinting: true,
       printWithoutDialog: false,
+      skipPrintPreview: false, // New setting with default value: false
       printDelay: 500,
       selectedPrinterName: null,
       printCopies: 1,
       showBrandingOnPrint: false,
-      bottomMargin: 0, // Standardwert für unteren Rand: 0mm
+      bottomMargin: 0,
       
       // Standard Positionierung - Erster Ausweis
       badgeRotation: 0,
@@ -119,14 +129,19 @@ export const usePrinterSettings = create<PrinterSettingsState>()(
         qrCodePosition: 'right',
       },
 
+      // Company branding defaults
+      companyLogo: null,
+      showBuiltByText: true,
+
       // Setter-Funktionen
       setEnableAutomaticPrinting: (value) => set({ enableAutomaticPrinting: value }),
       setPrintWithoutDialog: (value) => set({ printWithoutDialog: value }),
+      setSkipPrintPreview: (value) => set({ skipPrintPreview: value }), // New setter
       setPrintDelay: (value) => set({ printDelay: value }),
       setSelectedPrinterName: (value) => set({ selectedPrinterName: value }),
       setPrintCopies: (value) => set({ printCopies: value }),
       setShowBrandingOnPrint: (value) => set({ showBrandingOnPrint: value }),
-      setBottomMargin: (value) => set({ bottomMargin: value }), // Neue Setter-Funktion
+      setBottomMargin: (value) => set({ bottomMargin: value }),
       setBadgeRotation: (value) => set({ badgeRotation: value }),
       setBadgeOffsetX: (value) => set({ badgeOffsetX: value }),
       setBadgeOffsetY: (value) => set({ badgeOffsetY: value }),
@@ -141,6 +156,10 @@ export const usePrinterSettings = create<PrinterSettingsState>()(
           ...layoutSettings
         }
       })),
+      
+      // Company logo setters
+      setCompanyLogo: (logo) => set({ companyLogo: logo }),
+      setShowBuiltByText: (value) => set({ showBuiltByText: value }),
     }),
     {
       name: 'printer-settings', // localStorage key

@@ -17,8 +17,11 @@ import { UserPlus, X, Plus } from 'lucide-react';
 
 // Define form schema
 const visitorFormSchema = z.object({
+  firstName: z.string().min(1, {
+    message: "First name is required."
+  }),
   name: z.string().min(1, {
-    message: "Name is required."
+    message: "Last name is required."
   }),
   company: z.string().min(1, {
     message: "Company is required."
@@ -30,8 +33,11 @@ const visitorFormSchema = z.object({
 
 // Schema für zusätzliche Besucher
 const additionalVisitorSchema = z.object({
+  firstName: z.string().min(1, {
+    message: "First name is required."
+  }),
   name: z.string().min(1, {
-    message: "Name is required."
+    message: "Last name is required."
   })
 });
 
@@ -39,7 +45,7 @@ type VisitorFormValues = z.infer<typeof visitorFormSchema>;
 
 // Erweiterte Formularwerte mit zusätzlichen Besuchern
 interface ExtendedVisitorFormValues extends VisitorFormValues {
-  additionalVisitors: { name: string }[];
+  additionalVisitors: { firstName: string, name: string }[];
 }
 
 const CheckInStep1: React.FC = () => {
@@ -50,12 +56,13 @@ const CheckInStep1: React.FC = () => {
   const t = useTranslation(language);
   
   // Zustand für zusätzliche Besucher
-  const [additionalVisitors, setAdditionalVisitors] = useState<{ name: string }[]>([]);
+  const [additionalVisitors, setAdditionalVisitors] = useState<{ firstName: string, name: string }[]>([]);
 
   // Initialize form with react-hook-form and zod validation
   const form = useForm<VisitorFormValues>({
     resolver: zodResolver(visitorFormSchema),
     defaultValues: {
+      firstName: "",
       name: "",
       company: "",
       contact: ""
@@ -64,7 +71,7 @@ const CheckInStep1: React.FC = () => {
 
   // Funktion zum Hinzufügen eines zusätzlichen Besuchers
   const addAdditionalVisitor = () => {
-    setAdditionalVisitors([...additionalVisitors, { name: "" }]);
+    setAdditionalVisitors([...additionalVisitors, { firstName: "", name: "" }]);
   };
 
   // Funktion zum Entfernen eines zusätzlichen Besuchers
@@ -81,17 +88,26 @@ const CheckInStep1: React.FC = () => {
     setAdditionalVisitors(updatedVisitors);
   };
 
+  // Funktion zum Aktualisieren des Vornamens eines zusätzlichen Besuchers
+  const updateAdditionalVisitorFirstName = (index: number, firstName: string) => {
+    const updatedVisitors = [...additionalVisitors];
+    updatedVisitors[index].firstName = firstName;
+    setAdditionalVisitors(updatedVisitors);
+  };
+
   // Handle form submission
   const onSubmit = (values: VisitorFormValues) => {
     setIsSubmitting(true);
 
     try {
       // Überprüfe, ob alle zusätzlichen Besucher gültige Namen haben
-      const validAdditionalVisitors = additionalVisitors.filter(visitor => visitor.name.trim() !== "");
+      const validAdditionalVisitors = additionalVisitors.filter(visitor => 
+        visitor.name.trim() !== "" && visitor.firstName.trim() !== ""
+      );
       
       // Erstelle die Liste aller Besucher (Hauptbesucher + zusätzliche)
       const allVisitors = [
-        { name: values.name },
+        { firstName: values.firstName, name: values.name },
         ...validAdditionalVisitors
       ];
       
@@ -136,9 +152,32 @@ const CheckInStep1: React.FC = () => {
                   </Button>
                 </div>
                 
-                {/* Two column layout for name and company */}
+                {/* Two column layout for first name and last name */}
                 <div className="flex flex-col md:flex-row gap-4">
-                  {/* Name field - half width */}
+                  {/* First name field - half width */}
+                  <div className="md:w-1/2">
+                    <FormField
+                      control={form.control}
+                      name="firstName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-lg">{t('firstName')}</FormLabel>
+                          <FormControl>
+                            <Input 
+                              autoFocus
+                              placeholder={t('firstName')} 
+                              {...field} 
+                              className="text-lg h-12" 
+                              autoComplete="off"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Last name field - half width */}
                   <div className="md:w-1/2">
                     <FormField
                       control={form.control}
@@ -153,30 +192,7 @@ const CheckInStep1: React.FC = () => {
                           </FormLabel>
                           <FormControl>
                             <Input 
-                              autoFocus
                               placeholder={t('lastName')} 
-                              {...field} 
-                              className="text-lg h-12" 
-                              autoComplete="off"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  {/* Company field - half width */}
-                  <div className="md:w-1/2">
-                    <FormField
-                      control={form.control}
-                      name="company"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-lg">{t('company')}</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder={t('company')} 
                               {...field} 
                               className="text-lg h-12" 
                               autoComplete="off"
@@ -189,30 +205,67 @@ const CheckInStep1: React.FC = () => {
                   </div>
                 </div>
                 
+                {/* Company field - full width */}
+                <div>
+                  <FormField
+                    control={form.control}
+                    name="company"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-lg">{t('company')}</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder={t('company')} 
+                            {...field} 
+                            className="text-lg h-12" 
+                            autoComplete="off"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
                 {/* Zusätzliche Besucher */}
                 {additionalVisitors.map((visitor, index) => (
-                  <div key={index} className="flex items-start gap-2">
-                    <div className="flex-1">
-                      <FormLabel className="text-lg mb-2 block">
+                  <div key={index} className="flex flex-col gap-2">
+                    <div className="flex justify-between items-center">
+                      <FormLabel className="text-lg mb-0">
                         {t('additionalVisitor')} {index + 1}
                       </FormLabel>
-                      <div className="flex gap-2">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => removeAdditionalVisitor(index)}
+                        className="h-8"
+                      >
+                        <X className="h-4 w-4 mr-1" /> {t('remove')}
+                      </Button>
+                    </div>
+
+                    <div className="flex flex-col md:flex-row gap-4">
+                      {/* First name field for additional visitor */}
+                      <div className="md:w-1/2">
                         <Input
-                          value={visitor.name}
-                          onChange={(e) => updateAdditionalVisitorName(index, e.target.value)}
-                          placeholder={t('lastName')}
-                          className="text-lg h-12 flex-1"
+                          placeholder={t('firstName')}
+                          value={visitor.firstName}
+                          onChange={(e) => updateAdditionalVisitorFirstName(index, e.target.value)}
+                          className="text-lg h-12"
                           autoComplete="off"
                         />
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          size="icon"
-                          onClick={() => removeAdditionalVisitor(index)}
-                          className="h-12 w-12"
-                        >
-                          <X className="h-5 w-5" />
-                        </Button>
+                      </div>
+                      
+                      {/* Last name field for additional visitor */}
+                      <div className="md:w-1/2">
+                        <Input
+                          placeholder={t('lastName')}
+                          value={visitor.name}
+                          onChange={(e) => updateAdditionalVisitorName(index, e.target.value)}
+                          className="text-lg h-12"
+                          autoComplete="off"
+                        />
                       </div>
                     </div>
                   </div>

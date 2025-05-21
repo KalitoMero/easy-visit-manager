@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import NavButton from '@/components/NavButton';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,6 +8,7 @@ import { useTranslation } from '@/locale/translations';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Settings } from 'lucide-react';
+import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 
 const Index = () => {
   const { language } = useLanguageStore();
@@ -17,6 +17,7 @@ const Index = () => {
   const performScheduledCheckout = useVisitorStore((state) => state.performScheduledCheckout);
   const performScheduledAutoCheckout = useVisitorStore((state) => state.performScheduledAutoCheckout);
   const autoCheckoutSchedule = useVisitorStore((state) => state.autoCheckoutSchedule);
+  const { companyLogo, showBuiltByText } = usePrinterSettings();
 
   useEffect(() => {
     // Log visitors on initial load
@@ -126,6 +127,20 @@ const Index = () => {
             </NavButton>
           </div>
         </div>
+
+        {/* Company logo with built by text */}
+        {companyLogo && (
+          <div className="fixed bottom-4 right-4 flex items-center gap-2">
+            {showBuiltByText && (
+              <span className="text-sm text-muted-foreground">Built by</span>
+            )}
+            <img 
+              src={companyLogo} 
+              alt="Company Logo" 
+              className="max-h-8 max-w-32 object-contain"
+            />
+          </div>
+        )}
       </div>
     </div>
   );
