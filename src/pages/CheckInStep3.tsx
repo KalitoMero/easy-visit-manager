@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,9 +6,11 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
-import { Home, Timer } from 'lucide-react';
+import { Home, Timer, Printer } from 'lucide-react';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
 import useTranslation from '@/locale/translations';
+import { usePrinterSettings } from '@/hooks/usePrinterSettings';
+import { navigateToPrintPreview } from '@/lib/htmlBadgePrinter';
 
 const CheckInStep3 = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,11 +23,25 @@ const CheckInStep3 = () => {
   
   const { language } = useLanguageStore();
   const t = useTranslation(language);
+  const { enableAutomaticPrinting } = usePrinterSettings();
   
   // Get visitor from store using the id
   const visitor = useVisitorStore(state => {
     return id ? state.getVisitor(id) : undefined;
   });
+  
+  // Handle automatic printing
+  useEffect(() => {
+    if (visitor && enableAutomaticPrinting) {
+      // Add a small delay to ensure the store is updated
+      const timer = setTimeout(() => {
+        console.log("[AutoPrint] Initiating automatic print for visitor:", visitor.visitorNumber);
+        navigateToPrintPreview(visitor, navigate);
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [visitor, enableAutomaticPrinting, navigate]);
   
   // Log visitor status for debugging
   useEffect(() => {
@@ -60,6 +77,12 @@ const CheckInStep3 = () => {
   
   const handleHomeClick = () => {
     navigate('/');
+  };
+  
+  const handlePrintBadge = () => {
+    if (visitor) {
+      navigateToPrintPreview(visitor, navigate);
+    }
   };
   
   if (!visitor) {
@@ -112,6 +135,16 @@ const CheckInStep3 = () => {
                 <Home className="h-4 w-4" />
                 {t('backToHome')}
               </Button>
+              
+              {!enableAutomaticPrinting && (
+                <Button
+                  onClick={handlePrintBadge}
+                  className="flex items-center gap-2"
+                >
+                  <Printer className="h-4 w-4" />
+                  {language === 'de' ? 'Ausweis drucken' : 'Print Badge'}
+                </Button>
+              )}
             </div>
             
             <div className="flex items-center mt-8 text-muted-foreground">

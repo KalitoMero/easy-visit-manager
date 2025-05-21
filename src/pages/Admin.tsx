@@ -25,6 +25,8 @@ import BadgeLayoutSettings from "@/components/BadgeLayoutSettings";
 import VisitorBadge from "@/components/VisitorBadge";
 import VisitorCounterReset from "@/components/VisitorCounterReset";
 import AutoCheckoutSettings from "@/components/AutoCheckoutSettings";
+import PrinterPreviewSettings from "@/components/PrinterPreviewSettings";
+import LogoSettings from "@/components/LogoSettings";
 
 const formatTime = (isoString: string, language: Language) => {
   if (!isoString) return "-";
@@ -570,161 +572,169 @@ const Admin = () => {
           </TabsContent>
           
           <TabsContent value="printer">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Printer className="h-5 w-5" />
-                  Drucker-Einstellungen
-                </CardTitle>
-                <CardDescription>
-                  Konfigurieren Sie die Druckeinstellungen für Besucherausweise
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    id="automatic-printing"
-                    checked={enableAutomaticPrinting}
-                    onCheckedChange={setEnableAutomaticPrinting}
-                  />
-                  <Label htmlFor="automatic-printing">Automatischen Druck aktivieren</Label>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    id="print-without-dialog"
-                    checked={printWithoutDialog}
-                    onCheckedChange={setPrintWithoutDialog}
-                  />
-                  <Label htmlFor="print-without-dialog">Druckdialog unterdrücken (erfordert Kiosk-Modus)</Label>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    id="show-branding-on-print"
-                    checked={showBrandingOnPrint}
-                    onCheckedChange={setShowBrandingOnPrint}
-                  />
-                  <Label htmlFor="show-branding-on-print">Branding auf Ausdruck anzeigen</Label>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="print-delay">Verzögerung vor Druckvorgang (ms)</Label>
-                  <Input
-                    id="print-delay"
-                    type="number"
-                    value={printDelay}
-                    onChange={(e) => setPrintDelay(Number(e.target.value))}
-                    min={0}
-                    max={5000}
-                    step={100}
-                    disabled={!enableAutomaticPrinting}
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Kurze Verzögerung, um sicherzustellen, dass der Ausweis vollständig geladen ist, bevor der Druck gestartet wird
-                  </p>
-                </div>
-                
-                <div className="pt-4 pb-2">
-                  <h3 className="text-lg font-semibold">Ausweispositionierung und Rotation</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Stellen Sie die Position und Drehung der Besucherausweise auf der Druckseite ein
-                  </p>
-                  
-                  <BadgePositionPreview />
-                </div>
-                
-                {isElectron && (
-                  <div className="space-y-2">
-                    <Label htmlFor="printer-selection">Drucker auswählen</Label>
-                    <Select 
-                      value={selectedPrinterName || ""} 
-                      onValueChange={setSelectedPrinterName}
-                      disabled={!enableAutomaticPrinting}
-                    >
-                      <SelectTrigger id="printer-selection">
-                        <SelectValue placeholder="Standard-Drucker verwenden" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">Standard-Drucker verwenden</SelectItem>
-                        {availablePrinters.map(printer => (
-                          <SelectItem key={printer.name} value={printer.name}>
-                            {printer.name} {printer.isDefault ? "(Standard)" : ""}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-sm text-muted-foreground">
-                      Der gewählte Drucker wird für alle automatischen Druckvorgänge verwendet
-                    </p>
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Printer className="h-5 w-5" />
+                    Drucker-Einstellungen
+                  </CardTitle>
+                  <CardDescription>
+                    Konfigurieren Sie die Druckeinstellungen für Besucherausweise
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="automatic-printing"
+                      checked={enableAutomaticPrinting}
+                      onCheckedChange={setEnableAutomaticPrinting}
+                    />
+                    <Label htmlFor="automatic-printing">Automatischen Druck aktivieren</Label>
                   </div>
-                )}
-                
-                {isElectron && (
+                  
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="print-without-dialog"
+                      checked={printWithoutDialog}
+                      onCheckedChange={setPrintWithoutDialog}
+                    />
+                    <Label htmlFor="print-without-dialog">Druckdialog unterdrücken (erfordert Kiosk-Modus)</Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="show-branding-on-print"
+                      checked={showBrandingOnPrint}
+                      onCheckedChange={setShowBrandingOnPrint}
+                    />
+                    <Label htmlFor="show-branding-on-print">Branding auf Ausdruck anzeigen</Label>
+                  </div>
+                  
                   <div className="space-y-2">
-                    <Label htmlFor="print-copies">Anzahl Kopien</Label>
+                    <Label htmlFor="print-delay">Verzögerung vor Druckvorgang (ms)</Label>
                     <Input
-                      id="print-copies"
+                      id="print-delay"
                       type="number"
-                      value={printCopies}
-                      onChange={(e) => setPrintCopies(Number(e.target.value))}
-                      min={1}
-                      max={10}
+                      value={printDelay}
+                      onChange={(e) => setPrintDelay(Number(e.target.value))}
+                      min={0}
+                      max={5000}
+                      step={100}
                       disabled={!enableAutomaticPrinting}
                     />
                     <p className="text-sm text-muted-foreground">
-                      Anzahl der zu druckenden Exemplare pro Ausweis
+                      Kurze Verzögerung, um sicherzustellen, dass der Ausweis vollständig geladen ist, bevor der Druck gestartet wird
                     </p>
                   </div>
-                )}
-                
-                {isElectron ? (
-                  <Card className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-900">
-                    <CardContent className="p-4 space-y-2">
-                      <h3 className="text-lg font-medium flex items-center gap-1">
-                        <Settings className="h-4 w-4" /> Electron Desktop App
-                      </h3>
-                      <p className="text-sm">
-                        Diese Anwendung läuft als Electron Desktop App. Dies ermöglicht verbesserte Druckfunktionen und Kiosk-Modus ohne zusätzliche Browser-Flags.
-                      </p>
-                      <p className="text-sm font-medium">
-                        App-Version: {window.electronAPI ? window.electronAPI.getVersion() : '1.0.0'}
-                      </p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <Card className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-900">
-                    <CardContent className="p-4 space-y-2">
-                      <h3 className="text-lg font-medium flex items-center gap-1">
-                        <Settings className="h-4 w-4" /> Kiosk-Modus Anleitung
-                      </h3>
-                      <p className="text-sm">
-                        Für vollständig automatischen Druck ohne Dialog muss Chrome/Chromium mit speziellen Parametern gestartet werden:
-                      </p>
-                      <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded font-mono text-xs overflow-x-auto">
-                        chrome.exe --kiosk-printing
-                      </div>
-                      <p className="text-sm">
-                        Dies aktiviert den Kiosk-Druck-Modus, bei dem Druckaufträge ohne Dialog direkt an den Standarddrucker gesendet werden.
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-                
-                <div className="flex justify-between pt-4">
-                  <Button 
-                    variant="outline" 
-                    onClick={handleTestPrint}
-                  >
-                    <Printer className="mr-1" /> Testdruck
-                  </Button>
                   
-                  <Button onClick={handleSavePrinterSettings}>
-                    Einstellungen speichern
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                  {/* Add PrinterPreviewSettings component */}
+                  <PrinterPreviewSettings />
+                  
+                  {/* Add LogoSettings component */}
+                  <LogoSettings />
+                  
+                  <div className="pt-4 pb-2">
+                    <h3 className="text-lg font-semibold">Ausweispositionierung und Rotation</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Stellen Sie die Position und Drehung der Besucherausweise auf der Druckseite ein
+                    </p>
+                    
+                    <BadgePositionPreview />
+                  </div>
+                  
+                  {isElectron && (
+                    <div className="space-y-2">
+                      <Label htmlFor="printer-selection">Drucker auswählen</Label>
+                      <Select 
+                        value={selectedPrinterName || ""} 
+                        onValueChange={setSelectedPrinterName}
+                        disabled={!enableAutomaticPrinting}
+                      >
+                        <SelectTrigger id="printer-selection">
+                          <SelectValue placeholder="Standard-Drucker verwenden" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Standard-Drucker verwenden</SelectItem>
+                          {availablePrinters.map(printer => (
+                            <SelectItem key={printer.name} value={printer.name}>
+                              {printer.name} {printer.isDefault ? "(Standard)" : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-sm text-muted-foreground">
+                        Der gewählte Drucker wird für alle automatischen Druckvorgänge verwendet
+                      </p>
+                    </div>
+                  )}
+                  
+                  {isElectron && (
+                    <div className="space-y-2">
+                      <Label htmlFor="print-copies">Anzahl Kopien</Label>
+                      <Input
+                        id="print-copies"
+                        type="number"
+                        value={printCopies}
+                        onChange={(e) => setPrintCopies(Number(e.target.value))}
+                        min={1}
+                        max={10}
+                        disabled={!enableAutomaticPrinting}
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        Anzahl der zu druckenden Exemplare pro Ausweis
+                      </p>
+                    </div>
+                  )}
+                  
+                  {isElectron ? (
+                    <Card className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-900">
+                      <CardContent className="p-4 space-y-2">
+                        <h3 className="text-lg font-medium flex items-center gap-1">
+                          <Settings className="h-4 w-4" /> Electron Desktop App
+                        </h3>
+                        <p className="text-sm">
+                          Diese Anwendung läuft als Electron Desktop App. Dies ermöglicht verbesserte Druckfunktionen und Kiosk-Modus ohne zusätzliche Browser-Flags.
+                        </p>
+                        <p className="text-sm font-medium">
+                          App-Version: {window.electronAPI ? window.electronAPI.getVersion() : '1.0.0'}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Card className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-900">
+                      <CardContent className="p-4 space-y-2">
+                        <h3 className="text-lg font-medium flex items-center gap-1">
+                          <Settings className="h-4 w-4" /> Kiosk-Modus Anleitung
+                        </h3>
+                        <p className="text-sm">
+                          Für vollständig automatischen Druck ohne Dialog muss Chrome/Chromium mit speziellen Parametern gestartet werden:
+                        </p>
+                        <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded font-mono text-xs overflow-x-auto">
+                          chrome.exe --kiosk-printing
+                        </div>
+                        <p className="text-sm">
+                          Dies aktiviert den Kiosk-Druck-Modus, bei dem Druckaufträge ohne Dialog direkt an den Standarddrucker gesendet werden.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                  
+                  <div className="flex justify-between pt-4">
+                    <Button 
+                      variant="outline" 
+                      onClick={handleTestPrint}
+                    >
+                      <Printer className="mr-1" /> Testdruck
+                    </Button>
+                    
+                    <Button onClick={handleSavePrinterSettings}>
+                      Einstellungen speichern
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
           
           <TabsContent value="badge-layout">

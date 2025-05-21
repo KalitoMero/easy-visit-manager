@@ -39,7 +39,7 @@ const SignaturePad: React.FC<SignaturePadProps> = ({
   
   return (
     <div className="flex flex-col md:flex-row gap-3">
-      <Card className="border-2 p-0 overflow-hidden relative" style={{ width: width, height: height }}>
+      <Card className="border-2 border-gray-700 p-0 overflow-hidden relative" style={{ width: width, height: height }}>
         <SignatureCanvas
           canvasRef={canvasRef}
           startDrawing={startDrawing}

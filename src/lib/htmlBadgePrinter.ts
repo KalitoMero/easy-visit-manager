@@ -40,11 +40,16 @@ export const navigateToPrintPreview = (
     return;
   }
   
-  // Get the skipPrintPreview setting from the printer settings
-  const useSkipPreview = skipPreview ?? 
-    (typeof window !== 'undefined' && 
+  // Get printer settings from localStorage
+  const printerSettings = typeof window !== 'undefined' && 
      window.localStorage && 
-     JSON.parse(window.localStorage.getItem('printer-settings') || '{}')?.state?.skipPrintPreview);
+     JSON.parse(window.localStorage.getItem('printer-settings') || '{}');
+  
+  // Use provided skipPreview or get it from settings  
+  const useSkipPreview = skipPreview ?? 
+    (printerSettings?.state?.skipPrintPreview);
+  
+  logDebug('Print', `Print settings - Skip preview: ${useSkipPreview}`);
   
   if (useSkipPreview) {
     // If skip preview is enabled, print directly
