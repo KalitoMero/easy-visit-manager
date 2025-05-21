@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import VisitorBadge from '@/components/VisitorBadge';
@@ -15,6 +15,9 @@ import { isElectron } from '@/lib/htmlBadgePrinter';
 const BadgePrintPreview = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isDirect = searchParams.get('direct') === 'true';
+  
   const visitors = useVisitorStore(state => state.visitors);
   const { toast } = useToast();
   
@@ -42,14 +45,45 @@ const BadgePrintPreview = () => {
   const [qrLoadingAttempts, setQrLoadingAttempts] = useState(0);
   const [printingCompleted, setPrintingCompleted] = useState(false);
   const [manualPrintEnabled, setManualPrintEnabled] = useState(false);
+  const [mainQrLoaded, setMainQrLoaded] = useState(false);
+  const [additionalQrsLoaded, setAdditionalQrsLoaded] = useState({});
   
   // Find the visitor
   const visitor = visitors.find(v => v.id === id);
+  const hasAdditionalVisitors = visitor?.additionalVisitors && visitor.additionalVisitors.length > 0;
 
-  // QR code load handler
-  const handleQRCodeLoaded = () => {
-    logDebug('Print', "QR code loaded successfully in BadgePrintPreview");
+  // QR code load handler for main visitor
+  const handleMainQRCodeLoaded = () => {
+    logDebug('Print', "Main visitor QR code loaded successfully");
+    setMainQrLoaded(true);
+    checkAllQrCodesLoaded();
+  };
+  
+  // QR code load handler for additional visitors
+  const handleAdditionalQRCodeLoaded = (visitorId) => {
+    logDebug('Print', `Additional visitor QR code loaded for ${visitorId}`);
+    setAdditionalQrsLoaded(prev => ({...prev, [visitorId]: true}));
+    checkAllQrCodesLoaded();
+  };
+  
+  // Check if all QR codes are loaded
+  const checkAllQrCodesLoaded = () => {
+    if (!visitor) return;
+    
+    // Check main visitor QR code
+    if (!mainQrLoaded) return;
+    
+    // If there are additional visitors, check their QR codes too
+    if (hasAdditionalVisitors) {
+      const allAdditionalLoaded = visitor.additionalVisitors.every(
+        av => additionalQrsLoaded[av.id]
+      );
+      if (!allAdditionalLoaded) return;
+    }
+    
+    // All QR codes are loaded
     setQrCodesLoaded(true);
+    logDebug('Print', "All QR codes loaded successfully");
   };
   
   // Retry QR code loading
@@ -77,12 +111,17 @@ const BadgePrintPreview = () => {
       // Set a timer to redirect back to the success page
       const redirectTimer = setTimeout(() => {
         logDebug('Print', "Redirecting to success page after printing");
-        navigate(`/checkin/step3/${visitor.id}`);
-      }, 800); // Give a short delay to ensure print dialog has time to process
+        // If this was opened directly, close the window instead of navigating
+        if (isDirect) {
+          window.close();
+        } else {
+          navigate(`/checkin/step3/${visitor.id}`);
+        }
+      }, 1000); // Give time to ensure print dialog has processed
       
       return () => clearTimeout(redirectTimer);
     }
-  }, [printingCompleted, visitor, navigate]);
+  }, [printingCompleted, visitor, navigate, isDirect]);
   
   // Add print styles
   useEffect(() => {
@@ -166,7 +205,11 @@ const BadgePrintPreview = () => {
   // Handle automatic printing
   useEffect(() => {
     // Skip if requirements aren't met
-    if (!visitor || printAttemptedRef.current || !enableAutomaticPrinting || printInProgressRef.current || printingCompleted) {
+    if (!visitor || 
+        printAttemptedRef.current || 
+        !enableAutomaticPrinting || 
+        printInProgressRef.current || 
+        printingCompleted) {
       return;
     }
     
@@ -209,12 +252,14 @@ const BadgePrintPreview = () => {
             logDebug('Print', 'Electron print failed, falling back to browser printing');
             // Fallback to browser printing
             window.print();
+            // Important: mark as completed regardless of print dialog outcome
             setPrintingCompleted(true);
           }
         } else {
           // Browser printing
           logDebug('Print', "Using browser print function");
           window.print();
+          // Important: mark as completed regardless of print dialog outcome
           setPrintingCompleted(true);
         }
       } catch (error) {
@@ -225,6 +270,7 @@ const BadgePrintPreview = () => {
           variant: "destructive"
         });
         setManualPrintEnabled(true);
+        setPrintingCompleted(true); // Mark as completed to prevent infinite loop
       } finally {
         // Reset in-progress flag
         printInProgressRef.current = false;
@@ -268,10 +314,25 @@ const BadgePrintPreview = () => {
     return (
       <div className="p-8 text-center">
         <HomeButton />
-        <div className="mt-8">Visitor not found</div>
+        <div className="mt-8">Besucher nicht gefunden</div>
       </div>
     );
   }
+  
+  // Prepare array of all visitors to print (main visitor + additionals)
+  const allVisitorsToDisplay = [
+    { 
+      ...visitor,
+      isMain: true 
+    },
+    ...(visitor.additionalVisitors?.map(av => ({
+      ...av,
+      company: visitor.company,
+      contact: visitor.contact,
+      checkInTime: visitor.checkInTime,
+      isMain: false
+    })) || [])
+  ];
   
   return (
     <div className="p-4 flex flex-col gap-4 print:p-0">
@@ -307,90 +368,114 @@ const BadgePrintPreview = () => {
           <div className="bg-amber-50 border border-amber-200 p-3 rounded-md mb-4 flex items-center gap-2">
             <QrCode className="h-5 w-5 text-amber-600" />
             <div>
-              <p className="font-medium text-amber-800">QR-Code wird geladen...</p>
-              <p className="text-sm text-amber-700">Bitte warten Sie, bis der QR-Code vollständig geladen ist ({qrLoadingAttempts}/5 Versuche)</p>
+              <p className="font-medium text-amber-800">QR-Codes werden geladen...</p>
+              <p className="text-sm text-amber-700">Bitte warten Sie, bis alle QR-Codes vollständig geladen sind ({qrLoadingAttempts}/5 Versuche)</p>
             </div>
           </div>
         )}
       </div>
       
-      {/* Badge container for A6 printing - hidden on screen, visible when printing */}
+      {/* Badge containers for printing - hidden on screen, visible when printing */}
       <div className="visitor-badge-container print:block hidden">
-        <div className="a6-paper" style={{ 
-          width: '105mm', 
-          height: '148mm',
-          position: 'relative',
-          overflow: 'hidden',
-          boxSizing: 'border-box',
-          padding: 0,
-          margin: 0
-        }}>
-          {/* Top badge - exactly 6cm × 9cm */}
-          <div style={{
-            position: 'absolute',
-            top: '0',
-            left: '0',
-            width: '100%',
-            height: '72mm', /* 9cm */
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            boxSizing: 'border-box',
-            overflow: 'hidden',
-            padding: 0,
-            margin: 0
-          }}>
+        {allVisitorsToDisplay.map((visitorItem, index) => (
+          <div 
+            key={`print-${visitorItem.id || index}`}
+            className="visitor-page-container"
+            style={{ 
+              width: '105mm', 
+              height: '148mm',
+              position: 'relative',
+              overflow: 'hidden',
+              boxSizing: 'border-box',
+              padding: 0,
+              margin: 0,
+              pageBreakAfter: 'always'
+            }}
+          >
+            {/* Top badge - exactly 6cm × 9cm */}
             <div style={{
-              transform: `translate(${badgeOffsetX}mm, ${badgeOffsetY}mm) rotate(${badgeRotation}deg)`,
-              width: '60mm', /* 6cm */
+              position: 'absolute',
+              top: '0',
+              left: '0',
+              width: '100%',
               height: '72mm', /* 9cm */
-              boxSizing: 'border-box'
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              boxSizing: 'border-box',
+              overflow: 'hidden',
+              padding: 0,
+              margin: 0
             }}>
-              <VisitorBadge 
-                visitor={visitor} 
-                printTimestamp={printTimestamp}
-                qrPosition={badgeLayout.qrCodePosition || 'right'}
-                className="print-badge"
-                onQRCodeLoaded={handleQRCodeLoaded}
-              />
+              <div style={{
+                transform: `translate(${badgeOffsetX}mm, ${badgeOffsetY}mm) rotate(${badgeRotation}deg)`,
+                width: '60mm', /* 6cm */
+                height: '72mm', /* 9cm */
+                boxSizing: 'border-box'
+              }}>
+                <VisitorBadge 
+                  visitor={visitorItem.isMain ? visitor : {
+                    ...visitor,
+                    name: visitorItem.name,
+                    firstName: visitorItem.firstName,
+                    visitorNumber: visitorItem.visitorNumber
+                  }}
+                  name={!visitorItem.isMain ? visitorItem.name : undefined}
+                  firstName={!visitorItem.isMain ? visitorItem.firstName : undefined}
+                  visitorNumber={!visitorItem.isMain ? visitorItem.visitorNumber : undefined}
+                  printTimestamp={printTimestamp}
+                  qrPosition={badgeLayout.qrCodePosition || 'right'}
+                  className="print-badge"
+                  onQRCodeLoaded={visitorItem.isMain ? handleMainQRCodeLoaded : () => handleAdditionalQRCodeLoaded(visitorItem.id)}
+                />
+              </div>
+            </div>
+            
+            {/* Bottom badge - exactly 6cm × 9cm */}
+            <div style={{
+              position: 'absolute',
+              top: '72mm', /* Position below the first badge */
+              left: '0',
+              width: '100%',
+              height: '72mm', /* 9cm */
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              boxSizing: 'border-box',
+              overflow: 'hidden',
+              padding: 0,
+              margin: 0
+            }}>
+              <div style={{
+                transform: `translate(${secondBadgeOffsetX}mm, ${secondBadgeOffsetY}mm) rotate(${secondBadgeRotation}deg)`,
+                width: '60mm', /* 6cm */
+                height: '72mm', /* 9cm */
+                boxSizing: 'border-box'
+              }}>
+                <VisitorBadge 
+                  visitor={visitorItem.isMain ? visitor : {
+                    ...visitor,
+                    name: visitorItem.name,
+                    firstName: visitorItem.firstName,
+                    visitorNumber: visitorItem.visitorNumber
+                  }}
+                  name={!visitorItem.isMain ? visitorItem.name : undefined}
+                  firstName={!visitorItem.isMain ? visitorItem.firstName : undefined}
+                  visitorNumber={!visitorItem.isMain ? visitorItem.visitorNumber : undefined}
+                  printTimestamp={printTimestamp}
+                  qrPosition={badgeLayout.qrCodePosition || 'right'}
+                  className="print-badge"
+                  onQRCodeLoaded={visitorItem.isMain ? handleMainQRCodeLoaded : () => handleAdditionalQRCodeLoaded(visitorItem.id)}
+                />
+              </div>
             </div>
           </div>
-          
-          {/* Bottom badge - exactly 6cm × 9cm */}
-          <div style={{
-            position: 'absolute',
-            top: '72mm', /* Position below the first badge */
-            left: '0',
-            width: '100%',
-            height: '72mm', /* 9cm */
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            boxSizing: 'border-box',
-            overflow: 'hidden',
-            padding: 0,
-            margin: 0
-          }}>
-            <div style={{
-              transform: `translate(${secondBadgeOffsetX}mm, ${secondBadgeOffsetY}mm) rotate(${secondBadgeRotation}deg)`,
-              width: '60mm', /* 6cm */
-              height: '72mm', /* 9cm */
-              boxSizing: 'border-box'
-            }}>
-              <VisitorBadge 
-                visitor={visitor} 
-                printTimestamp={printTimestamp}
-                qrPosition={badgeLayout.qrCodePosition || 'right'}
-                className="print-badge"
-                onQRCodeLoaded={handleQRCodeLoaded}
-              />
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
       
       {/* Screen preview - visible only on screen */}
       <div className="print:hidden">
+        {/* Main visitor badge preview */}
         <div className="mb-8">
           <h2 className="text-lg font-medium mb-2">Druckvorschau (A6-Format)</h2>
           <div className="border border-gray-300 rounded-md p-4 bg-white" style={{ 
@@ -427,7 +512,7 @@ const BadgePrintPreview = () => {
                   printTimestamp={printTimestamp}
                   qrPosition={badgeLayout.qrCodePosition || 'right'}
                   className="w-full h-full"
-                  onQRCodeLoaded={handleQRCodeLoaded}
+                  onQRCodeLoaded={handleMainQRCodeLoaded}
                 />
               </div>
             </div>
@@ -467,7 +552,7 @@ const BadgePrintPreview = () => {
                   printTimestamp={printTimestamp}
                   qrPosition={badgeLayout.qrCodePosition || 'right'}
                   className="w-full h-full"
-                  onQRCodeLoaded={handleQRCodeLoaded}
+                  onQRCodeLoaded={handleMainQRCodeLoaded}
                 />
               </div>
             </div>
@@ -475,19 +560,33 @@ const BadgePrintPreview = () => {
         </div>
         
         {/* Additional visitors section */}
-        {visitor.additionalVisitors && visitor.additionalVisitors.length > 0 && visitor.additionalVisitors.map((additionalVisitor) => (
-          <div key={additionalVisitor.id} className="mb-4">
-            <h3 className="text-md font-medium mb-2">Zusätzlicher Besucher: {additionalVisitor.name}</h3>
-            <VisitorBadge 
-              visitor={visitor} 
-              name={additionalVisitor.name}
-              visitorNumber={additionalVisitor.visitorNumber}
-              printTimestamp={printTimestamp}
-              qrPosition={badgeLayout.qrCodePosition || 'right'}
-              onQRCodeLoaded={handleQRCodeLoaded}
-            />
+        {hasAdditionalVisitors && (
+          <div className="mt-8 mb-4">
+            <h2 className="text-lg font-medium mb-4">Zusätzliche Besucher</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {visitor.additionalVisitors.map((additionalVisitor) => (
+                <div key={additionalVisitor.id} className="border border-gray-200 rounded-md p-4 bg-white">
+                  <h3 className="text-md font-medium mb-2">{additionalVisitor.name}</h3>
+                  <p className="text-sm text-gray-500 mb-2">Besuchernummer: {additionalVisitor.visitorNumber}</p>
+                  <VisitorBadge 
+                    visitor={{
+                      ...visitor,
+                      name: additionalVisitor.name,
+                      firstName: additionalVisitor.firstName,
+                      visitorNumber: additionalVisitor.visitorNumber
+                    }}
+                    name={additionalVisitor.name}
+                    firstName={additionalVisitor.firstName}
+                    visitorNumber={additionalVisitor.visitorNumber}
+                    printTimestamp={printTimestamp}
+                    qrPosition={badgeLayout.qrCodePosition || 'right'}
+                    onQRCodeLoaded={() => handleAdditionalQRCodeLoaded(additionalVisitor.id)}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );
