@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
@@ -11,26 +11,43 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 
 const AutoCheckoutSettings = () => {
   const { toast } = useToast();
+  
+  // Use selector functions to get only what you need to prevent re-renders
   const autoCheckoutSchedule = useVisitorStore(state => state.autoCheckoutSchedule);
   const updateAutoCheckoutSchedule = useVisitorStore(state => state.updateAutoCheckoutSchedule);
   const checkOutAllVisitors = useVisitorStore(state => state.checkOutAllVisitors);
-  const activeVisitors = useVisitorStore(state => state.getActiveVisitors());
+  
+  // Get active visitors count directly through a selector function
+  const activeVisitorsCount = useVisitorStore(state => 
+    state.visitors.filter(v => v.checkOutTime === null).length
+  );
 
-  // Local state for form
-  const [enabled, setEnabled] = useState(autoCheckoutSchedule.enabled);
-  const [hour, setHour] = useState(autoCheckoutSchedule.hour.toString());
-  const [minute, setMinute] = useState(autoCheckoutSchedule.minute.toString());
+  // Local state for form - initialize only once with default values
+  const [formState, setFormState] = useState({
+    enabled: autoCheckoutSchedule.enabled,
+    hour: autoCheckoutSchedule.hour.toString(),
+    minute: autoCheckoutSchedule.minute.toString()
+  });
+
+  // Update local state when store changes, but only when component mounts
+  useEffect(() => {
+    setFormState({
+      enabled: autoCheckoutSchedule.enabled,
+      hour: autoCheckoutSchedule.hour.toString(),
+      minute: autoCheckoutSchedule.minute.toString()
+    });
+  }, []);  // Empty dependency array ensures this only runs once on mount
 
   const handleSaveSettings = () => {
     updateAutoCheckoutSchedule(
-      enabled,
-      parseInt(hour),
-      parseInt(minute)
+      formState.enabled,
+      parseInt(formState.hour),
+      parseInt(formState.minute)
     );
 
     toast({
       title: "Einstellungen gespeichert",
-      description: `Automatische Abmeldung ${enabled ? 'aktiviert' : 'deaktiviert'} - Zeit: ${hour}:${minute} Uhr`,
+      description: `Automatische Abmeldung ${formState.enabled ? 'aktiviert' : 'deaktiviert'} - Zeit: ${formState.hour}:${formState.minute} Uhr`,
     });
   };
 
@@ -68,10 +85,10 @@ const AutoCheckoutSettings = () => {
               onClick={handleCheckoutAllVisitors}
               variant="default" 
               className="flex items-center gap-2"
-              disabled={activeVisitors.length === 0}
+              disabled={activeVisitorsCount === 0}
             >
               <UserMinus className="h-4 w-4" />
-              Jetzt alle abmelden ({activeVisitors.length})
+              Jetzt alle abmelden ({activeVisitorsCount})
             </Button>
           </div>
           <p className="text-sm text-muted-foreground">
@@ -91,17 +108,20 @@ const AutoCheckoutSettings = () => {
               </p>
             </div>
             <Switch
-              checked={enabled}
-              onCheckedChange={setEnabled}
+              checked={formState.enabled}
+              onCheckedChange={(checked) => setFormState(prev => ({ ...prev, enabled: checked }))}
               aria-label="Automatische Abmeldung aktivieren"
             />
           </div>
 
-          {enabled && (
+          {formState.enabled && (
             <div className="flex items-end gap-4 mt-4">
               <div className="w-full space-y-2">
                 <Label htmlFor="checkout-hour">Stunde</Label>
-                <Select value={hour} onValueChange={setHour}>
+                <Select 
+                  value={formState.hour} 
+                  onValueChange={(value) => setFormState(prev => ({ ...prev, hour: value }))}
+                >
                   <SelectTrigger id="checkout-hour">
                     <SelectValue placeholder="Stunde wählen" />
                   </SelectTrigger>
@@ -117,7 +137,10 @@ const AutoCheckoutSettings = () => {
 
               <div className="w-full space-y-2">
                 <Label htmlFor="checkout-minute">Minute</Label>
-                <Select value={minute} onValueChange={setMinute}>
+                <Select 
+                  value={formState.minute} 
+                  onValueChange={(value) => setFormState(prev => ({ ...prev, minute: value }))}
+                >
                   <SelectTrigger id="checkout-minute">
                     <SelectValue placeholder="Minute wählen" />
                   </SelectTrigger>
@@ -142,11 +165,11 @@ const AutoCheckoutSettings = () => {
             </div>
           )}
 
-          {enabled && (
+          {formState.enabled && (
             <div className="text-sm bg-muted/50 p-3 rounded-md">
               <p>
                 <strong>Aktuelle Einstellung: </strong>
-                Automatische Abmeldung täglich um {hour.padStart(2, '0')}:{minute.padStart(2, '0')} Uhr
+                Automatische Abmeldung täglich um {formState.hour.padStart(2, '0')}:{formState.minute.padStart(2, '0')} Uhr
               </p>
               {autoCheckoutSchedule.lastRun && (
                 <p className="text-xs text-muted-foreground mt-2">
