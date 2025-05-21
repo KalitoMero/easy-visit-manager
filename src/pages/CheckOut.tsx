@@ -8,7 +8,7 @@ import HomeButton from '@/components/HomeButton';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
-import { useTranslation } from '@/locale/translations';
+import useTranslation from '@/locale/translations';
 
 const CheckOut = () => {
   const [visitorNumber, setVisitorNumber] = useState('');

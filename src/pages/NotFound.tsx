@@ -1,9 +1,8 @@
-
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import NavButton from "@/components/NavButton";
 import { useLanguageStore } from '@/hooks/useLanguageStore';
-import { useTranslation } from '@/locale/translations';
+import useTranslation from '@/locale/translations';
 
 const NotFound = () => {
   const location = useLocation();

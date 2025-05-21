@@ -12,7 +12,7 @@ import { useVisitorStore } from '@/hooks/useVisitorStore';
 import NavButton from '@/components/NavButton';
 import HomeButton from '@/components/HomeButton';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
-import { useTranslation } from '@/locale/translations';
+import useTranslation from '@/locale/translations';
 import { UserPlus, X, Plus } from 'lucide-react';
 
 // Define form schema

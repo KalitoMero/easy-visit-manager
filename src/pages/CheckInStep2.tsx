@@ -10,7 +10,7 @@ import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { usePolicyStore } from '@/hooks/usePolicyStore';
 import { useToast } from '@/components/ui/use-toast';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
-import { useTranslation } from '@/locale/translations';
+import useTranslation from '@/locale/translations';
 import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import { ArrowLeft, ArrowDown } from 'lucide-react';
 import SignaturePad from '@/components/SignaturePad';

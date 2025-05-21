@@ -1,10 +1,11 @@
+
 import React, { useEffect } from 'react';
 import NavButton from '@/components/NavButton';
 import { Card, CardContent } from '@/components/ui/card';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
-import { useTranslation } from '@/locale/translations';
+import useTranslation from '@/locale/translations';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Settings } from 'lucide-react';

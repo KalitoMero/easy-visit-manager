@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import NavButton from '@/components/NavButton';
 import HomeButton from '@/components/HomeButton';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
-import { useTranslation } from '@/locale/translations';
+import useTranslation from '@/locale/translations';
 
 const CheckOutSuccess = () => {
   const { language } = useLanguageStore();

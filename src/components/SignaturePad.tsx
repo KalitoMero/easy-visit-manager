@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Eraser } from 'lucide-react';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
-import { useTranslation } from '@/locale/translations';
+import useTranslation from '@/locale/translations';
 import { useSignatureCanvas } from '@/hooks/useSignatureCanvas';
 import SignatureCanvas from './SignatureCanvas';
 
