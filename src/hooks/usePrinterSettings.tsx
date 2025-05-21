@@ -1,6 +1,6 @@
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 interface BadgeLayoutOptions {
   showContact: boolean;
@@ -114,7 +114,7 @@ export const usePrinterSettings = create<PrinterSettingsStore>()(
     }),
     {
       name: "printer-settings",
-      storage: localStorage,
+      storage: createJSONStorage(() => localStorage),
     }
   )
 );
