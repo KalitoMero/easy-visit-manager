@@ -1,5 +1,17 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+
+interface BadgeLayoutOptions {
+  showContact: boolean;
+  showDateTime: boolean;
+  fontSizeTitle: 'small' | 'medium' | 'large';
+  fontSizeName: 'small' | 'medium' | 'large';
+  fontSizeCompany: 'small' | 'medium' | 'large';
+  qrCodeSize: number;
+  footerSpacing: number;
+  qrCodePosition: 'right' | 'center';
+}
 
 interface PrinterSettingsStore {
   enableAutomaticPrinting: boolean;
@@ -11,6 +23,18 @@ interface PrinterSettingsStore {
   badgeRotation: number;
   companyLogo: string | null;
   showBuiltByText: boolean;
+  
+  // New properties for badge positioning and layout
+  badgeOffsetX: number;
+  badgeOffsetY: number;
+  secondBadgeRotation: number;
+  secondBadgeOffsetX: number;
+  secondBadgeOffsetY: number;
+  skipPrintPreview: boolean;
+  badgeLayout: BadgeLayoutOptions;
+  bottomMargin: number;
+  
+  // Original setter methods
   setEnableAutomaticPrinting: (enabled: boolean) => void;
   setPrintWithoutDialog: (withoutDialog: boolean) => void;
   setPrintDelay: (delay: number) => void;
@@ -20,18 +44,16 @@ interface PrinterSettingsStore {
   setBadgeRotation: (rotation: number) => void;
   setCompanyLogo: (logo: string | null) => void;
   setShowBuiltByText: (show: boolean) => void;
-}
-
-interface PrinterSettings {
-  enableAutomaticPrinting: boolean;
-  printWithoutDialog: boolean;
-  printDelay: number;
-  showBrandingOnPrint: boolean;
-  badgePositionX: number;
-  badgePositionY: number;
-  badgeRotation: number;
-  companyLogo: string | null;
-  showBuiltByText: boolean;
+  
+  // New setter methods
+  setBadgeOffsetX: (offset: number) => void;
+  setBadgeOffsetY: (offset: number) => void;
+  setSecondBadgeRotation: (rotation: number) => void;
+  setSecondBadgeOffsetX: (offset: number) => void;
+  setSecondBadgeOffsetY: (offset: number) => void;
+  setSkipPrintPreview: (skip: boolean) => void;
+  setBadgeLayout: (layout: Partial<BadgeLayoutOptions>) => void;
+  setBottomMargin: (margin: number) => void;
 }
 
 export const usePrinterSettings = create<PrinterSettingsStore>()(
@@ -46,6 +68,27 @@ export const usePrinterSettings = create<PrinterSettingsStore>()(
       badgeRotation: 0,
       companyLogo: null,
       showBuiltByText: true,
+      
+      // Initialize new properties
+      badgeOffsetX: 0,
+      badgeOffsetY: 0,
+      secondBadgeRotation: 0,
+      secondBadgeOffsetX: 0,
+      secondBadgeOffsetY: 0,
+      skipPrintPreview: false,
+      bottomMargin: 0,
+      badgeLayout: {
+        showContact: true,
+        showDateTime: true,
+        fontSizeTitle: 'medium',
+        fontSizeName: 'medium',
+        fontSizeCompany: 'medium',
+        qrCodeSize: 120,
+        footerSpacing: 8,
+        qrCodePosition: 'right'
+      },
+      
+      // Original setter methods
       setEnableAutomaticPrinting: (enabled: boolean) => set({ enableAutomaticPrinting: enabled }),
       setPrintWithoutDialog: (withoutDialog: boolean) => set({ printWithoutDialog: withoutDialog }),
       setPrintDelay: (delay: number) => set({ printDelay: delay }),
@@ -55,10 +98,23 @@ export const usePrinterSettings = create<PrinterSettingsStore>()(
       setBadgeRotation: (rotation: number) => set({ badgeRotation: rotation }),
       setCompanyLogo: (logo: string | null) => set({ companyLogo: logo }),
       setShowBuiltByText: (show: boolean) => set({ showBuiltByText: show }),
+      
+      // New setter methods
+      setBadgeOffsetX: (offset: number) => set({ badgeOffsetX: offset }),
+      setBadgeOffsetY: (offset: number) => set({ badgeOffsetY: offset }),
+      setSecondBadgeRotation: (rotation: number) => set({ secondBadgeRotation: rotation }),
+      setSecondBadgeOffsetX: (offset: number) => set({ secondBadgeOffsetX: offset }),
+      setSecondBadgeOffsetY: (offset: number) => set({ secondBadgeOffsetY: offset }),
+      setSkipPrintPreview: (skip: boolean) => set({ skipPrintPreview: skip }),
+      setBadgeLayout: (layout: Partial<BadgeLayoutOptions>) => 
+        set((state) => ({ 
+          badgeLayout: { ...state.badgeLayout, ...layout } 
+        })),
+      setBottomMargin: (margin: number) => set({ bottomMargin: margin }),
     }),
     {
       name: "printer-settings",
-      getStorage: () => localStorage,
+      storage: localStorage,
     }
   )
 );

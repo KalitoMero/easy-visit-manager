@@ -33,10 +33,10 @@ const BadgePositionControls = ({
   setOffsetY,
   label
 }: { 
-  rotation: 0 | 90 | 180 | 270, 
+  rotation: number, 
   offsetX: number, 
   offsetY: number,
-  setRotation: (value: 0 | 90 | 180 | 270) => void,
+  setRotation: (value: number) => void,
   setOffsetX: (value: number) => void,
   setOffsetY: (value: number) => void,
   label: string
