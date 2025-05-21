@@ -10,7 +10,6 @@ import { Trash2 } from 'lucide-react';
 
 const LogoSettings = () => {
   const { companyLogo, showBuiltByText, setCompanyLogo, setShowBuiltByText } = usePrinterSettings();
-  const [showPreview, setShowPreview] = useState(false);
 
   const handleLogoUpload = (base64Logo: string) => {
     setCompanyLogo(base64Logo);

@@ -1,169 +1,64 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
 
-type PrinterSettingsState = {
-  // Grundlegende Einstellungen
+interface PrinterSettingsStore {
   enableAutomaticPrinting: boolean;
   printWithoutDialog: boolean;
-  skipPrintPreview: boolean; // New setting to skip print preview
-  printDelay: number; // Verzögerung in Millisekunden
-  selectedPrinterName: string | null; // Name des ausgewählten Druckers
-  printCopies: number; // Anzahl der Kopien
-  showBrandingOnPrint: boolean; // Branding auf Ausdruck anzeigen
-  bottomMargin: number; // Neuer unterer Rand in mm
-  
-  // Badge Position und Rotation (Oberer Ausweis)
-  badgeRotation: 0 | 90 | 180 | 270; // Rotation in Grad (0, 90, 180, 270)
-  badgeOffsetX: number; // Horizontale Verschiebung in mm
-  badgeOffsetY: number; // Vertikale Verschiebung in mm
-
-  // Badge Position und Rotation (Unterer Ausweis)
-  secondBadgeRotation: 0 | 90 | 180 | 270; // Rotation in Grad (0, 90, 180, 270)
-  secondBadgeOffsetX: number; // Horizontale Verschiebung in mm
-  secondBadgeOffsetY: number; // Vertikale Verschiebung in mm
-
-  // Anpassungen des Badge-Layouts
-  badgeLayout: {
-    showContact: boolean;
-    showDateTime: boolean;
-    fontSizeTitle: 'small' | 'medium' | 'large';
-    fontSizeName: 'small' | 'medium' | 'large';
-    fontSizeCompany: 'small' | 'medium' | 'large';
-    qrCodeSize: number; // Größe in Pixeln
-    footerSpacing: number; // Abstand in Pixeln
-    qrCodePosition: 'right' | 'center'; // Position des QR-Codes
-  };
-
-  // Company branding
-  companyLogo: string | null; // Base64 encoded logo image
-  showBuiltByText: boolean; // Whether to show "Built by" text with logo
-
-  // Aktionen
-  setEnableAutomaticPrinting: (value: boolean) => void;
-  setPrintWithoutDialog: (value: boolean) => void;
-  setSkipPrintPreview: (value: boolean) => void; // New setter for skip preview
-  setPrintDelay: (value: number) => void;
-  setSelectedPrinterName: (value: string | null) => void;
-  setPrintCopies: (value: number) => void;
-  setShowBrandingOnPrint: (value: boolean) => void;
-  setBottomMargin: (value: number) => void;
-  setBadgeRotation: (value: 0 | 90 | 180 | 270) => void;
-  setBadgeOffsetX: (value: number) => void;
-  setBadgeOffsetY: (value: number) => void;
-  setSecondBadgeRotation: (value: 0 | 90 | 180 | 270) => void;
-  setSecondBadgeOffsetX: (value: number) => void;
-  setSecondBadgeOffsetY: (value: number) => void;
-  
-  // Layout-Anpassungsaktionen
-  setBadgeLayout: (layoutSettings: Partial<PrinterSettingsState['badgeLayout']>) => void;
-  
-  // Logo actions
+  printDelay: number;
+  showBrandingOnPrint: boolean;
+  badgePositionX: number;
+  badgePositionY: number;
+  badgeRotation: number;
+  companyLogo: string | null;
+  showBuiltByText: boolean;
+  setEnableAutomaticPrinting: (enabled: boolean) => void;
+  setPrintWithoutDialog: (withoutDialog: boolean) => void;
+  setPrintDelay: (delay: number) => void;
+  setShowBrandingOnPrint: (show: boolean) => void;
+  setBadgePositionX: (position: number) => void;
+  setBadgePositionY: (position: number) => void;
+  setBadgeRotation: (rotation: number) => void;
   setCompanyLogo: (logo: string | null) => void;
-  setShowBuiltByText: (value: boolean) => void;
-};
+  setShowBuiltByText: (show: boolean) => void;
+}
 
-// Helper function to check if we're running in Electron
-const isElectron = () => {
-  return window && window.electronAPI && window.electronAPI.isElectron === true;
-};
+interface PrinterSettings {
+  enableAutomaticPrinting: boolean;
+  printWithoutDialog: boolean;
+  printDelay: number;
+  showBrandingOnPrint: boolean;
+  badgePositionX: number;
+  badgePositionY: number;
+  badgeRotation: number;
+  companyLogo: string | null;
+  showBuiltByText: boolean;
+}
 
-// Custom storage for Electron
-const electronStorage = {
-  getItem: async (name: string): Promise<string | null> => {
-    if (isElectron()) {
-      const data = await window.electronAPI.getStoreData('printer-settings');
-      return data ? JSON.stringify(data) : null;
-    } 
-    const str = localStorage.getItem(name);
-    return str ?? null;
-  },
-  setItem: async (name: string, value: string): Promise<void> => {
-    if (isElectron()) {
-      const parsed = JSON.parse(value);
-      await window.electronAPI.setStoreData('printer-settings', 'printerSettings', parsed);
-    } else {
-      localStorage.setItem(name, value);
-    }
-  },
-  removeItem: async (name: string): Promise<void> => {
-    if (isElectron()) {
-      await window.electronAPI.setStoreData('printer-settings', 'printerSettings', null);
-    } else {
-      localStorage.removeItem(name);
-    }
-  },
-};
-
-export const usePrinterSettings = create<PrinterSettingsState>()(
+export const usePrinterSettings = create<PrinterSettingsStore>()(
   persist(
     (set) => ({
-      // Standardwerte
-      enableAutomaticPrinting: true,
+      enableAutomaticPrinting: false,
       printWithoutDialog: false,
-      skipPrintPreview: false, // New setting with default value: false
-      printDelay: 500,
-      selectedPrinterName: null,
-      printCopies: 1,
-      showBrandingOnPrint: false,
-      bottomMargin: 0,
-      
-      // Standard Positionierung - Erster Ausweis
+      printDelay: 0,
+      showBrandingOnPrint: true,
+      badgePositionX: 0,
+      badgePositionY: 0,
       badgeRotation: 0,
-      badgeOffsetX: 0,
-      badgeOffsetY: 0,
-
-      // Standard Positionierung - Zweiter Ausweis
-      secondBadgeRotation: 0,
-      secondBadgeOffsetX: 0,
-      secondBadgeOffsetY: 0,
-      
-      // Standard Layout-Einstellungen
-      badgeLayout: {
-        showContact: true,
-        showDateTime: true,
-        fontSizeTitle: 'medium',
-        fontSizeName: 'medium',
-        fontSizeCompany: 'medium',
-        qrCodeSize: 120,
-        footerSpacing: 8,
-        qrCodePosition: 'right',
-      },
-
-      // Company branding defaults
       companyLogo: null,
       showBuiltByText: true,
-
-      // Setter-Funktionen
-      setEnableAutomaticPrinting: (value) => set({ enableAutomaticPrinting: value }),
-      setPrintWithoutDialog: (value) => set({ printWithoutDialog: value }),
-      setSkipPrintPreview: (value) => set({ skipPrintPreview: value }), // New setter
-      setPrintDelay: (value) => set({ printDelay: value }),
-      setSelectedPrinterName: (value) => set({ selectedPrinterName: value }),
-      setPrintCopies: (value) => set({ printCopies: value }),
-      setShowBrandingOnPrint: (value) => set({ showBrandingOnPrint: value }),
-      setBottomMargin: (value) => set({ bottomMargin: value }),
-      setBadgeRotation: (value) => set({ badgeRotation: value }),
-      setBadgeOffsetX: (value) => set({ badgeOffsetX: value }),
-      setBadgeOffsetY: (value) => set({ badgeOffsetY: value }),
-      setSecondBadgeRotation: (value) => set({ secondBadgeRotation: value }),
-      setSecondBadgeOffsetX: (value) => set({ secondBadgeOffsetX: value }),
-      setSecondBadgeOffsetY: (value) => set({ secondBadgeOffsetY: value }),
-      
-      // Layout-Anpassungen
-      setBadgeLayout: (layoutSettings) => set((state) => ({
-        badgeLayout: {
-          ...state.badgeLayout,
-          ...layoutSettings
-        }
-      })),
-      
-      // Company logo setters
-      setCompanyLogo: (logo) => set({ companyLogo: logo }),
-      setShowBuiltByText: (value) => set({ showBuiltByText: value }),
+      setEnableAutomaticPrinting: (enabled: boolean) => set({ enableAutomaticPrinting: enabled }),
+      setPrintWithoutDialog: (withoutDialog: boolean) => set({ printWithoutDialog: withoutDialog }),
+      setPrintDelay: (delay: number) => set({ printDelay: delay }),
+      setShowBrandingOnPrint: (show: boolean) => set({ showBrandingOnPrint: show }),
+      setBadgePositionX: (position: number) => set({ badgePositionX: position }),
+      setBadgePositionY: (position: number) => set({ badgePositionY: position }),
+      setBadgeRotation: (rotation: number) => set({ badgeRotation: rotation }),
+      setCompanyLogo: (logo: string | null) => set({ companyLogo: logo }),
+      setShowBuiltByText: (show: boolean) => set({ showBuiltByText: show }),
     }),
     {
-      name: 'printer-settings', // localStorage key
-      storage: createJSONStorage(() => electronStorage),
+      name: "printer-settings",
+      getStorage: () => localStorage,
     }
   )
 );

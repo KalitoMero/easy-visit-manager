@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import NavButton from '@/components/NavButton';
 import { Card, CardContent } from '@/components/ui/card';
