@@ -181,7 +181,7 @@ const VisitorBadge = ({
             {displayVisitorNumber}
           </div>
           <div className="salutation text-sm text-muted-foreground">
-            Mr. / Mrs.
+            Herr / Frau / Div
           </div>
           <div className={`name font-bold ${nameFontClass} truncate max-w-full text-center`}>
             {displayName}

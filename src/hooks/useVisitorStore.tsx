@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -30,10 +31,18 @@ type DeletionSchedule = {
   lastRun?: string;
 };
 
+type AutoCheckoutSchedule = {
+  enabled: boolean;
+  hour: number;
+  minute: number;
+  lastRun?: string;
+};
+
 type VisitorStore = {
   visitors: Visitor[];
   visitorCounter: number;
   deletionSchedule: DeletionSchedule;
+  autoCheckoutSchedule: AutoCheckoutSchedule;
   addVisitor: (name: string, company: string, contact: string) => Visitor;
   addGroupVisitor: (visitors: Array<{ name: string }>, company: string, contact: string) => Visitor;
   checkOutVisitor: (id: string) => void;
@@ -45,8 +54,11 @@ type VisitorStore = {
   searchVisitors: (query: string) => Visitor[];
   acceptPolicy: (id: string, signature?: string | null) => void;
   updateDeletionSchedule: (enabled: boolean, dayOfWeek: number, hour: number, minute: number) => void;
+  updateAutoCheckoutSchedule: (enabled: boolean, hour: number, minute: number) => void;
   deleteOldVisitors: () => number;
+  checkOutAllVisitors: () => number;
   performScheduledCheckout: () => void;
+  performScheduledAutoCheckout: () => void;
   resetVisitorCounter: (newCounter?: number) => void;
   getActiveVisitors: () => Visitor[];
   getInactiveVisitors: () => Visitor[];
@@ -55,11 +67,22 @@ type VisitorStore = {
 
 // Helper function for auto checkout initialization
 export const initializeAutoCheckout = () => {
-  // Check out all visitors at 8 PM every day
+  // Check for auto-checkout schedule every 5 minutes
   const checkTime = () => {
     const now = new Date();
+    const state = useVisitorStore.getState();
+    
+    // Check if we need to perform automated checkout based on schedule
+    if (state.autoCheckoutSchedule.enabled) {
+      const { hour, minute } = state.autoCheckoutSchedule;
+      if (now.getHours() === hour && Math.floor(now.getMinutes() / 5) === Math.floor(minute / 5)) {
+        state.performScheduledAutoCheckout();
+      }
+    }
+    
+    // Legacy 8 PM checkout (can now be removed or replaced)
     if (now.getHours() === 20) { // 8 PM
-      useVisitorStore.getState().performScheduledCheckout();
+      state.performScheduledCheckout();
     }
   };
   
@@ -83,6 +106,12 @@ export const useVisitorStore = create<VisitorStore>()(
         dayOfWeek: 0, // Sunday
         hour: 3, // 3 AM
         minute: 0,
+      },
+      autoCheckoutSchedule: {
+        enabled: false,
+        hour: 17, // 5 PM default
+        minute: 0,
+        lastRun: undefined
       },
       
       addVisitor: (name, company, contact) => {
@@ -239,6 +268,18 @@ export const useVisitorStore = create<VisitorStore>()(
           }
         }));
       },
+
+      updateAutoCheckoutSchedule: (enabled, hour, minute) => {
+        set((state) => ({
+          autoCheckoutSchedule: {
+            ...state.autoCheckoutSchedule,
+            enabled,
+            hour,
+            minute,
+            lastRun: new Date().toISOString() // Update the last run time
+          }
+        }));
+      },
       
       deleteOldVisitors: () => {
         const { visitors } = get();
@@ -259,6 +300,27 @@ export const useVisitorStore = create<VisitorStore>()(
         return inactiveVisitors.length;
       },
       
+      checkOutAllVisitors: () => {
+        const { visitors } = get();
+        const activeVisitors = visitors.filter(v => v.checkOutTime === null);
+        
+        if (activeVisitors.length === 0) {
+          return 0;
+        }
+
+        const now = new Date().toISOString();
+        
+        set((state) => ({
+          visitors: state.visitors.map((visitor) => 
+            visitor.checkOutTime === null 
+              ? { ...visitor, checkOutTime: now } 
+              : visitor
+          )
+        }));
+
+        return activeVisitors.length;
+      },
+      
       performScheduledCheckout: () => {
         const today = new Date();
         const hour = today.getHours();
@@ -275,6 +337,29 @@ export const useVisitorStore = create<VisitorStore>()(
             ),
           }));
         }
+      },
+      
+      performScheduledAutoCheckout: () => {
+        const now = new Date();
+        console.log("Performing auto checkout at", now.toLocaleTimeString());
+        
+        set((state) => {
+          // Check out all active visitors
+          const updatedVisitors = state.visitors.map((visitor) =>
+            visitor.checkOutTime === null 
+              ? { ...visitor, checkOutTime: now.toISOString() } 
+              : visitor
+          );
+          
+          // Update the last run time
+          return {
+            visitors: updatedVisitors,
+            autoCheckoutSchedule: {
+              ...state.autoCheckoutSchedule,
+              lastRun: now.toISOString()
+            }
+          };
+        });
       },
       
       resetVisitorCounter: (newCounter = DEFAULT_VISITOR_COUNTER) => {

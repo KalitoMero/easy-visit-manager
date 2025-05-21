@@ -15,28 +15,62 @@ const Index = () => {
   const t = useTranslation(language);
   const visitors = useVisitorStore((state) => state.visitors);
   const performScheduledCheckout = useVisitorStore((state) => state.performScheduledCheckout);
+  const performScheduledAutoCheckout = useVisitorStore((state) => state.performScheduledAutoCheckout);
+  const autoCheckoutSchedule = useVisitorStore((state) => state.autoCheckoutSchedule);
 
   useEffect(() => {
     // Log visitors on initial load
     console.log("Initial visitor data:", visitors);
     
-    // Set up automatic checkout at 8 PM
+    // Set up automatic checkout based on schedule
     const checkTime = () => {
       const now = new Date();
+      
+      // Check if auto-checkout is enabled and it's the right time
+      if (autoCheckoutSchedule.enabled) {
+        if (now.getHours() === autoCheckoutSchedule.hour && 
+            Math.floor(now.getMinutes() / 5) === Math.floor(autoCheckoutSchedule.minute / 5)) {
+          performScheduledAutoCheckout();
+        }
+      }
+      
+      // Legacy 8 PM checkout
       if (now.getHours() === 20) { // 8 PM
         performScheduledCheckout();
       }
     };
     
-    const timer = setInterval(checkTime, 5 * 60 * 1000);
+    const timer = setInterval(checkTime, 5 * 60 * 1000); // Check every 5 minutes
     
     // Try to also perform scheduled checkout if it hasn't been done today
     setTimeout(() => {
       performScheduledCheckout();
+      
+      // Also check if we should run auto-checkout
+      if (autoCheckoutSchedule.enabled) {
+        const now = new Date();
+        const checkoutTime = new Date();
+        checkoutTime.setHours(autoCheckoutSchedule.hour, autoCheckoutSchedule.minute, 0, 0);
+        
+        // If the scheduled time has already passed today, run checkout
+        if (now > checkoutTime) {
+          // Check if we already ran today
+          const lastRun = autoCheckoutSchedule.lastRun ? new Date(autoCheckoutSchedule.lastRun) : null;
+          const today = new Date();
+          
+          // Only run if we haven't run today yet
+          if (!lastRun || 
+              lastRun.getDate() !== today.getDate() || 
+              lastRun.getMonth() !== today.getMonth() || 
+              lastRun.getFullYear() !== today.getFullYear()) {
+            performScheduledAutoCheckout();
+          }
+        }
+      }
     }, 2000);
     
     return () => clearInterval(timer);
-  }, [visitors, performScheduledCheckout]);
+  }, [visitors, performScheduledCheckout, performScheduledAutoCheckout, autoCheckoutSchedule]);
 
   return (
     <div className="app-container">

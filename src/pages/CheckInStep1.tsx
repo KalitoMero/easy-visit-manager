@@ -148,7 +148,7 @@ const CheckInStep1: React.FC = () => {
                           <FormLabel className="text-lg">
                             {t('lastName')} 
                             <span className="text-sm text-muted-foreground ml-2">
-                              ({language === 'de' ? 'Herr / Frau' : 'Mr. / Mrs.'})
+                              ({language === 'de' ? 'Herr / Frau / Div' : 'Mr. / Mrs. / Div'})
                             </span>
                           </FormLabel>
                           <FormControl>

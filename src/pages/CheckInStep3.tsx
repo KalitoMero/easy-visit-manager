@@ -6,8 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import HomeButton from '@/components/HomeButton';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
-import { navigateToPrintPreview } from '@/lib/htmlBadgePrinter';
-import { Printer, Home, Timer } from 'lucide-react';
+import { Home, Timer } from 'lucide-react';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
 import { useTranslation } from '@/locale/translations';
 
@@ -15,8 +14,6 @@ const CheckInStep3 = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-  const shouldPrintAutomatically = searchParams.get('print') === 'true';
   
   const [secondsLeft, setSecondsLeft] = useState<number>(10);
   const [redirecting, setRedirecting] = useState<boolean>(false);
@@ -62,32 +59,6 @@ const CheckInStep3 = () => {
     };
   }, [secondsLeft, navigate, redirecting, visitor]);
   
-  // Automatic print effect
-  useEffect(() => {
-    if (visitor && shouldPrintAutomatically) {
-      console.log("[Page] Initiating automatic HTML badge printing for visitor:", visitor.visitorNumber);
-      handlePrintBadge();
-    }
-  }, [visitor, shouldPrintAutomatically]);
-  
-  const handlePrintBadge = () => {
-    if (!visitor) return;
-    
-    try {
-      // Navigate to print preview
-      navigateToPrintPreview(visitor, navigate);
-    } catch (error) {
-      console.error("Error during print:", error);
-      toast({
-        title: language === 'de' ? "Druckfehler" : "Print Error",
-        description: language === 'de' 
-          ? "Beim Drucken ist ein Fehler aufgetreten." 
-          : "An error occurred while printing.",
-        variant: "destructive",
-      });
-    }
-  };
-  
   const handleHomeClick = () => {
     navigate('/');
   };
@@ -123,8 +94,8 @@ const CheckInStep3 = () => {
             
             <p className="text-xl">
               {language === 'de' 
-                ? `Willkommen, ${visitor.name}!`
-                : `Welcome, ${visitor.name}!`}
+                ? `Willkommen, Herr / Frau / Div ${visitor.name}!`
+                : `Welcome, Mr. / Mrs. / Div ${visitor.name}!`}
             </p>
             
             <p>
@@ -134,14 +105,6 @@ const CheckInStep3 = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 mt-4">
-              <Button
-                onClick={handlePrintBadge}
-                className="flex items-center gap-2"
-              >
-                <Printer className="h-4 w-4" />
-                {t('printBadge')}
-              </Button>
-              
               <Button
                 variant="outline"
                 onClick={handleHomeClick}
