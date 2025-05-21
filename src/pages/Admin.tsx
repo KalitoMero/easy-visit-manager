@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +24,7 @@ import BadgePositionPreview from "@/components/BadgePositionPreview";
 import BadgeLayoutSettings from "@/components/BadgeLayoutSettings";
 import VisitorBadge from "@/components/VisitorBadge";
 import VisitorCounterReset from "@/components/VisitorCounterReset";
+import AutoCheckoutSettings from "@/components/AutoCheckoutSettings";
 
 const formatTime = (isoString: string, language: Language) => {
   if (!isoString) return "-";
@@ -465,6 +465,8 @@ const Admin = () => {
           <TabsContent value="settings">
             <div className="space-y-6">
               <VisitorCounterReset />
+              
+              <AutoCheckoutSettings />
               
               <Card>
                 <CardHeader>
