@@ -750,7 +750,8 @@ const Admin = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-6 md:grid-cols-2">
-                  <BadgeLayoutSettings className="md:col-span-1" />
+                  {/* Remove the className prop from BadgeLayoutSettings since it doesn't accept it */}
+                  <BadgeLayoutSettings />
                   
                   <div className="md:col-span-1 space-y-4">
                     <h3 className="text-lg font-semibold">Vorschau</h3>
