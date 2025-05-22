@@ -9,7 +9,7 @@ import HomeButton from "@/components/HomeButton";
 import { Button } from '@/components/ui/button';
 import { Printer, Home } from 'lucide-react';
 import { logDebug } from '@/lib/debugUtils';
-import { isElectron, createPrintController } from '@/lib/htmlBadgePrinter';
+import { isElectron, createPrintController, resetPrintStatus } from '@/lib/htmlBadgePrinter';
 
 // Erstellen eines Print-Controllers für diese Komponente
 const printController = createPrintController();
@@ -93,23 +93,35 @@ const BadgePrintPreview = () => {
           left: 50% !important;
           transform: translateX(-50%) !important;
           width: 60mm !important;
-          height: 60mm !important;
+          height: 69mm !important;
+          overflow: visible !important;
         }
         
         /* Das zweite Badge unten positionieren */
         .visitor-badge-bottom {
           position: absolute !important;
-          top: 78mm !important;
+          top: 74mm !important;
           left: 50% !important;
           transform: translateX(-50%) !important;
           width: 60mm !important;
-          height: 60mm !important;
+          height: 69mm !important;
+          overflow: visible !important;
         }
         
-        /* Badge-Abmessungen: genau 60mm x 90mm */
+        /* Trennlinie hinzufügen */
+        .badge-divider {
+          border-top: 1px dashed #999 !important;
+          width: 100% !important;
+          position: absolute !important;
+          top: 74mm !important;
+          left: 0 !important;
+          visibility: visible !important;
+        }
+        
+        /* Badge-Abmessungen: genau 60mm x 69mm */
         .print-badge {
           width: 60mm !important;
-          height: 90mm !important;
+          height: 69mm !important;
           margin: 0 !important;
           padding: 1mm !important;
           box-sizing: border-box !important;
@@ -150,6 +162,8 @@ const BadgePrintPreview = () => {
     // Aufräumen
     return () => {
       document.head.removeChild(styleEl);
+      // Druckstatus zurücksetzen beim Unmount der Komponente
+      resetPrintStatus();
     };
   }, [bottomMargin]);
   
@@ -176,9 +190,12 @@ const BadgePrintPreview = () => {
                 name: visitor.name,
               }).then(() => {
                 setPrintingCompleted(true);
+                // Druckstatus zurücksetzen
+                resetPrintStatus();
               }).catch((err) => {
                 console.error("Electron-Druckfehler:", err);
                 setPrintingCompleted(true);
+                resetPrintStatus();
               });
             } else {
               // Direktes Drucken ohne Verzögerung
@@ -187,13 +204,16 @@ const BadgePrintPreview = () => {
               // Verzögert als abgeschlossen markieren, um Zeit für den Druckdialog zu geben
               setTimeout(() => {
                 setPrintingCompleted(true);
-              }, 500);
+                // Druckstatus zurücksetzen
+                resetPrintStatus();
+              }, 1000);
             }
           }, 300);
         }
       } catch (error) {
         console.error("Druckfehler:", error);
         setPrintingCompleted(true);
+        resetPrintStatus();
       }
     }
   }, [visitor, enableAutomaticPrinting, isDirect, printingCompleted, printHandled]);
@@ -206,6 +226,7 @@ const BadgePrintPreview = () => {
       // Setzen Sie einen Timeout, um sicherzustellen, dass der Druck vollständig ist
       const redirectTimeout = setTimeout(() => {
         printController.reset(); // Controller zurücksetzen
+        resetPrintStatus(); // Globalen Druckstatus zurücksetzen
         
         // Wenn dies direkt geöffnet wurde, das Fenster schließen, anstatt zu navigieren
         if (isDirect) {
@@ -217,7 +238,7 @@ const BadgePrintPreview = () => {
           // Zurück zur vorherigen Seite oder Startseite
           navigate(-1);
         }
-      }, 500);
+      }, 1000);
       
       // Timeout aufräumen, wenn die Komponente unmountet wird
       return () => clearTimeout(redirectTimeout);
@@ -230,6 +251,7 @@ const BadgePrintPreview = () => {
     const handleAfterPrint = () => {
       logDebug('Print', 'afterprint event fired - Print dialog closed');
       setPrintingCompleted(true);
+      resetPrintStatus(); // Druckstatus zurücksetzen
     };
     
     window.addEventListener('afterprint', handleAfterPrint);
@@ -260,7 +282,8 @@ const BadgePrintPreview = () => {
       // Kurze Verzögerung vor dem Setzen als abgeschlossen
       setTimeout(() => {
         setPrintingCompleted(true);
-      }, 500);
+        resetPrintStatus(); // Druckstatus zurücksetzen
+      }, 1000);
     }
   };
   
@@ -358,6 +381,9 @@ const BadgePrintPreview = () => {
               />
             </div>
             
+            {/* Trennlinie zwischen den Badges */}
+            <div className="badge-divider"></div>
+            
             {/* Unteres Badge (Duplikat) */}
             <div className="visitor-badge-bottom">
               <VisitorBadge
@@ -410,7 +436,7 @@ const BadgePrintPreview = () => {
                 transition: 'transform 0.2s ease-in-out',
                 scale: '0.7',
                 width: '60mm',
-                height: '72mm',
+                height: '69mm',
                 boxSizing: 'border-box'
               }}>
                 <VisitorBadge 
@@ -449,7 +475,7 @@ const BadgePrintPreview = () => {
                 transition: 'transform 0.2s ease-in-out',
                 scale: '0.7',
                 width: '60mm',
-                height: '72mm',
+                height: '69mm',
                 boxSizing: 'border-box'
               }}>
                 <VisitorBadge 

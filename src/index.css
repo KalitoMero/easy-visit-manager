@@ -85,7 +85,7 @@
   @apply w-full max-w-4xl mx-auto;
 }
 
-/* Druckspezifische Stile - verbessert für zuverlässigeres Layout */
+/* Druckspezifische Stile - verbessert für zuverlässiges Drucken von zwei Ausweisen */
 @media print {
   @page {
     size: A6 portrait !important;
@@ -128,24 +128,26 @@
   .visitor-badge-top {
     position: absolute !important;
     top: 5mm !important;
-    left: 22.5mm !important; /* (105mm - 60mm) / 2 = 22.5mm - zentriert */
+    left: 50% !important;
+    transform: translateX(-50%) !important;
     width: 60mm !important;
-    height: 60mm !important;
+    height: 69mm !important;  /* Angepasst für bessere Positionierung */
   }
   
   /* Unteren Ausweis positionieren */
   .visitor-badge-bottom {
     position: absolute !important;
     top: 74mm !important; /* Halbe Höhe (148mm / 2) = 74mm */
-    left: 22.5mm !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
     width: 60mm !important;
-    height: 60mm !important;
+    height: 69mm !important;  /* Angepasst für bessere Positionierung */
   }
   
   /* Jeder Ausweis nimmt genau die Hälfte der A6-Seitenhöhe ein */
   .print-badge {
     width: 60mm !important;
-    height: 74mm !important;
+    height: 69mm !important;
     padding: 2mm !important;
     box-sizing: border-box !important;
     margin: 0 !important;
@@ -183,6 +185,12 @@
   .badge-divider {
     border-top: 1px dashed #ccc !important;
     width: 100% !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: absolute !important;
+    top: 74mm !important; /* Genau in der Mitte der A6-Seite */
+    left: 0 !important;
   }
   
   /* Popup-dialogs während des Drucks ausblenden */

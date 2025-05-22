@@ -14,10 +14,10 @@ export function generateCheckoutEmailUrl(visitorNumber: number): string {
  * Generates a QR code as a data URL using the qrcode library
  */
 export async function generateQRCodeDataUrl(data: string, size: number = 140): Promise<string> {
-  // Dynamisches Import der QRCode Library
-  const QRCode = await import('qrcode');
-  
   try {
+    // Dynamisch die QRCode-Bibliothek importieren
+    const QRCode = await import('qrcode');
+    
     // QR-Code als Data-URL generieren mit optimierten Einstellungen
     const dataUrl = await QRCode.toDataURL(data, {
       width: size,
@@ -37,10 +37,9 @@ export async function generateQRCodeDataUrl(data: string, size: number = 140): P
 }
 
 /**
- * Diese Funktion ist stark vereinfacht - sie führt den Callback sofort aus
- * und blockiert nicht mehr den Renderingprozess
+ * Callback sofort ausführen ohne zu blockieren
  */
 export function ensureQRCodesLoaded(callback: () => void): void {
-  // Callback sofort ausführen ohne zu warten
+  // Callback direkt aufrufen
   if (callback) callback();
 }

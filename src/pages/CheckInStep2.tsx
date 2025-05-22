@@ -14,7 +14,7 @@ import useTranslation from '@/locale/translations';
 import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import { ArrowLeft, ArrowDown } from 'lucide-react';
 import SignaturePad from '@/components/SignaturePad';
-import { navigateToPrintPreview } from '@/lib/htmlBadgePrinter';
+import { navigateToPrintPreview, resetPrintStatus } from '@/lib/htmlBadgePrinter';
 
 const CheckInStep2 = () => {
   const { id } = useParams<{ id: string }>();
@@ -57,6 +57,11 @@ const CheckInStep2 = () => {
       });
     }
   }, [visitor]);
+  
+  // Druckstatus zurücksetzen, wenn Komponente gemountet wird
+  useEffect(() => {
+    resetPrintStatus();
+  }, []);
   
   const handleScrollToBottom = React.useCallback(() => {
     if (!hasScrolledToBottom) {
@@ -101,6 +106,9 @@ const CheckInStep2 = () => {
       try {
         console.log("Accepting policy for visitor:", visitor.visitorNumber);
         acceptPolicy(id, signature);
+        
+        // Vor der Navigation den Druckstatus zurücksetzen
+        resetPrintStatus();
         
         // If automatic printing is enabled, redirect to print preview or print directly
         if (enableAutomaticPrinting) {
