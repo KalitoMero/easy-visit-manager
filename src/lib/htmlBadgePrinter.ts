@@ -7,7 +7,7 @@ import { logDebug } from './debugUtils';
  */
 let isPrintingInProgress = false;
 let lastPrintTimestamp = 0;
-const PRINT_COOLDOWN = 2000; // 2 seconds cooldown between prints
+const PRINT_COOLDOWN = 1000; // 1 second cooldown between prints (reduced from 2s)
 
 // Add global flag to track if we're currently in a print cycle
 let printCycleActive = false;
@@ -60,12 +60,12 @@ export const printVisitorBadge = async (): Promise<void> => {
       // Immediately resolve to allow faster navigation
       resolve();
       
-      // Still reset the print flags after a delay
+      // Still reset the print flags after a shorter delay
       printCycleTimeout = setTimeout(() => {
         isPrintingInProgress = false;
         printCycleActive = false;
-        logDebug('Print', 'Print cycle fully completed');
-      }, 1000); // 1 second for full cycle completion
+        logDebug('Print', 'Print cycle fully completed and reset');
+      }, 500); // 500ms for full cycle completion (reduced from 1000ms)
     });
   } catch (error) {
     // Reset print status on error
@@ -107,6 +107,9 @@ export const navigateToPrintPreview = (
     return;
   }
   
+  // Reset prior to navigation to ensure clean state
+  resetPrintStatus();
+  
   // Get printer settings from localStorage
   const printerSettings = typeof window !== 'undefined' && 
      window.localStorage && 
@@ -125,12 +128,6 @@ export const navigateToPrintPreview = (
     // If preview should be skipped, print directly
     logDebug('Print', `Skipping preview and printing badge directly for visitor ${visitor.visitorNumber}`);
     
-    // Prevent print cycles
-    if (printCycleActive) {
-      logDebug('Print', 'Print cycle already active, preventing opening print window');
-      return;
-    }
-    
     // Open print page in new window with direct=true parameter to trigger immediate printing
     const printWindow = window.open(`/print-badge/${visitor.id}?direct=true&flow=checkin&t=${timestamp}`, '_blank');
     
@@ -140,9 +137,10 @@ export const navigateToPrintPreview = (
     }
     
     // Navigate to success page immediately after opening print window
+    // Use a shorter timeout for faster navigation
     setTimeout(() => {
       navigate(`/checkin/step3/${visitor.id}`);
-    }, 200);
+    }, 100);
   } else {
     // Navigate to print preview with parameter indicating we're coming from check-in flow
     logDebug('Print', `Navigating to print preview for visitor ${visitor.visitorNumber}`);
@@ -164,16 +162,29 @@ export const createPrintController = () => {
   // Create closure to track print status
   let isPrinting = false;
   let printAttempts = 0;
-  const MAX_PRINT_ATTEMPTS = 1; // Only allow 1 print attempt
-  const PRINT_RESET_TIMEOUT = 1000; // Reset print controller after 1 second
+  const MAX_PRINT_ATTEMPTS = 2; // Allow 2 print attempts (increased from 1)
+  const PRINT_RESET_TIMEOUT = 800; // Reset print controller after 800ms (reduced from 1000ms)
   let resetTimer: number | null = null;
   
   return {
     // Try to start printing if not already in progress
     print: (): boolean => {
-      if (isPrinting || printAttempts >= MAX_PRINT_ATTEMPTS || printCycleActive) {
-        logDebug('Print', `Print blocked - already running or max attempts reached (${printAttempts}) or print cycle active`);
+      if (isPrinting) {
+        logDebug('Print', `Print blocked - already running`);
         return false;
+      }
+      
+      if (printAttempts >= MAX_PRINT_ATTEMPTS) {
+        logDebug('Print', `Print blocked - max attempts reached (${printAttempts})`);
+        printAttempts = 0; // Reset attempts to allow navigation
+        return false;
+      }
+      
+      if (printCycleActive) {
+        logDebug('Print', `Print blocked - global print cycle active`);
+        // Force reset global state if it's stuck
+        resetPrintStatus();
+        return true;
       }
       
       isPrinting = true;
