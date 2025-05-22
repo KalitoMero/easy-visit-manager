@@ -192,7 +192,7 @@ export const navigateToPrintPreview = (
       logDebug('Print', '🛑 Blocking new print window - recent print detected');
       
       // Skip opening print window, just navigate to success page
-      navigate(`/checkin/step3/${visitor.id}`);
+      navigate(`/checkin/step3/${visitor.id}?fromPrint=true`);
       return;
     }
     
@@ -211,7 +211,7 @@ export const navigateToPrintPreview = (
     }
     
     // Ensure we navigate to success page immediately after opening print window
-    navigate(`/checkin/step3/${visitor.id}`);
+    navigate(`/checkin/step3/${visitor.id}?fromPrint=true`);
   } else {
     // Navigate to regular print preview with parameter indicating we're coming from check-in flow
     logDebug('Print', `Navigating to print preview for visitor ${visitor.visitorNumber}`);

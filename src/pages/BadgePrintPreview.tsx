@@ -109,7 +109,7 @@ const BadgePrintPreview = () => {
         logDebug('Print', '⚠️ FORCE NAVIGATION: Safety timeout triggered');
         safeNavigateAfterPrint();
       }
-    }, 1000); // 1 second safety timeout
+    }, 3000); // 3 second safety timeout
     
     return () => {
       clearTimeout(forceNavigationTimer);
@@ -138,8 +138,8 @@ const BadgePrintPreview = () => {
     if (isDirect) {
       window.close();
     } else {
-      // IMPORTANT: There is only one navigation, directly to the success page
-      navigate(`/checkin/step3/${visitor.id}`);
+      // Add fromPrint parameter to indicate we're coming from print flow
+      navigate(`/checkin/step3/${visitor.id}?fromPrint=true`);
     }
   };
   
@@ -173,6 +173,8 @@ const BadgePrintPreview = () => {
           box-sizing: border-box !important;
           overflow: hidden !important;
           page-break-after: always !important;
+          z-index: 9999 !important;
+          background-color: white !important;
         }
         
         /* Badge dimensions and positioning settings */
@@ -181,6 +183,7 @@ const BadgePrintPreview = () => {
           width: 105mm !important;
           height: 148mm !important;
           page-break-after: always !important;
+          background-color: white !important;
         }
         
         /* Position top badge with rotation */
@@ -336,11 +339,17 @@ const BadgePrintPreview = () => {
         try {
           await preloadQRCodes(allVisitorNumbers);
           logDebug('Print', 'QR codes preloaded - starting auto-print');
-          handlePrintProcess();
+          
+          // Add a small delay to ensure DOM is fully rendered
+          setTimeout(() => {
+            handlePrintProcess();
+          }, 300);
         } catch (error) {
           console.error('QR preload error:', error);
-          // Print anyway even if QR loading fails
-          handlePrintProcess();
+          // Print anyway even if QR loading fails - with delay
+          setTimeout(() => {
+            handlePrintProcess();
+          }, 300);
         }
       };
       
@@ -363,7 +372,7 @@ const BadgePrintPreview = () => {
     if (visitor) {
       // Record this as printed before returning
       recordPrint();
-      navigate(`/checkin/step3/${visitor.id}`);
+      navigate(`/checkin/step3/${visitor.id}?fromPrint=true`);
     } else {
       navigate('/');
     }

@@ -56,7 +56,7 @@ const CheckInStep3 = () => {
   
   // Reset print status on component mount
   useEffect(() => {
-    // Reset any stuck print status
+    // Reset any stuck print status - but don't trigger new prints from here
     resetPrintStatus();
     logDebug('Print', 'CheckInStep3 - Resetting print status');
     
@@ -66,7 +66,7 @@ const CheckInStep3 = () => {
     };
   }, []);
   
-  // Handle automatic printing only once
+  // Handle automatic printing only once and only if not already printed
   useEffect(() => {
     // Skip if already done or visitor is missing
     if (initialLoadComplete.current || printInitiated.current || !visitor || !enableAutomaticPrinting) {
@@ -82,6 +82,13 @@ const CheckInStep3 = () => {
     
     initialLoadComplete.current = true;
     
+    // IMPORTANT CHANGE: Only initiate print if we're not coming from print flow
+    const comingFromPrintFlow = searchParams.get('fromPrint') === 'true';
+    if (comingFromPrintFlow) {
+      logDebug('Print', 'CheckInStep3 - Coming from print flow, skipping automatic print');
+      return;
+    }
+    
     // Use timeout to ensure the store is fully updated
     const timer = setTimeout(() => {
       logDebug('Print', 'CheckInStep3 - Initiating automatic print for visitor:', visitor.visitorNumber);
@@ -90,7 +97,7 @@ const CheckInStep3 = () => {
     }, 100);
     
     return () => clearTimeout(timer);
-  }, [visitor, enableAutomaticPrinting, navigate, skipPrintPreview]);
+  }, [visitor, enableAutomaticPrinting, navigate, skipPrintPreview, searchParams]);
   
   // Countdown timer effect for redirecting back to home
   useEffect(() => {
@@ -212,6 +219,13 @@ const CheckInStep3 = () => {
           color: #00cc00;
           font-size: 40px;
           font-weight: bold;
+        }
+
+        /* Hide success page content when printing */
+        @media print {
+          body * {
+            visibility: hidden !important;
+          }
         }
         `}
       </style>
