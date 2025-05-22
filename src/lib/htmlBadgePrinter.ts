@@ -1,4 +1,3 @@
-
 import { Visitor } from '@/hooks/useVisitorStore';
 import { logDebug } from './debugUtils';
 
@@ -9,6 +8,10 @@ let isPrintingInProgress = false;
 let lastPrintTimestamp = 0;
 const PRINT_COOLDOWN = 2000; // 2 seconds cooldown between prints
 
+// Add global flag to track if we're currently in a print cycle
+let printCycleActive = false;
+let printCycleTimeout = null;
+
 /**
  * Prints the current page containing the visitor badge(s)
  * @returns Promise that resolves when print dialog is opened
@@ -17,6 +20,12 @@ export const printVisitorBadge = async (): Promise<void> => {
   try {
     const now = Date.now();
     
+    // Check for an active print cycle - prevents loops
+    if (printCycleActive) {
+      logDebug('Print', 'Print cycle already active, preventing additional print calls');
+      return Promise.resolve();
+    }
+
     // Check for cooldown period to prevent multiple rapid prints
     if (now - lastPrintTimestamp < PRINT_COOLDOWN) {
       logDebug('Print', `Print request too soon after last print (${now - lastPrintTimestamp}ms), ignoring`);
@@ -31,6 +40,7 @@ export const printVisitorBadge = async (): Promise<void> => {
     
     // Set print status
     isPrintingInProgress = true;
+    printCycleActive = true;
     lastPrintTimestamp = now;
     logDebug('Print', 'Print process started');
     
@@ -42,15 +52,26 @@ export const printVisitorBadge = async (): Promise<void> => {
     // Return a promise that resolves after a short delay
     return new Promise((resolve) => {
       // Short delay to process the print dialog
-      setTimeout(() => {
+      if (printCycleTimeout) {
+        clearTimeout(printCycleTimeout);
+      }
+      
+      printCycleTimeout = setTimeout(() => {
         isPrintingInProgress = false;
+        // Keep print cycle active for a longer period to ensure no repeat prints
+        setTimeout(() => {
+          printCycleActive = false;
+          logDebug('Print', 'Print cycle fully completed');
+        }, 3000); // 3 seconds for full cycle completion
+        
         logDebug('Print', 'Print status reset');
         resolve();
-      }, 1000);
+      }, 1500);
     });
   } catch (error) {
     // Reset print status on error
     isPrintingInProgress = false;
+    printCycleActive = false;
     logDebug('Print', 'Error during print process', error);
     throw error;
   }
@@ -61,6 +82,13 @@ export const printVisitorBadge = async (): Promise<void> => {
  */
 export const resetPrintStatus = (): void => {
   isPrintingInProgress = false;
+  printCycleActive = false;
+  
+  if (printCycleTimeout) {
+    clearTimeout(printCycleTimeout);
+    printCycleTimeout = null;
+  }
+  
   logDebug('Print', 'Print status manually reset');
 };
 
@@ -98,6 +126,12 @@ export const navigateToPrintPreview = (
     // If preview should be skipped, print directly
     logDebug('Print', `Skipping preview and printing badge directly for visitor ${visitor.visitorNumber}`);
     
+    // Prevent print cycles
+    if (printCycleActive) {
+      logDebug('Print', 'Print cycle already active, preventing opening print window');
+      return;
+    }
+    
     // Open print page in new window with direct=true parameter to trigger immediate printing
     const printWindow = window.open(`/print-badge/${visitor.id}?direct=true&t=${timestamp}`, '_blank');
     
@@ -126,15 +160,15 @@ export const createPrintController = () => {
   // Create closure to track print status
   let isPrinting = false;
   let printAttempts = 0;
-  const MAX_PRINT_ATTEMPTS = 1; // Only allow 1 print attempt (reduced from 2)
+  const MAX_PRINT_ATTEMPTS = 1; // Only allow 1 print attempt
   const PRINT_RESET_TIMEOUT = 5000; // Reset print controller after 5 seconds
   let resetTimer: number | null = null;
   
   return {
     // Try to start printing if not already in progress
     print: (): boolean => {
-      if (isPrinting || printAttempts >= MAX_PRINT_ATTEMPTS) {
-        logDebug('Print', `Print blocked - already running or max attempts reached (${printAttempts})`);
+      if (isPrinting || printAttempts >= MAX_PRINT_ATTEMPTS || printCycleActive) {
+        logDebug('Print', `Print blocked - already running or max attempts reached (${printAttempts}) or print cycle active`);
         return false;
       }
       

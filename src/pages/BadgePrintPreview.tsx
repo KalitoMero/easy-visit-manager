@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Printer, Home } from 'lucide-react';
 import { logDebug } from '@/lib/debugUtils';
 import { isElectron, createPrintController, resetPrintStatus } from '@/lib/htmlBadgePrinter';
+import { preloadQRCodes } from '@/lib/qrCodeUtils';
 
 // Create a print controller for this component
 const printController = createPrintController();
@@ -37,17 +38,51 @@ const BadgePrintPreview = () => {
     bottomMargin
   } = usePrinterSettings();
   
-  // Status tracking
+  // Status tracking with refs to prevent re-renders
   const printTimestamp = useRef(new Date()).current;
   const [printingCompleted, setPrintingCompleted] = useState(false);
   const printInitiatedRef = useRef(false);
+  const redirectedRef = useRef(false);
+  const loadedRef = useRef(false);
   
   // Find visitor
   const visitor = visitors.find(v => v.id === id);
   const hasAdditionalVisitors = visitor?.additionalVisitors && visitor.additionalVisitors.length > 0;
 
+  // Prepare visitorNumbers array for QR code preloading
+  const allVisitorNumbers = React.useMemo(() => {
+    if (!visitor) return [];
+    
+    const numbers = [visitor.visitorNumber];
+    if (visitor.additionalVisitors) {
+      visitor.additionalVisitors.forEach(av => {
+        if (av.visitorNumber) {
+          numbers.push(av.visitorNumber);
+        }
+      });
+    }
+    return numbers;
+  }, [visitor]);
+
+  // Preload QR codes once when component mounts
+  useEffect(() => {
+    if (!visitor || loadedRef.current) return;
+    
+    const preload = async () => {
+      await preloadQRCodes(allVisitorNumbers);
+      loadedRef.current = true;
+      logDebug('Print', 'Preloaded all QR codes successfully');
+    };
+    
+    preload();
+  }, [visitor, allVisitorNumbers]);
+
   // Add print styles
   useEffect(() => {
+    // Reset print status when component mounts
+    resetPrintStatus();
+    printController.reset();
+    
     // Create style element for print styles
     const styleEl = document.createElement('style');
     styleEl.setAttribute('type', 'text/css');
@@ -168,10 +203,35 @@ const BadgePrintPreview = () => {
     };
   }, [bottomMargin]);
   
+  // Function to safely navigate after printing
+  const safeNavigateAfterPrint = () => {
+    if (redirectedRef.current || !visitor) return;
+    
+    logDebug('Print', "Redirecting after printing");
+    redirectedRef.current = true; // Prevent duplicate redirects
+    
+    // Set timeout to ensure print is complete
+    setTimeout(() => {
+      printController.reset(); // Reset controller
+      resetPrintStatus(); // Reset global print status
+      
+      // If opened directly, close window instead of navigating
+      if (isDirect) {
+        window.close();
+      } else if (fromCheckin) {
+        // Back to checkin success page if from checkin flow
+        navigate(`/checkin/step3/${visitor.id}`);
+      } else {
+        // Back to previous page or home
+        navigate(-1);
+      }
+    }, 1000);
+  };
+  
   // Handle automatic printing - Execute once after loading
   useEffect(() => {
-    // Skip if already initiated, completed, or no visitor
-    if (printInitiatedRef.current || printingCompleted || !visitor) return;
+    // Skip if already initiated, completed, no visitor, or QR codes not loaded
+    if (printInitiatedRef.current || printingCompleted || !visitor || !loadedRef.current) return;
     
     // Only trigger automatic printing if enabled or direct parameter is present
     if ((enableAutomaticPrinting || isDirect)) {
@@ -192,12 +252,13 @@ const BadgePrintPreview = () => {
                 name: visitor.name,
               }).then(() => {
                 setPrintingCompleted(true);
-                // Reset print status
-                resetPrintStatus();
+                // Navigate after printing
+                safeNavigateAfterPrint();
               }).catch((err) => {
                 console.error("Electron print error:", err);
                 setPrintingCompleted(true);
-                resetPrintStatus();
+                // Still try to navigate on error
+                safeNavigateAfterPrint();
               });
             } else {
               // Direct print with browser
@@ -206,7 +267,8 @@ const BadgePrintPreview = () => {
               // Mark as completed after delay for print dialog
               setTimeout(() => {
                 setPrintingCompleted(true);
-                resetPrintStatus();
+                // Navigate after printing
+                safeNavigateAfterPrint();
               }, 1000);
             }
           }, 500);
@@ -215,39 +277,19 @@ const BadgePrintPreview = () => {
         } catch (error) {
           console.error("Print error:", error);
           setPrintingCompleted(true);
-          resetPrintStatus();
-          printController.reset();
+          // Still try to navigate on error
+          safeNavigateAfterPrint();
         }
       }
     }
-  }, [visitor, enableAutomaticPrinting, isDirect, printingCompleted]);
+  }, [visitor, enableAutomaticPrinting, isDirect, printingCompleted, loadedRef.current]);
   
-  // Navigate after printing
+  // Navigate after printing is completed
   useEffect(() => {
     if (printingCompleted && visitor) {
-      logDebug('Print', "Redirecting after printing");
-      
-      // Set timeout to ensure print is complete
-      const redirectTimeout = setTimeout(() => {
-        printController.reset(); // Reset controller
-        resetPrintStatus(); // Reset global print status
-        
-        // If opened directly, close window instead of navigating
-        if (isDirect) {
-          window.close();
-        } else if (fromCheckin) {
-          // Back to checkin success page if from checkin flow
-          navigate(`/checkin/step3/${visitor.id}`);
-        } else {
-          // Back to previous page or home
-          navigate(-1);
-        }
-      }, 1000);
-      
-      // Clean up timeout when component unmounts
-      return () => clearTimeout(redirectTimeout);
+      safeNavigateAfterPrint();
     }
-  }, [printingCompleted, visitor, navigate, isDirect, fromCheckin]);
+  }, [printingCompleted, visitor]);
   
   // Prevent print loops after first print attempt
   useEffect(() => {
@@ -255,7 +297,6 @@ const BadgePrintPreview = () => {
     const handleAfterPrint = () => {
       logDebug('Print', 'afterprint event fired - Print dialog closed');
       setPrintingCompleted(true);
-      resetPrintStatus(); // Reset print status
     };
     
     window.addEventListener('afterprint', handleAfterPrint);
@@ -286,7 +327,6 @@ const BadgePrintPreview = () => {
       // Short delay before marking as complete
       setTimeout(() => {
         setPrintingCompleted(true);
-        resetPrintStatus(); // Reset print status
       }, 1000);
     }
   };

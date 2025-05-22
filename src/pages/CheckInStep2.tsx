@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -97,9 +96,14 @@ const CheckInStep2 = () => {
     );
   }
 
+  // Add reference to prevent duplicate form submissions
+  const formSubmittedRef = useRef(false);
+  
   const handleContinue = () => {
-    if (isProcessing) return;
+    if (isProcessing || formSubmittedRef.current) return;
+    
     setIsProcessing(true);
+    formSubmittedRef.current = true;
     
     // Accept policy with signature - without affecting checkout status
     if (id) {
@@ -129,9 +133,17 @@ const CheckInStep2 = () => {
           variant: "destructive"
         });
         setIsProcessing(false);
+        formSubmittedRef.current = false;
       }
     }
   };
+
+  // Reset submission state when component unmounts to prevent issues on revisit
+  useEffect(() => {
+    return () => {
+      formSubmittedRef.current = false;
+    };
+  }, []);
 
   return (
     <div className="app-container">

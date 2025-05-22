@@ -15,6 +15,7 @@ const qrCodeCache: Record<string, string> = {};
 
 /**
  * Generates a QR code as a data URL using the qrcode library
+ * Optimized to use pre-cached QR codes when available
  */
 export async function generateQRCodeDataUrl(data: string, size: number = 140): Promise<string> {
   // Return from cache if available
@@ -35,7 +36,10 @@ export async function generateQRCodeDataUrl(data: string, size: number = 140): P
         dark: '#000000',
         light: '#FFFFFF'
       },
-      errorCorrectionLevel: 'H' // Higher error correction for better scanning
+      errorCorrectionLevel: 'H', // Higher error correction for better scanning
+      rendererOpts: {
+        quality: 0.8 // Slightly reduced quality for faster rendering
+      }
     });
     
     // Cache the result
@@ -46,6 +50,19 @@ export async function generateQRCodeDataUrl(data: string, size: number = 140): P
     console.error("Error generating QR code:", error);
     return '';
   }
+}
+
+/**
+ * Pre-loads QR codes for a given list of visitor numbers
+ * This helps ensure all QR codes are ready before printing
+ */
+export async function preloadQRCodes(visitorNumbers: number[]): Promise<void> {
+  const promises = visitorNumbers.map(visitorNumber => {
+    const checkoutUrl = generateCheckoutEmailUrl(visitorNumber);
+    return generateQRCodeDataUrl(checkoutUrl);
+  });
+  
+  await Promise.all(promises);
 }
 
 /**
