@@ -204,84 +204,41 @@ const BadgePrintPreview = () => {
   
   // Handle automatic printing
   useEffect(() => {
-    // Skip if requirements aren't met
-    if (!visitor || 
-        printAttemptedRef.current || 
-        !enableAutomaticPrinting || 
-        printInProgressRef.current || 
-        printingCompleted) {
-      return;
-    }
-    
-    // Wait for QR codes
-    if (!qrCodesLoaded && qrLoadingAttempts < 5) {
-      logDebug('Print', "Waiting for QR codes to load before printing...");
-      return;
-    }
-    
-    // Mark as attempted to prevent duplicate printing
-    printAttemptedRef.current = true;
-    
-    const printBadge = async () => {
-      try {
-        // Set print in progress flag
-        printInProgressRef.current = true;
-        logDebug('Print', "Starting print process");
-        
-        // Wait for QR codes to be fully loaded
-        await ensureQRCodesLoaded(() => {
-          logDebug('Print', "QR codes confirmed loaded, proceeding with print");
-        }, 5000);
-        
-        // Add delay for rendering
-        await new Promise(resolve => setTimeout(resolve, Math.max(printDelay, 1000)));
-        
-        // Electron or browser printing
-        if (isElectron()) {
-          logDebug('Print', "Using Electron printing API");
-          const result = await window.electronAPI.printBadge({
-            id: visitor.id,
-            name: visitor.name,
-            // Include necessary print options
-          });
-          
-          if (result.success) {
-            logDebug('Print', 'Badge printed successfully through Electron');
-            setPrintingCompleted(true);
-          } else {
-            logDebug('Print', 'Electron print failed, falling back to browser printing');
-            // Fallback to browser printing
-            window.print();
-            // Important: mark as completed regardless of print dialog outcome
-            setPrintingCompleted(true);
-          }
-        } else {
-          // Browser printing
-          logDebug('Print', "Using browser print function");
-          window.print();
-          // Important: mark as completed regardless of print dialog outcome
-          setPrintingCompleted(true);
-        }
-      } catch (error) {
-        logDebug('Print', 'Print error:', error);
-        toast({
-          title: "Fehler beim Drucken",
-          description: "Der Ausweis konnte nicht automatisch gedruckt werden. Bitte versuchen Sie manuell zu drucken.",
-          variant: "destructive"
+  if (
+    !visitor ||
+    printAttemptedRef.current ||
+    !enableAutomaticPrinting ||
+    printInProgressRef.current ||
+    printingCompleted
+  ) return;
+
+  if (!qrCodesLoaded) return;
+
+  printAttemptedRef.current = true;
+
+  const printBadge = async () => {
+    printInProgressRef.current = true;
+    try {
+      await new Promise(resolve => setTimeout(resolve, Math.max(printDelay, 1000)));
+      if (isElectron()) {
+        const result = await window.electronAPI.printBadge({
+          id: visitor.id,
+          name: visitor.name,
         });
-        setManualPrintEnabled(true);
-        setPrintingCompleted(true); // Mark as completed to prevent infinite loop
-      } finally {
-        // Reset in-progress flag
-        printInProgressRef.current = false;
+        setPrintingCompleted(true);
+      } else {
+        window.print();
+        setPrintingCompleted(true);
       }
-    };
-    
-    // Start print with small delay
-    setTimeout(() => {
-      printBadge();
-    }, 500);
-  }, [visitor, enableAutomaticPrinting, printDelay, qrCodesLoaded, qrLoadingAttempts, printingCompleted, toast]);
+    } catch {
+      setPrintingCompleted(true);
+    } finally {
+      printInProgressRef.current = false;
+    }
+  };
+
+  printBadge();
+}, [visitor, enableAutomaticPrinting, printDelay, qrCodesLoaded]);
   
   // Handle manual print
   const handleManualPrint = () => {
