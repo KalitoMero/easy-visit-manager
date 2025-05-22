@@ -333,102 +333,42 @@ const BadgePrintPreview = () => {
       </div>
       
       {/* Badge containers for printing - hidden on screen, visible when printing */}
-      <div className="visitor-badge-container print:block hidden">
-        {allVisitorsToDisplay.map((visitorItem, index) => (
-          <div 
-            key={`print-${visitorItem.id || index}`}
-            className="visitor-page-container"
-            style={{ 
-              width: '105mm', 
-              height: '148mm',
-              position: 'relative',
-              overflow: 'hidden',
-              boxSizing: 'border-box',
-              padding: 0,
-              margin: 0,
-              pageBreakAfter: 'always'
-            }}
-          >
-            {/* Top badge - exactly 6cm × 9cm */}
-            <div style={{
-              position: 'absolute',
-              top: '0',
-              left: '0',
-              width: '100%',
-              height: '72mm', /* 9cm */
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              boxSizing: 'border-box',
-              overflow: 'hidden',
-              padding: 0,
-              margin: 0
-            }}>
-              <div style={{
-                transform: `translate(${badgeOffsetX}mm, ${badgeOffsetY}mm) rotate(${badgeRotation}deg)`,
-                width: '60mm', /* 6cm */
-                height: '72mm', /* 9cm */
-                boxSizing: 'border-box'
-              }}>
-                <VisitorBadge 
-                  visitor={visitorItem.isMain ? visitor : {
-                    ...visitor,
-                    name: visitorItem.name,
-                    firstName: visitorItem.firstName,
-                    visitorNumber: visitorItem.visitorNumber
-                  }}
-                  name={!visitorItem.isMain ? visitorItem.name : undefined}
-                  firstName={!visitorItem.isMain ? visitorItem.firstName : undefined}
-                  visitorNumber={!visitorItem.isMain ? visitorItem.visitorNumber : undefined}
-                  printTimestamp={printTimestamp}
-                  qrPosition={badgeLayout.qrCodePosition || 'right'}
-                  className="print-badge"
-                  onQRCodeLoaded={visitorItem.isMain ? handleMainQRCodeLoaded : () => handleAdditionalQRCodeLoaded(visitorItem.id)}
-                />
-              </div>
-            </div>
-            
-            {/* Bottom badge - exactly 6cm × 9cm */}
-            <div style={{
-              position: 'absolute',
-              top: '72mm', /* Position below the first badge */
-              left: '0',
-              width: '100%',
-              height: '72mm', /* 9cm */
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              boxSizing: 'border-box',
-              overflow: 'hidden',
-              padding: 0,
-              margin: 0
-            }}>
-              <div style={{
-                transform: `translate(${secondBadgeOffsetX}mm, ${secondBadgeOffsetY}mm) rotate(${secondBadgeRotation}deg)`,
-                width: '60mm', /* 6cm */
-                height: '72mm', /* 9cm */
-                boxSizing: 'border-box'
-              }}>
-                <VisitorBadge 
-                  visitor={visitorItem.isMain ? visitor : {
-                    ...visitor,
-                    name: visitorItem.name,
-                    firstName: visitorItem.firstName,
-                    visitorNumber: visitorItem.visitorNumber
-                  }}
-                  name={!visitorItem.isMain ? visitorItem.name : undefined}
-                  firstName={!visitorItem.isMain ? visitorItem.firstName : undefined}
-                  visitorNumber={!visitorItem.isMain ? visitorItem.visitorNumber : undefined}
-                  printTimestamp={printTimestamp}
-                  qrPosition={badgeLayout.qrCodePosition || 'right'}
-                  className="print-badge"
-                  onQRCodeLoaded={visitorItem.isMain ? handleMainQRCodeLoaded : () => handleAdditionalQRCodeLoaded(visitorItem.id)}
-                />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+<div className="visitor-badge-container print:block hidden">
+  {allVisitorsToDisplay.map((visitorItem, index) => (
+    <div
+      key={`print-${visitorItem.id || index}`}
+      className="visitor-page-container"
+      style={{
+        width: '105mm',
+        height: '148mm',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        pageBreakAfter: 'always'
+      }}
+    >
+      <VisitorBadge
+        visitor={visitorItem.isMain ? visitor : {
+          ...visitor,
+          name: visitorItem.name,
+          firstName: visitorItem.firstName,
+          visitorNumber: visitorItem.visitorNumber
+        }}
+        name={!visitorItem.isMain ? visitorItem.name : undefined}
+        firstName={!visitorItem.isMain ? visitorItem.firstName : undefined}
+        visitorNumber={!visitorItem.isMain ? visitorItem.visitorNumber : undefined}
+        printTimestamp={printTimestamp}
+        qrPosition={badgeLayout.qrCodePosition || 'right'}
+        className="print-badge"
+        onQRCodeLoaded={
+          visitorItem.isMain
+            ? handleMainQRCodeLoaded
+            : () => handleAdditionalQRCodeLoaded(visitorItem.id)
+        }
+      />
+    </div>
+  ))}
+</div>
       
       {/* Screen preview - visible only on screen */}
       <div className="print:hidden">
