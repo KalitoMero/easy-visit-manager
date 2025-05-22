@@ -56,14 +56,14 @@ export const navigateToPrintPreview = (
     logDebug('Print', `Skipping preview and printing badge directly for visitor ${visitor.visitorNumber}`);
     
     // Open the print page in a new window for direct printing
-    // Unique timestamp parameter prevents browser caching and ensures a fresh instance
-    const timestamp = new Date().getTime();
-    const printWindow = window.open(`/print-badge/${visitor.id}?direct=true&t=${timestamp}`, '_blank');
+     const printWindow = window.open(`/print-badge/${visitor.id}?direct=true`, '_blank');
+    
     
     // After a short delay, focus and print the new window
     if (printWindow) {
       setTimeout(() => {
         printWindow.focus();
+         printWindow.print();
         // Print is handled in the BadgePrintPreview component when direct=true
       }, 1000);
     }
