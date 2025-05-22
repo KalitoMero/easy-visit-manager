@@ -23,6 +23,7 @@ interface PrinterSettingsStore {
   badgeRotation: number;
   companyLogo: string | null;
   showBuiltByText: boolean;
+  policyImageUrl?: string | null; // Added missing property
   
   // New properties for badge positioning and layout
   badgeOffsetX: number;
@@ -44,6 +45,7 @@ interface PrinterSettingsStore {
   setBadgeRotation: (rotation: number) => void;
   setCompanyLogo: (logo: string | null) => void;
   setShowBuiltByText: (show: boolean) => void;
+  setPolicyImageUrl?: (url: string | null) => void; // Added setter method
   
   // New setter methods
   setBadgeOffsetX: (offset: number) => void;
@@ -68,6 +70,7 @@ export const usePrinterSettings = create<PrinterSettingsStore>()(
       badgeRotation: 0,
       companyLogo: null,
       showBuiltByText: true,
+      policyImageUrl: null, // Initialize the property
       
       // Initialize new properties
       badgeOffsetX: 0,
@@ -98,6 +101,7 @@ export const usePrinterSettings = create<PrinterSettingsStore>()(
       setBadgeRotation: (rotation: number) => set({ badgeRotation: rotation }),
       setCompanyLogo: (logo: string | null) => set({ companyLogo: logo }),
       setShowBuiltByText: (show: boolean) => set({ showBuiltByText: show }),
+      setPolicyImageUrl: (url: string | null) => set({ policyImageUrl: url }),
       
       // New setter methods
       setBadgeOffsetX: (offset: number) => set({ badgeOffsetX: offset }),
