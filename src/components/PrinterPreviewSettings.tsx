@@ -51,7 +51,7 @@ const PrinterPreviewSettings = () => {
               Druckvorschau überspringen
             </Label>
             <p className="text-sm text-muted-foreground mt-1">
-              Aktivieren Sie diese Option, um die Druckvorschau zu überspringen und direkt zu drucken.
+              Aktivieren Sie diese Option, um die Druckvorschau zu überspringen und direkt nach der Unterschrift zu drucken und zur Erfolgsseite zu navigieren.
             </p>
           </div>
           <Switch

@@ -36,8 +36,9 @@ const VisitorBadge = ({
   const displayVisitorNumber = visitorNumber || visitor.visitorNumber;
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   
-  // Get badge layout settings
+  // Get badge layout and company logo settings
   const badgeLayout = usePrinterSettings(state => state.badgeLayout);
+  const companyLogo = usePrinterSettings(state => state.companyLogo);
   
   // Generate the checkout email URL directly with the correct visitor number
   const checkoutEmailUrl = generateCheckoutEmailUrl(displayVisitorNumber);
@@ -108,8 +109,17 @@ const VisitorBadge = ({
       className
     )}>
       {/* Badge Header */}
-      <div className="badge-header border-b pb-1 pt-0 text-center">
+      <div className="badge-header border-b pb-1 pt-0 flex justify-between items-center">
         <div className={`font-bold ${getTitleFontClass()}`}>VISITOR</div>
+        {companyLogo && (
+          <div className="company-logo">
+            <img 
+              src={companyLogo} 
+              alt="Company Logo" 
+              className="max-h-6 max-w-16 object-contain" 
+            />
+          </div>
+        )}
       </div>
       
       {/* Badge Content - Main area with visitor info and QR code */}

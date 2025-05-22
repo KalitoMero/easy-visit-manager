@@ -1,3 +1,4 @@
+
 import { Visitor } from '@/hooks/useVisitorStore';
 import { logDebug } from './debugUtils';
 
@@ -49,25 +50,22 @@ export const printVisitorBadge = async (): Promise<void> => {
     
     logDebug('Print', 'Print dialog opened');
     
-    // Return a promise that resolves after a short delay
+    // Return a promise that resolves immediately
     return new Promise((resolve) => {
-      // Short delay to process the print dialog
+      // Very short delay to process the print dialog
       if (printCycleTimeout) {
         clearTimeout(printCycleTimeout);
       }
       
-      // Reduce timeout duration for faster navigation
+      // Immediately resolve to allow faster navigation
+      resolve();
+      
+      // Still reset the print flags after a delay
       printCycleTimeout = setTimeout(() => {
         isPrintingInProgress = false;
-        // Keep print cycle active for a longer period to ensure no repeat prints
-        setTimeout(() => {
-          printCycleActive = false;
-          logDebug('Print', 'Print cycle fully completed');
-        }, 3000); // 3 seconds for full cycle completion
-        
-        logDebug('Print', 'Print status reset');
-        resolve();
-      }, 500); // Reduced from 1500ms for faster navigation
+        printCycleActive = false;
+        logDebug('Print', 'Print cycle fully completed');
+      }, 1000); // 1 second for full cycle completion
     });
   } catch (error) {
     // Reset print status on error
@@ -140,6 +138,11 @@ export const navigateToPrintPreview = (
     if (printWindow) {
       printWindow.focus();
     }
+    
+    // Navigate to success page immediately after opening print window
+    setTimeout(() => {
+      navigate(`/checkin/step3/${visitor.id}`, { state: { fromPrint: true, printSuccess: true } });
+    }, 200);
   } else {
     // Navigate to print preview with parameter indicating we're coming from check-in flow
     logDebug('Print', `Navigating to print preview for visitor ${visitor.visitorNumber}`);
@@ -162,7 +165,7 @@ export const createPrintController = () => {
   let isPrinting = false;
   let printAttempts = 0;
   const MAX_PRINT_ATTEMPTS = 1; // Only allow 1 print attempt
-  const PRINT_RESET_TIMEOUT = 5000; // Reset print controller after 5 seconds
+  const PRINT_RESET_TIMEOUT = 1000; // Reset print controller after 1 second
   let resetTimer: number | null = null;
   
   return {
