@@ -1,3 +1,5 @@
+
+
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
@@ -35,7 +37,6 @@ const BadgePrintPreview = () => {
   const printAttemptedRef = useRef(false);
   const printInProgressRef = useRef(false);
   const printTimestamp = useRef(new Date()).current;
-  const redirectAttemptedRef = useRef(false);
   
   const [qrCodesLoaded, setQrCodesLoaded] = useState(false);
   const [qrLoadingAttempts, setQrLoadingAttempts] = useState(0);
@@ -67,21 +68,6 @@ const BadgePrintPreview = () => {
       setManualPrintEnabled(true);
     }
   }, [qrCodesLoaded, qrLoadingAttempts, visitor, manualPrintEnabled]);
-
-  // Redirect after printing is completed
-  useEffect(() => {
-    if (printingCompleted && visitor && !redirectAttemptedRef.current) {
-      redirectAttemptedRef.current = true;
-      
-      // Set a timer to redirect back to the success page
-      const redirectTimer = setTimeout(() => {
-        logDebug('Print', "Redirecting to success page after printing");
-        navigate(`/checkin/step3/${visitor.id}`);
-      }, 800); // Give a short delay to ensure print dialog has time to process
-      
-      return () => clearTimeout(redirectTimer);
-    }
-  }, [printingCompleted, visitor, navigate]);
   
   // Add print styles
   useEffect(() => {
@@ -330,7 +316,7 @@ const BadgePrintPreview = () => {
             top: '0',
             left: '0',
             width: '100%',
-            height: '72mm', /* 9cm */
+            height: '90mm', /* 9cm */
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
@@ -358,10 +344,10 @@ const BadgePrintPreview = () => {
           {/* Bottom badge - exactly 6cm × 9cm */}
           <div style={{
             position: 'absolute',
-            top: '72mm', /* Position below the first badge */
+            top: '90mm', /* Position below the first badge */
             left: '0',
             width: '100%',
-            height: '72mm', /* 9cm */
+            height: '90mm', /* 9cm */
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
