@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -12,10 +13,14 @@ import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import { navigateToPrintPreview, resetPrintStatus } from '@/lib/htmlBadgePrinter';
 import { logDebug } from '@/lib/debugUtils';
 
+// Storage key for tracking recent print operations
+const PRINT_HISTORY_KEY = 'visitor-print-history';
+
 const CheckInStep3 = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   
   const [secondsLeft, setSecondsLeft] = useState<number>(10);
   const [redirecting, setRedirecting] = useState<boolean>(false);
@@ -34,6 +39,21 @@ const CheckInStep3 = () => {
   const printInitiated = useRef(false);
   const initialLoadComplete = useRef(false);
   
+  // Check if this visitor was recently printed
+  const wasRecentlyPrinted = () => {
+    if (!id) return false;
+    
+    try {
+      const printHistory = JSON.parse(localStorage.getItem(PRINT_HISTORY_KEY) || '{}');
+      if (!printHistory[id]) return false;
+      
+      const elapsedTime = Date.now() - printHistory[id];
+      return elapsedTime < 10000; // 10 seconds
+    } catch (e) {
+      return false;
+    }
+  };
+  
   // Reset print status on component mount
   useEffect(() => {
     // Reset any stuck print status
@@ -50,6 +70,13 @@ const CheckInStep3 = () => {
   useEffect(() => {
     // Skip if already done or visitor is missing
     if (initialLoadComplete.current || printInitiated.current || !visitor || !enableAutomaticPrinting) {
+      return;
+    }
+    
+    // Check if coming from print page or visitor was recently printed
+    if (wasRecentlyPrinted()) {
+      logDebug('Print', 'CheckInStep3 - Visitor was recently printed, skipping auto-print');
+      initialLoadComplete.current = true;
       return;
     }
     
@@ -147,7 +174,7 @@ const CheckInStep3 = () => {
                 {t('backToHome')}
               </Button>
               
-              {!printInitiated.current && !enableAutomaticPrinting && (
+              {!printInitiated.current && !enableAutomaticPrinting && !wasRecentlyPrinted() && (
                 <Button
                   onClick={handlePrintBadge}
                   className="flex items-center gap-2"

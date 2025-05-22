@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
@@ -13,6 +14,9 @@ import { preloadQRCodes } from '@/lib/qrCodeUtils';
 
 // Create a print controller for this component
 const printController = createPrintController();
+
+// Storage key for tracking print status across page visits
+const PRINT_HISTORY_KEY = 'visitor-print-history';
 
 const BadgePrintPreview = () => {
   const { id } = useParams<{ id: string }>();
@@ -39,10 +43,8 @@ const BadgePrintPreview = () => {
   
   // Status tracking with refs to avoid re-renders
   const printTimestamp = useRef(new Date()).current;
-  const [printingCompleted, setPrintingCompleted] = useState(false);
   const printInitiatedRef = useRef(false);
   const redirectedRef = useRef(false);
-  const loadedRef = useRef(false);
   
   // Find visitor
   const visitor = visitors.find(v => v.id === id);
@@ -62,6 +64,30 @@ const BadgePrintPreview = () => {
     }
     return numbers;
   }, [visitor]);
+  
+  // Check if this visitor has been recently printed
+  const hasBeenRecentlyPrinted = () => {
+    try {
+      const printHistory = JSON.parse(localStorage.getItem(PRINT_HISTORY_KEY) || '{}');
+      if (!printHistory[id]) return false;
+      
+      const elapsedTime = Date.now() - printHistory[id];
+      return elapsedTime < 10000; // 10 seconds
+    } catch (e) {
+      return false;
+    }
+  };
+
+  // Record print in history
+  const recordPrint = () => {
+    try {
+      const printHistory = JSON.parse(localStorage.getItem(PRINT_HISTORY_KEY) || '{}');
+      printHistory[id] = Date.now();
+      localStorage.setItem(PRINT_HISTORY_KEY, JSON.stringify(printHistory));
+    } catch (e) {
+      // Ignore errors
+    }
+  };
 
   // Reset all print statuses when component mounts
   useEffect(() => {
@@ -71,13 +97,19 @@ const BadgePrintPreview = () => {
     printInitiatedRef.current = false;
     redirectedRef.current = false;
     
-    // Force navigation safety timeout (very short - 1.5 seconds)
+    // Check if we've already printed this visitor recently
+    if (hasBeenRecentlyPrinted() && !isDirect) {
+      logDebug('Print', '⚠️ Recent print detected - skipping automatic print');
+      // Don't trigger print again, just wait for user action
+    }
+    
+    // Force navigation safety timeout (very short - 1 second)
     const forceNavigationTimer = setTimeout(() => {
       if (!redirectedRef.current && visitor) {
         logDebug('Print', '⚠️ FORCE NAVIGATION: Safety timeout triggered');
         safeNavigateAfterPrint();
       }
-    }, 1500); // 1.5 second safety timeout
+    }, 1000); // 1 second safety timeout
     
     return () => {
       clearTimeout(forceNavigationTimer);
@@ -98,6 +130,9 @@ const BadgePrintPreview = () => {
     // Reset controller and print status
     printController.reset();
     resetPrintStatus();
+    
+    // Record this print in history
+    recordPrint();
     
     // If opened directly, close window instead of navigating
     if (isDirect) {
@@ -273,9 +308,12 @@ const BadgePrintPreview = () => {
         // Direct browser printing
         window.print();
         logDebug('Print', "✅ Browser print dialog shown");
-          
-        // Navigate immediately after showing print dialog
-        safeNavigateAfterPrint();
+        
+        // For direct windows, navigate immediately
+        if (isDirect) {
+          safeNavigateAfterPrint();
+        }
+        // Regular print page relies on afterprint event
       }
     } catch (error) {
       console.error("❌ Print error:", error);
@@ -287,6 +325,12 @@ const BadgePrintPreview = () => {
   useEffect(() => {
     // Check if automatic printing should be done
     if (!printInitiatedRef.current && visitor && (enableAutomaticPrinting || isDirect)) {
+      // Skip if we've printed this visitor recently unless forced via direct=true
+      if (hasBeenRecentlyPrinted() && !isDirect) {
+        logDebug('Print', '⚠️ Recent print detected - skipping automatic print');
+        return;
+      }
+      
       // Load QR codes first
       const loadQRs = async () => {
         try {
@@ -317,6 +361,8 @@ const BadgePrintPreview = () => {
   // Return to success page
   const handleReturn = () => {
     if (visitor) {
+      // Record this as printed before returning
+      recordPrint();
       navigate(`/checkin/step3/${visitor.id}`);
     } else {
       navigate('/');
