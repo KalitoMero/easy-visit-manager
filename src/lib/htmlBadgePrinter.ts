@@ -141,7 +141,7 @@ export const navigateToPrintPreview = (
     
     // Navigate to success page immediately after opening print window
     setTimeout(() => {
-      navigate(`/checkin/step3/${visitor.id}`, { state: { fromPrint: true, printSuccess: true } });
+      navigate(`/checkin/step3/${visitor.id}`);
     }, 200);
   } else {
     // Navigate to print preview with parameter indicating we're coming from check-in flow
