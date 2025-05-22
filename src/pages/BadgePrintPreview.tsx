@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
@@ -205,7 +206,7 @@ const BadgePrintPreview = () => {
   
   // Function to safely navigate after printing
   const safeNavigateAfterPrint = () => {
-    if (redirectedRef.current || !visitor || navigationAttemptedRef.current) return;
+    if (redirectedRef.current || !visitor) return;
     
     logDebug('Print', "Redirecting after printing");
     navigationAttemptedRef.current = true; // Mark that navigation was attempted to prevent multiple attempts
@@ -218,13 +219,28 @@ const BadgePrintPreview = () => {
     if (isDirect) {
       window.close();
     } else {
-      // Navigate to success page directly - use state to indicate print was successful
-      navigate(`/checkin/step3/${visitor.id}`, { state: { fromPrint: true, printSuccess: true } });
+      // Navigate to success page directly
+      navigate(`/checkin/step3/${visitor.id}`);
     }
     
     // Mark as redirected to prevent duplicate redirects
     redirectedRef.current = true;
   };
+  
+  // Force navigation after a fixed timeout to prevent getting stuck
+  useEffect(() => {
+    if (!visitor || !loadedRef.current || redirectedRef.current) return;
+
+    // Force navigation after 5 seconds to prevent getting stuck in print preview
+    const forceNavigationTimer = setTimeout(() => {
+      if (!redirectedRef.current) {
+        logDebug('Print', "Force navigating to success page after timeout");
+        safeNavigateAfterPrint();
+      }
+    }, 3000); // 3 second safety timeout
+    
+    return () => clearTimeout(forceNavigationTimer);
+  }, [visitor, loadedRef.current]);
   
   // Handle automatic printing - Execute once after loading
   useEffect(() => {
@@ -262,13 +278,11 @@ const BadgePrintPreview = () => {
               // Direct print with browser
               window.print();
               
-              // Mark as completed immediately after print
+              // Mark as completed immediately after print dialog shows
               setPrintingCompleted(true);
               
-              // Navigate after a very short delay to ensure print dialog has time to process
-              setTimeout(() => {
-                safeNavigateAfterPrint();
-              }, 100); // Very short delay
+              // Navigate to success page immediately
+              safeNavigateAfterPrint();
             }
           }, 300); // Short delay before printing to ensure everything is rendered
           
@@ -285,7 +299,10 @@ const BadgePrintPreview = () => {
   // Navigate after printing is completed
   useEffect(() => {
     if (printingCompleted && visitor && !redirectedRef.current) {
-      safeNavigateAfterPrint();
+      // Add a tiny delay to ensure the print dialog has time to appear
+      setTimeout(() => {
+        safeNavigateAfterPrint();
+      }, 50);
     }
   }, [printingCompleted, visitor]);
   
@@ -295,10 +312,8 @@ const BadgePrintPreview = () => {
     const handleAfterPrint = () => {
       logDebug('Print', 'afterprint event fired - Print dialog closed');
       setPrintingCompleted(true);
-      // Navigate after print is complete
-      if (!redirectedRef.current) {
-        safeNavigateAfterPrint();
-      }
+      // Navigate after print is complete - immediately
+      safeNavigateAfterPrint();
     };
     
     window.addEventListener('afterprint', handleAfterPrint);
@@ -327,11 +342,10 @@ const BadgePrintPreview = () => {
       window.print();
       
       // Short delay before marking as complete
-      setTimeout(() => {
-        setPrintingCompleted(true);
-        // Navigate after manual print
-        safeNavigateAfterPrint();
-      }, 500);
+      setPrintingCompleted(true);
+      
+      // Navigate immediately to prevent getting stuck
+      safeNavigateAfterPrint();
     }
   };
   
