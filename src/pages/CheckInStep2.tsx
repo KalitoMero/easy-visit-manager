@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -117,7 +118,7 @@ const CheckInStep2 = () => {
         // If automatic printing is enabled, redirect to print preview or print directly
         if (enableAutomaticPrinting) {
           console.log("Automatic printing enabled, initiating print flow");
-          // Add route parameter to indicate we're coming from check-in flow
+          // Skip print preview if configured or navigate to print preview
           navigateToPrintPreview(visitor, navigate, skipPrintPreview);
         } else {
           console.log("Automatic printing disabled, navigating to success page");

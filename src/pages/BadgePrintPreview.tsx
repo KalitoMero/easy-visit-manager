@@ -209,7 +209,7 @@ const BadgePrintPreview = () => {
     logDebug('Print', "Redirecting after printing");
     redirectedRef.current = true; // Prevent duplicate redirects
     
-    // Set timeout to ensure print is complete
+    // Navigate immediately - reduced delay to make redirection faster
     setTimeout(() => {
       printController.reset(); // Reset controller
       resetPrintStatus(); // Reset global print status
@@ -217,14 +217,11 @@ const BadgePrintPreview = () => {
       // If opened directly, close window instead of navigating
       if (isDirect) {
         window.close();
-      } else if (fromCheckin) {
-        // Back to checkin success page if from checkin flow
-        navigate(`/checkin/step3/${visitor.id}`);
       } else {
-        // Back to previous page or home
-        navigate(-1);
+        // Always navigate to success page directly
+        navigate(`/checkin/step3/${visitor.id}`);
       }
-    }, 1000);
+    }, 500); // Reduced from 1000 to 500ms for faster navigation
   };
   
   // Handle automatic printing - Execute once after loading
@@ -263,14 +260,12 @@ const BadgePrintPreview = () => {
               // Direct print with browser
               window.print();
               
-              // Mark as completed after delay for print dialog
-              setTimeout(() => {
-                setPrintingCompleted(true);
-                // Navigate after printing
-                safeNavigateAfterPrint();
-              }, 1000);
+              // Mark as completed immediately after print to speed up navigation
+              setPrintingCompleted(true);
+              // Navigate after printing without additional delay
+              safeNavigateAfterPrint();
             }
-          }, 500);
+          }, 300); // Reduced from 500 to 300ms for faster printing
           
           return () => clearTimeout(printTimer);
         } catch (error) {
@@ -296,6 +291,8 @@ const BadgePrintPreview = () => {
     const handleAfterPrint = () => {
       logDebug('Print', 'afterprint event fired - Print dialog closed');
       setPrintingCompleted(true);
+      // Immediately navigate after print is complete
+      safeNavigateAfterPrint();
     };
     
     window.addEventListener('afterprint', handleAfterPrint);
@@ -326,18 +323,16 @@ const BadgePrintPreview = () => {
       // Short delay before marking as complete
       setTimeout(() => {
         setPrintingCompleted(true);
-      }, 1000);
+        // Navigate after manual print
+        safeNavigateAfterPrint();
+      }, 500);
     }
   };
   
   // Return to success page
   const handleReturn = () => {
     if (visitor) {
-      if (fromCheckin) {
-        navigate(`/checkin/step3/${visitor.id}`);
-      } else {
-        navigate(-1);
-      }
+      navigate(`/checkin/step3/${visitor.id}`);
     } else {
       navigate('/');
     }

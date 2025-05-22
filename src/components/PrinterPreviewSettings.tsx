@@ -15,6 +15,8 @@ const PrinterPreviewSettings = () => {
   const { 
     skipPrintPreview, 
     setSkipPrintPreview,
+    enableAutomaticPrinting,
+    setEnableAutomaticPrinting
   } = usePrinterSettings();
 
   return (
@@ -26,7 +28,23 @@ const PrinterPreviewSettings = () => {
         </CardDescription>
       </CardHeader>
       
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Label htmlFor="auto-print" className="font-medium">
+              Automatisches Drucken
+            </Label>
+            <p className="text-sm text-muted-foreground mt-1">
+              Nach dem Unterschreiben automatisch drucken.
+            </p>
+          </div>
+          <Switch
+            id="auto-print"
+            checked={enableAutomaticPrinting}
+            onCheckedChange={setEnableAutomaticPrinting}
+          />
+        </div>
+        
         <div className="flex items-center justify-between">
           <div>
             <Label htmlFor="skip-preview" className="font-medium">

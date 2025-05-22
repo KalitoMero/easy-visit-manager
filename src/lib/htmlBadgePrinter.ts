@@ -56,6 +56,7 @@ export const printVisitorBadge = async (): Promise<void> => {
         clearTimeout(printCycleTimeout);
       }
       
+      // Reduce timeout duration for faster navigation
       printCycleTimeout = setTimeout(() => {
         isPrintingInProgress = false;
         // Keep print cycle active for a longer period to ensure no repeat prints
@@ -66,7 +67,7 @@ export const printVisitorBadge = async (): Promise<void> => {
         
         logDebug('Print', 'Print status reset');
         resolve();
-      }, 1500);
+      }, 500); // Reduced from 1500ms for faster navigation
     });
   } catch (error) {
     // Reset print status on error
@@ -133,7 +134,7 @@ export const navigateToPrintPreview = (
     }
     
     // Open print page in new window with direct=true parameter to trigger immediate printing
-    const printWindow = window.open(`/print-badge/${visitor.id}?direct=true&t=${timestamp}`, '_blank');
+    const printWindow = window.open(`/print-badge/${visitor.id}?direct=true&flow=checkin&t=${timestamp}`, '_blank');
     
     // Focus new window if opened
     if (printWindow) {
