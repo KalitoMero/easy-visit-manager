@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
@@ -121,23 +120,23 @@ const BadgePrintPreview = () => {
           page-break-after: always !important;
         }
         
-        /* Position top badge */
+        /* Position top badge with rotation */
         .visitor-badge-top {
           position: absolute !important;
           top: 5mm !important;
           left: 50% !important;
-          transform: translateX(-50%) !important;
+          transform: translateX(-50%) rotate(${badgeRotation}deg) translate(${badgeOffsetX}mm, ${badgeOffsetY}mm) !important;
           width: 60mm !important;
           height: 69mm !important;
           overflow: visible !important;
         }
         
-        /* Position bottom badge */
+        /* Position bottom badge with rotation */
         .visitor-badge-bottom {
           position: absolute !important;
           top: 74mm !important;
           left: 50% !important;
-          transform: translateX(-50%) !important;
+          transform: translateX(-50%) rotate(${secondBadgeRotation}deg) translate(${secondBadgeOffsetX}mm, ${secondBadgeOffsetY}mm) !important;
           width: 60mm !important;
           height: 69mm !important;
           overflow: visible !important;
@@ -201,7 +200,7 @@ const BadgePrintPreview = () => {
       resetPrintStatus();
       printController.reset();
     };
-  }, [bottomMargin]);
+  }, [bottomMargin, badgeRotation, badgeOffsetX, badgeOffsetY, secondBadgeRotation, secondBadgeOffsetX, secondBadgeOffsetY]);
   
   // Function to safely navigate after printing
   const safeNavigateAfterPrint = () => {
@@ -451,7 +450,7 @@ const BadgePrintPreview = () => {
       
       {/* Screen preview - only visible on screen */}
       <div className="print:hidden">
-        {/* Main visitor badge preview */}
+        {/* Screen preview layout */}
         <div className="mb-8">
           <h2 className="text-lg font-medium mb-2">Druckvorschau (A6-Format)</h2>
           <div className="border border-gray-300 rounded-md p-4 bg-white" style={{ 
