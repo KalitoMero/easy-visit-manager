@@ -82,7 +82,7 @@ const CheckInStep3 = () => {
     
     initialLoadComplete.current = true;
     
-    // IMPORTANT CHANGE: Only initiate print if we're not coming from print flow
+    // IMPORTANT: Only initiate print if we're not coming from print flow
     const comingFromPrintFlow = searchParams.get('fromPrint') === 'true';
     if (comingFromPrintFlow) {
       logDebug('Print', 'CheckInStep3 - Coming from print flow, skipping automatic print');
@@ -130,6 +130,43 @@ const CheckInStep3 = () => {
     }
   };
   
+  // Function to get all visitor names
+  const getAllVisitorNames = () => {
+    if (!visitor) return [];
+    
+    const allVisitors = [
+      { name: visitor.name, firstName: visitor.firstName }
+    ];
+    
+    if (visitor.additionalVisitors && visitor.additionalVisitors.length > 0) {
+      visitor.additionalVisitors.forEach(additionalVisitor => {
+        allVisitors.push({
+          name: additionalVisitor.name,
+          firstName: additionalVisitor.firstName
+        });
+      });
+    }
+    
+    return allVisitors;
+  };
+  
+  // Generate welcome message based on language and visitor count
+  const getWelcomeMessage = () => {
+    const allVisitors = getAllVisitorNames();
+    
+    if (allVisitors.length === 1) {
+      // Single visitor welcome message
+      return language === 'de' 
+        ? `Willkommen, Herr / Frau / Div ${visitor?.name}!`
+        : `Welcome, Mr. / Mrs. / Div ${visitor?.name}!`;
+    } else {
+      // Group welcome message
+      return language === 'de'
+        ? `Willkommen an alle Besucher:`
+        : `Welcome to all visitors:`;
+    }
+  };
+  
   if (!visitor) {
     return (
       <div className="app-container">
@@ -146,6 +183,9 @@ const CheckInStep3 = () => {
     );
   }
   
+  // Get all visitor names to display
+  const allVisitors = getAllVisitorNames();
+  
   return (
     <div className="app-container">
       <HomeButton />
@@ -160,15 +200,26 @@ const CheckInStep3 = () => {
             </div>
             
             <p className="text-xl">
-              {language === 'de' 
-                ? `Willkommen, Herr / Frau / Div ${visitor.name}!`
-                : `Welcome, Mr. / Mrs. / Div ${visitor.name}!`}
+              {getWelcomeMessage()}
             </p>
+            
+            {/* Display visitor list if multiple visitors */}
+            {allVisitors.length > 1 && (
+              <div className="visitor-list bg-muted/30 rounded-md p-4 w-full max-w-md">
+                <ul className="list-none space-y-2">
+                  {allVisitors.map((visitor, index) => (
+                    <li key={index} className="font-medium">
+                      {visitor.firstName ? `${visitor.firstName} ${visitor.name}` : visitor.name}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             
             <p>
               {language === 'de'
-                ? `Ihre Besuchernummer ist: ${visitor.visitorNumber}`
-                : `Your visitor number is: ${visitor.visitorNumber}`}
+                ? `${allVisitors.length > 1 ? 'Ihre Besuchernummern wurden' : 'Ihre Besuchernummer ist'}: ${visitor.visitorNumber}${visitor.additionalVisitors?.map(v => `, ${v.visitorNumber}`).join('') || ''}`
+                : `${allVisitors.length > 1 ? 'Your visitor numbers are' : 'Your visitor number is'}: ${visitor.visitorNumber}${visitor.additionalVisitors?.map(v => `, ${v.visitorNumber}`).join('') || ''}`}
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 mt-4">
@@ -187,7 +238,7 @@ const CheckInStep3 = () => {
                   className="flex items-center gap-2"
                 >
                   <Printer className="h-4 w-4" />
-                  {language === 'de' ? 'Ausweis drucken' : 'Print Badge'}
+                  {language === 'de' ? 'Ausweise drucken' : 'Print Badges'}
                 </Button>
               )}
             </div>

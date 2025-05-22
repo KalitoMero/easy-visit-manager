@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import VisitorBadge from '@/components/VisitorBadge';
@@ -9,13 +9,20 @@ import HomeButton from "@/components/HomeButton";
 import { Button } from '@/components/ui/button';
 import { Printer, QrCode } from 'lucide-react';
 import { logDebug } from '@/lib/debugUtils';
-import { isElectron } from '@/lib/htmlBadgePrinter';
+import { isElectron, printVisitorBadge, createPrintController } from '@/lib/htmlBadgePrinter';
+
+// Storage key for tracking recent print operations
+const PRINT_HISTORY_KEY = 'visitor-print-history';
 
 const BadgePrintPreview = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const visitors = useVisitorStore(state => state.visitors);
   const { toast } = useToast();
+  
+  // Check if we should print immediately (direct mode)
+  const isDirect = searchParams.get('direct') === 'true';
   
   // Printer settings
   const { 
@@ -35,9 +42,57 @@ const BadgePrintPreview = () => {
   const printTimestamp = useRef(new Date()).current;
   const autoPrintTriggered = useRef(false);
   const [printingCompleted, setPrintingCompleted] = useState(false);
+  const [currentPrintIndex, setCurrentPrintIndex] = useState(0);
+  const printController = useRef(createPrintController()).current;
   
   // Find the visitor
   const visitor = visitors.find(v => v.id === id);
+  
+  // Create a flattened array of visitors (main + additional)
+  const allVisitors = useRef<Array<{
+    visitor: typeof visitor, 
+    name?: string,
+    firstName?: string,
+    visitorNumber: number
+  }>>([]).current;
+  
+  // Prepare all visitors to be printed - ONCE
+  useEffect(() => {
+    if (visitor && allVisitors.length === 0) {
+      // Add main visitor
+      allVisitors.push({
+        visitor: visitor,
+        visitorNumber: visitor.visitorNumber
+      });
+      
+      // Add additional visitors if any
+      if (visitor.additionalVisitors && visitor.additionalVisitors.length > 0) {
+        visitor.additionalVisitors.forEach(additionalVisitor => {
+          allVisitors.push({
+            visitor: visitor,
+            name: additionalVisitor.name,
+            firstName: additionalVisitor.firstName,
+            visitorNumber: additionalVisitor.visitorNumber
+          });
+        });
+      }
+      
+      logDebug('Print', `Prepared ${allVisitors.length} visitors for printing`);
+    }
+  }, [visitor, allVisitors]);
+  
+  // Record this visitor as printed
+  const recordPrint = () => {
+    if (!id) return;
+    
+    try {
+      const printHistory = JSON.parse(localStorage.getItem(PRINT_HISTORY_KEY) || '{}');
+      printHistory[id] = Date.now();
+      localStorage.setItem(PRINT_HISTORY_KEY, JSON.stringify(printHistory));
+    } catch (e) {
+      // Ignore storage errors
+    }
+  };
 
   // Add print styles
   useEffect(() => {
@@ -69,6 +124,8 @@ const BadgePrintPreview = () => {
           box-sizing: border-box !important;
           overflow: hidden !important;
           page-break-after: always !important;
+          z-index: 9999 !important;
+          background-color: white !important;
         }
         
         /* Badge dimensions: exactly 60mm x 90mm */
@@ -118,75 +175,139 @@ const BadgePrintPreview = () => {
     };
   }, [bottomMargin]);
   
-  // Handle automatic printing - simplified for immediate printing
-  useEffect(() => {
-    // Skip if already triggered or no visitor data
-    if (autoPrintTriggered.current || !visitor || printingCompleted) return;
+  // Handle printing process for single or multiple badges
+  const handlePrintProcess = async () => {
+    if (!visitor) return;
     
-    // If automatic printing is enabled
-    if (enableAutomaticPrinting) {
-      autoPrintTriggered.current = true;
-      
-      // Print directly without delay
-      logDebug('Print', "Starting automatic print process");
-      
-      try {
-        // Print via Electron API or window.print()
-        if (isElectron()) {
-          window.electronAPI.printBadge({
-            id: visitor.id,
-            name: visitor.name,
-          }).then(() => {
-            setPrintingCompleted(true);
-            navigateToSuccess();
-          }).catch(() => {
-            setPrintingCompleted(true);
-            navigateToSuccess();
-          });
-        } else {
-          window.print();
-          setPrintingCompleted(true);
-          navigateToSuccess();
-        }
-      } catch (error) {
-        console.error("Print error:", error);
-        setPrintingCompleted(true);
-      }
+    // If print has already been attempted, prevent repeated prints
+    if (!printController.print()) {
+      logDebug('Print', 'Print controller blocked print attempt');
+      return;
     }
-  }, [visitor, enableAutomaticPrinting, printingCompleted]);
-  
-  // Navigate to success page
-  const navigateToSuccess = () => {
-    if (visitor) {
+    
+    try {
+      // Print the current badge
+      await printVisitorBadge();
+      
+      // Update print index
+      const nextIndex = currentPrintIndex + 1;
+      setCurrentPrintIndex(nextIndex);
+      
+      // Reset controller for next print
+      printController.reset();
+      
+      // If we have more badges to print, continue printing
+      if (nextIndex < allVisitors.length) {
+        // Continue with next badge after a brief delay
+        setTimeout(() => {
+          logDebug('Print', `Printing next badge (${nextIndex + 1} of ${allVisitors.length})`);
+          // The component will re-render with the new currentPrintIndex
+        }, 500);
+      } else {
+        // All badges printed, navigate back
+        setPrintingCompleted(true);
+        recordPrint();
+        logDebug('Print', 'All badges printed successfully');
+        
+        // Navigate back with a short delay
+        setTimeout(() => {
+          if (isDirect) {
+            window.close();
+          } else {
+            navigate(`/checkin/step3/${visitor.id}?fromPrint=true`);
+          }
+        }, 300);
+      }
+    } catch (error) {
+      console.error('Print error:', error);
+      printController.reset();
+      setPrintingCompleted(true);
+      
+      // Navigate back even if there's an error
       setTimeout(() => {
-        navigate(`/checkin/step3/${visitor.id}`);
+        if (isDirect) {
+          window.close();
+        } else {
+          navigate(`/checkin/step3/${visitor.id}?fromPrint=true`);
+        }
       }, 300);
     }
   };
   
+  // Safety navigation - used as a fallback if printing gets stuck
+  const safeNavigateAfterPrint = () => {
+    if (visitor && !printingCompleted) {
+      setPrintingCompleted(true);
+      recordPrint();
+      
+      if (isDirect) {
+        window.close();
+      } else {
+        navigate(`/checkin/step3/${visitor.id}?fromPrint=true`);
+      }
+    }
+  };
+  
+  // Force navigation after timeout as safety measure
+  useEffect(() => {
+    // Only start safety timer if in direct mode and not completed
+    if (!isDirect || printingCompleted || !visitor) return;
+    
+    const forceNavigationTimer = setTimeout(() => {
+      logDebug('Print', '⚠️ FORCE NAVIGATION: Safety timeout triggered');
+      safeNavigateAfterPrint();
+    }, 3000); // 3 second safety timeout
+    
+    return () => {
+      clearTimeout(forceNavigationTimer);
+    };
+  }, [isDirect, printingCompleted, visitor]);
+  
+  // Handle automatic printing based on settings
+  useEffect(() => {
+    // Skip if already triggered, no visitor data, or printing completed
+    if (autoPrintTriggered.current || !visitor || printingCompleted) return;
+    
+    // If direct mode is enabled or auto printing
+    if (isDirect || enableAutomaticPrinting) {
+      autoPrintTriggered.current = true;
+      
+      // Run automatic print with a small delay to ensure render is complete
+      setTimeout(() => {
+        logDebug('Print', "Starting automatic print process");
+        handlePrintProcess();
+      }, 300);
+    }
+  }, [visitor, enableAutomaticPrinting, isDirect, printingCompleted, currentPrintIndex]);
+  
   // Handle manual print
   const handleManualPrint = () => {
-    if (autoPrintTriggered.current) return;
+    if (autoPrintTriggered.current || !visitor) return;
     
     toast({
       title: "Druckvorgang gestartet",
       description: "Das Druckfenster wird geöffnet...",
     });
     
-    // Set status and print
+    // Set status and start print process
     autoPrintTriggered.current = true;
-    window.print();
-    setPrintingCompleted(true);
-    navigateToSuccess();
+    handlePrintProcess();
   };
   
   // Return to success page
   const handleReturn = () => {
     if (visitor) {
-      navigate(`/checkin/step3/${visitor.id}`);
+      navigate(`/checkin/step3/${visitor.id}?fromPrint=true`);
     } else {
       navigate('/');
     }
+  };
+  
+  // Get current visitor being printed
+  const getCurrentVisitorData = () => {
+    if (!visitor || allVisitors.length === 0) return null;
+    
+    return allVisitors[currentPrintIndex] || allVisitors[0];
   };
   
   if (!visitor) {
@@ -198,6 +319,9 @@ const BadgePrintPreview = () => {
     );
   }
   
+  // Get current visitor for printing
+  const currentVisitor = getCurrentVisitorData();
+  
   return (
     <div className="p-4 flex flex-col gap-4 print:p-0">
       {/* UI controls - visible only on screen */}
@@ -205,7 +329,14 @@ const BadgePrintPreview = () => {
         <HomeButton />
         
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">Besucherausweis Druckvorschau</h2>
+          <h2 className="text-xl font-semibold">
+            Besucherausweis Druckvorschau
+            {allVisitors.length > 1 && (
+              <span className="ml-2 text-sm text-muted-foreground">
+                (Ausweis {currentPrintIndex + 1} von {allVisitors.length})
+              </span>
+            )}
+          </h2>
           
           <div className="flex gap-2">
             <Button 
@@ -254,19 +385,24 @@ const BadgePrintPreview = () => {
             padding: 0,
             margin: 0
           }}>
-            <div style={{
-              transform: `translate(${badgeOffsetX}mm, ${badgeOffsetY}mm) rotate(${badgeRotation}deg)`,
-              width: '60mm', /* 6cm */
-              height: '90mm', /* 9cm */
-              boxSizing: 'border-box'
-            }}>
-              <VisitorBadge 
-                visitor={visitor} 
-                printTimestamp={printTimestamp}
-                qrPosition={badgeLayout.qrCodePosition || 'right'}
-                className="print-badge"
-              />
-            </div>
+            {currentVisitor && (
+              <div style={{
+                transform: `translate(${badgeOffsetX}mm, ${badgeOffsetY}mm) rotate(${badgeRotation}deg)`,
+                width: '60mm', /* 6cm */
+                height: '90mm', /* 9cm */
+                boxSizing: 'border-box'
+              }}>
+                <VisitorBadge 
+                  visitor={currentVisitor.visitor} 
+                  name={currentVisitor.name}
+                  firstName={currentVisitor.firstName}
+                  visitorNumber={currentVisitor.visitorNumber}
+                  printTimestamp={printTimestamp}
+                  qrPosition={badgeLayout.qrCodePosition || 'right'}
+                  className="print-badge"
+                />
+              </div>
+            )}
           </div>
           
           {/* Bottom badge - exactly 6cm × 9cm */}
@@ -284,19 +420,24 @@ const BadgePrintPreview = () => {
             padding: 0,
             margin: 0
           }}>
-            <div style={{
-              transform: `translate(${secondBadgeOffsetX}mm, ${secondBadgeOffsetY}mm) rotate(${secondBadgeRotation}deg)`,
-              width: '60mm', /* 6cm */
-              height: '90mm', /* 9cm */
-              boxSizing: 'border-box'
-            }}>
-              <VisitorBadge 
-                visitor={visitor} 
-                printTimestamp={printTimestamp}
-                qrPosition={badgeLayout.qrCodePosition || 'right'}
-                className="print-badge"
-              />
-            </div>
+            {currentVisitor && (
+              <div style={{
+                transform: `translate(${secondBadgeOffsetX}mm, ${secondBadgeOffsetY}mm) rotate(${secondBadgeRotation}deg)`,
+                width: '60mm', /* 6cm */
+                height: '90mm', /* 9cm */
+                boxSizing: 'border-box'
+              }}>
+                <VisitorBadge 
+                  visitor={currentVisitor.visitor} 
+                  name={currentVisitor.name}
+                  firstName={currentVisitor.firstName}
+                  visitorNumber={currentVisitor.visitorNumber}
+                  printTimestamp={printTimestamp}
+                  qrPosition={badgeLayout.qrCodePosition || 'right'}
+                  className="print-badge"
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -304,7 +445,14 @@ const BadgePrintPreview = () => {
       {/* Screen preview - visible only on screen */}
       <div className="print:hidden">
         <div className="mb-8">
-          <h2 className="text-lg font-medium mb-2">Druckvorschau (A6-Format)</h2>
+          <h2 className="text-lg font-medium mb-2">
+            Druckvorschau (A6-Format)
+            {allVisitors.length > 1 && (
+              <span className="ml-2 text-sm text-muted-foreground">
+                - Badge {currentPrintIndex + 1} von {allVisitors.length}
+              </span>
+            )}
+          </h2>
           <div className="border border-gray-300 rounded-md p-4 bg-white" style={{ 
             width: '105mm', 
             height: '148mm',
@@ -325,22 +473,27 @@ const BadgePrintPreview = () => {
               alignItems: 'center',
               boxSizing: 'border-box'
             }}>
-              <div style={{
-                transform: `translate(${badgeOffsetX}mm, ${badgeOffsetY}mm) rotate(${badgeRotation}deg)`,
-                transformOrigin: 'center',
-                transition: 'transform 0.2s ease-in-out',
-                scale: '0.7',
-                width: '60mm',
-                height: '90mm',
-                boxSizing: 'border-box'
-              }}>
-                <VisitorBadge 
-                  visitor={visitor} 
-                  printTimestamp={printTimestamp}
-                  qrPosition={badgeLayout.qrCodePosition || 'right'}
-                  className="w-full h-full"
-                />
-              </div>
+              {currentVisitor && (
+                <div style={{
+                  transform: `translate(${badgeOffsetX}mm, ${badgeOffsetY}mm) rotate(${badgeRotation}deg)`,
+                  transformOrigin: 'center',
+                  transition: 'transform 0.2s ease-in-out',
+                  scale: '0.7',
+                  width: '60mm',
+                  height: '90mm',
+                  boxSizing: 'border-box'
+                }}>
+                  <VisitorBadge 
+                    visitor={currentVisitor.visitor} 
+                    name={currentVisitor.name}
+                    firstName={currentVisitor.firstName}
+                    visitorNumber={currentVisitor.visitorNumber}
+                    printTimestamp={printTimestamp}
+                    qrPosition={badgeLayout.qrCodePosition || 'right'}
+                    className="w-full h-full"
+                  />
+                </div>
+              )}
             </div>
             
             {/* Middle divider */}
@@ -364,39 +517,82 @@ const BadgePrintPreview = () => {
               alignItems: 'center',
               boxSizing: 'border-box'
             }}>
-              <div style={{
-                transform: `translate(${secondBadgeOffsetX}mm, ${secondBadgeOffsetY}mm) rotate(${secondBadgeRotation}deg)`,
-                transformOrigin: 'center',
-                transition: 'transform 0.2s ease-in-out',
-                scale: '0.7',
-                width: '60mm',
-                height: '90mm',
-                boxSizing: 'border-box'
-              }}>
-                <VisitorBadge 
-                  visitor={visitor} 
-                  printTimestamp={printTimestamp}
-                  qrPosition={badgeLayout.qrCodePosition || 'right'}
-                  className="w-full h-full"
-                />
-              </div>
+              {currentVisitor && (
+                <div style={{
+                  transform: `translate(${secondBadgeOffsetX}mm, ${secondBadgeOffsetY}mm) rotate(${secondBadgeRotation}deg)`,
+                  transformOrigin: 'center',
+                  transition: 'transform 0.2s ease-in-out',
+                  scale: '0.7',
+                  width: '60mm',
+                  height: '90mm',
+                  boxSizing: 'border-box'
+                }}>
+                  <VisitorBadge 
+                    visitor={currentVisitor.visitor} 
+                    name={currentVisitor.name}
+                    firstName={currentVisitor.firstName}
+                    visitorNumber={currentVisitor.visitorNumber}
+                    printTimestamp={printTimestamp}
+                    qrPosition={badgeLayout.qrCodePosition || 'right'}
+                    className="w-full h-full"
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
         
-        {/* Additional visitors section */}
-        {visitor.additionalVisitors && visitor.additionalVisitors.length > 0 && visitor.additionalVisitors.map((additionalVisitor) => (
-          <div key={additionalVisitor.id} className="mb-4">
-            <h3 className="text-md font-medium mb-2">Zusätzlicher Besucher: {additionalVisitor.name}</h3>
-            <VisitorBadge 
-              visitor={visitor} 
-              name={additionalVisitor.name}
-              visitorNumber={additionalVisitor.visitorNumber}
-              printTimestamp={printTimestamp}
-              qrPosition={badgeLayout.qrCodePosition || 'right'}
-            />
+        {/* Print navigation controls for multiple visitors */}
+        {allVisitors.length > 1 && (
+          <div className="flex justify-between items-center mb-4">
+            <div className="text-sm text-muted-foreground">
+              {currentPrintIndex + 1} von {allVisitors.length} Ausweisen
+            </div>
+            
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPrintIndex === 0}
+                onClick={() => setCurrentPrintIndex(prev => Math.max(0, prev - 1))}
+              >
+                Vorheriger Ausweis
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPrintIndex >= allVisitors.length - 1}
+                onClick={() => setCurrentPrintIndex(prev => Math.min(allVisitors.length - 1, prev + 1))}
+              >
+                Nächster Ausweis
+              </Button>
+            </div>
           </div>
-        ))}
+        )}
+        
+        {/* All visitors preview (small thumbnails) */}
+        {allVisitors.length > 1 && (
+          <div className="mt-4">
+            <h3 className="text-md font-medium mb-2">Alle Besucher-Ausweise</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {allVisitors.map((visitorData, index) => (
+                <div 
+                  key={index} 
+                  className={`border p-2 rounded cursor-pointer ${currentPrintIndex === index ? 'border-primary' : 'border-gray-200'}`}
+                  onClick={() => setCurrentPrintIndex(index)}
+                >
+                  <div className="text-sm font-medium mb-1">
+                    {visitorData.name || visitor?.name}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    #{visitorData.visitorNumber}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

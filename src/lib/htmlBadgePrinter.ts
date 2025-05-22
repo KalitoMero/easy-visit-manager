@@ -21,6 +21,8 @@ const RESET_COUNTER_INTERVAL = 10000; // Reset count after 10 seconds of inactiv
 
 // New global storage key for cross-window communication
 const PRINT_STATUS_STORAGE_KEY = 'visitor-badge-print-status';
+// Storage key for tracking recent print operations
+const PRINT_HISTORY_KEY = 'visitor-print-history';
 
 /**
  * Check if print has been recently initiated based on localStorage
@@ -151,6 +153,42 @@ export const resetPrintStatus = (): void => {
   }
   
   logDebug('Print', 'Print status manually reset');
+};
+
+/**
+ * Record that a visitor's badge was printed
+ * @param visitorId The ID of the visitor that was printed
+ */
+export const recordPrintedVisitor = (visitorId: string): void => {
+  if (!visitorId) return;
+  
+  try {
+    const printHistory = JSON.parse(localStorage.getItem(PRINT_HISTORY_KEY) || '{}');
+    printHistory[visitorId] = Date.now();
+    localStorage.setItem(PRINT_HISTORY_KEY, JSON.stringify(printHistory));
+    logDebug('Print', `Recorded print for visitor ${visitorId}`);
+  } catch (e) {
+    // Ignore storage errors
+  }
+};
+
+/**
+ * Check if a visitor was recently printed
+ * @param visitorId The ID of the visitor to check
+ * @returns boolean indicating whether visitor was recently printed
+ */
+export const wasVisitorRecentlyPrinted = (visitorId: string): boolean => {
+  if (!visitorId) return false;
+  
+  try {
+    const printHistory = JSON.parse(localStorage.getItem(PRINT_HISTORY_KEY) || '{}');
+    if (!printHistory[visitorId]) return false;
+    
+    const elapsedTime = Date.now() - printHistory[visitorId];
+    return elapsedTime < 10000; // 10 seconds
+  } catch (e) {
+    return false;
+  }
 };
 
 /**
