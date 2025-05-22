@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,8 @@ import { Home, Timer, Printer } from 'lucide-react';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
 import useTranslation from '@/locale/translations';
 import { usePrinterSettings } from '@/hooks/usePrinterSettings';
-import { navigateToPrintPreview } from '@/lib/htmlBadgePrinter';
+import { navigateToPrintPreview, resetPrintStatus } from '@/lib/htmlBadgePrinter';
+import { logDebug } from '@/lib/debugUtils';
 
 const CheckInStep3 = () => {
   const { id } = useParams<{ id: string }>();
@@ -30,35 +30,40 @@ const CheckInStep3 = () => {
     return id ? state.getVisitor(id) : undefined;
   });
   
-  // Flag to track if print was already initiated
-  const printInitiated = React.useRef(false);
+  // Flag to track if print was already initiated - use ref to persist between renders
+  const printInitiated = useRef(false);
+  const initialLoadComplete = useRef(false);
   
-  // Handle automatic printing
+  // Reset print status on component mount
   useEffect(() => {
-    // Skip if print was already initiated or visitor is missing
-    if (printInitiated.current || !visitor || !enableAutomaticPrinting) return;
+    // Reset any stuck print status
+    resetPrintStatus();
+    logDebug('Print', 'CheckInStep3 - Resetting print status');
     
-    // Add a small delay to ensure the store is updated
+    return () => {
+      // Also reset on unmount
+      resetPrintStatus();
+    };
+  }, []);
+  
+  // Handle automatic printing only once
+  useEffect(() => {
+    // Skip if already done or visitor is missing
+    if (initialLoadComplete.current || printInitiated.current || !visitor || !enableAutomaticPrinting) {
+      return;
+    }
+    
+    initialLoadComplete.current = true;
+    
+    // Use timeout to ensure the store is fully updated
     const timer = setTimeout(() => {
-      console.log("[AutoPrint] Initiating automatic print for visitor:", visitor.visitorNumber);
+      logDebug('Print', 'CheckInStep3 - Initiating automatic print for visitor:', visitor.visitorNumber);
       printInitiated.current = true;
       navigateToPrintPreview(visitor, navigate, skipPrintPreview);
     }, 100);
     
     return () => clearTimeout(timer);
   }, [visitor, enableAutomaticPrinting, navigate, skipPrintPreview]);
-  
-  // Log visitor status for debugging
-  useEffect(() => {
-    console.log("[Page] Visitor on success page:", {
-      id: visitor?.id,
-      name: visitor?.name,
-      number: visitor?.visitorNumber,
-      checkInTime: visitor?.checkInTime,
-      checkOutTime: visitor?.checkOutTime,
-      policyAccepted: visitor?.policyAccepted
-    });
-  }, [visitor]);
   
   // Countdown timer effect for redirecting back to home
   useEffect(() => {

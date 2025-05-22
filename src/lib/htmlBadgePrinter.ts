@@ -7,11 +7,17 @@ import { logDebug } from './debugUtils';
  */
 let isPrintingInProgress = false;
 let lastPrintTimestamp = 0;
-const PRINT_COOLDOWN = 1000; // 1 second cooldown between prints (reduced from 2s)
+const PRINT_COOLDOWN = 3000; // Increased to 3 seconds cooldown between prints
 
 // Add global flag to track if we're currently in a print cycle
 let printCycleActive = false;
 let printCycleTimeout = null;
+
+// ANTI-LOOP protection - new global tracker
+let printInvocationsCount = 0;
+const MAX_PRINT_INVOCATIONS = 2;
+let lastResetTime = Date.now();
+const RESET_COUNTER_INTERVAL = 10000; // Reset count after 10 seconds of inactivity
 
 /**
  * Prints the current page containing the visitor badge(s)
@@ -20,6 +26,21 @@ let printCycleTimeout = null;
 export const printVisitorBadge = async (): Promise<void> => {
   try {
     const now = Date.now();
+    
+    // ANTI-LOOP: Reset counter if enough time has passed
+    if (now - lastResetTime > RESET_COUNTER_INTERVAL) {
+      printInvocationsCount = 0;
+      lastResetTime = now;
+      logDebug('Print', 'Print invocation counter reset due to timeout');
+    }
+    
+    // ANTI-LOOP: Increment counter and check if we've hit the limit
+    printInvocationsCount++;
+    if (printInvocationsCount > MAX_PRINT_INVOCATIONS) {
+      logDebug('Print', `🛑 EMERGENCY STOP: Print loop detected (${printInvocationsCount} invocations)`);
+      resetPrintStatus(); // Force reset all print statuses
+      return Promise.resolve(); // Exit immediately
+    }
     
     // Check for an active print cycle - prevents loops
     if (printCycleActive) {
@@ -52,7 +73,7 @@ export const printVisitorBadge = async (): Promise<void> => {
     
     // Return a promise that resolves immediately
     return new Promise((resolve) => {
-      // Very short delay to process the print dialog
+      // Clear any existing timeout
       if (printCycleTimeout) {
         clearTimeout(printCycleTimeout);
       }
@@ -60,17 +81,15 @@ export const printVisitorBadge = async (): Promise<void> => {
       // Immediately resolve to allow faster navigation
       resolve();
       
-      // Still reset the print flags after a shorter delay
+      // Still reset the print flags after a short delay
       printCycleTimeout = setTimeout(() => {
-        isPrintingInProgress = false;
-        printCycleActive = false;
+        resetPrintStatus();
         logDebug('Print', 'Print cycle fully completed and reset');
-      }, 500); // 500ms for full cycle completion (reduced from 1000ms)
+      }, 500); // 500ms for full cycle completion
     });
   } catch (error) {
     // Reset print status on error
-    isPrintingInProgress = false;
-    printCycleActive = false;
+    resetPrintStatus();
     logDebug('Print', 'Error during print process', error);
     throw error;
   }
@@ -162,8 +181,8 @@ export const createPrintController = () => {
   // Create closure to track print status
   let isPrinting = false;
   let printAttempts = 0;
-  const MAX_PRINT_ATTEMPTS = 2; // Allow 2 print attempts (increased from 1)
-  const PRINT_RESET_TIMEOUT = 800; // Reset print controller after 800ms (reduced from 1000ms)
+  const MAX_PRINT_ATTEMPTS = 1; // Reduced to 1 to prevent multiple attempts
+  const PRINT_RESET_TIMEOUT = 2000; // Increased to 2 seconds for safety
   let resetTimer: number | null = null;
   
   return {
@@ -184,7 +203,7 @@ export const createPrintController = () => {
         logDebug('Print', `Print blocked - global print cycle active`);
         // Force reset global state if it's stuck
         resetPrintStatus();
-        return true;
+        return false; // Changed to false to block printing when global cycle is active
       }
       
       isPrinting = true;
