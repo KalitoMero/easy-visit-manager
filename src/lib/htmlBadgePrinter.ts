@@ -3,9 +3,11 @@ import { Visitor } from '@/hooks/useVisitorStore';
 import { logDebug } from './debugUtils';
 
 /**
- * Globale Variable, um mehrfache Druckaufträge zu verhindern
+ * Global variable to prevent multiple print requests
  */
 let isPrintingInProgress = false;
+let lastPrintTimestamp = 0;
+const PRINT_COOLDOWN = 2000; // 2 seconds cooldown between prints
 
 /**
  * Prints the current page containing the visitor badge(s)
@@ -13,44 +15,53 @@ let isPrintingInProgress = false;
  */
 export const printVisitorBadge = async (): Promise<void> => {
   try {
-    // Wenn bereits ein Druckprozess läuft, nichts tun
-    if (isPrintingInProgress) {
-      logDebug('Print', 'Druckprozess läuft bereits, doppelter Aufruf verhindert');
+    const now = Date.now();
+    
+    // Check for cooldown period to prevent multiple rapid prints
+    if (now - lastPrintTimestamp < PRINT_COOLDOWN) {
+      logDebug('Print', `Print request too soon after last print (${now - lastPrintTimestamp}ms), ignoring`);
       return Promise.resolve();
     }
     
-    // Druckstatus setzen
-    isPrintingInProgress = true;
-    logDebug('Print', 'Druckprozess gestartet');
+    // If printing is already in progress, do nothing
+    if (isPrintingInProgress) {
+      logDebug('Print', 'Print process already running, preventing duplicate call');
+      return Promise.resolve();
+    }
     
-    // Browser-Druckfunktion aufrufen
+    // Set print status
+    isPrintingInProgress = true;
+    lastPrintTimestamp = now;
+    logDebug('Print', 'Print process started');
+    
+    // Call browser print function
     window.print();
     
-    logDebug('Print', 'Druckdialog geöffnet');
+    logDebug('Print', 'Print dialog opened');
     
-    // Promise zurückgeben, das nach kurzer Verzögerung auflöst
+    // Return a promise that resolves after a short delay
     return new Promise((resolve) => {
-      // Kurze Verzögerung, um den Druckdialog zu verarbeiten
+      // Short delay to process the print dialog
       setTimeout(() => {
         isPrintingInProgress = false;
-        logDebug('Print', 'Druckstatus zurückgesetzt');
+        logDebug('Print', 'Print status reset');
         resolve();
       }, 1000);
     });
   } catch (error) {
-    // Bei Fehler den Druckstatus zurücksetzen
+    // Reset print status on error
     isPrintingInProgress = false;
-    logDebug('Print', 'Fehler während des Druckprozesses', error);
+    logDebug('Print', 'Error during print process', error);
     throw error;
   }
 };
 
 /**
- * Funktion zum Zurücksetzen des Druckstatus
+ * Function to reset print status
  */
 export const resetPrintStatus = (): void => {
   isPrintingInProgress = false;
-  logDebug('Print', 'Druckstatus manuell zurückgesetzt');
+  logDebug('Print', 'Print status manually reset');
 };
 
 /**
@@ -65,38 +76,38 @@ export const navigateToPrintPreview = (
   skipPreview?: boolean
 ): void => {
   if (!visitor || !visitor.id) {
-    logDebug('Print', 'Navigation zur Druckvorschau nicht möglich: Ungültige Besucherdaten');
+    logDebug('Print', 'Navigation to print preview not possible: Invalid visitor data');
     return;
   }
   
-  // Druckereinstellungen aus dem localStorage holen
+  // Get printer settings from localStorage
   const printerSettings = typeof window !== 'undefined' && 
      window.localStorage && 
      JSON.parse(window.localStorage.getItem('printer-settings') || '{}');
   
-  // SkipPreview aus den Einstellungen oder dem Parameter verwenden
+  // Use skipPreview from settings or parameter
   const useSkipPreview = skipPreview ?? 
     (printerSettings?.skipPrintPreview);
   
-  // Timestamp hinzufügen, um Cache-Probleme zu vermeiden
+  // Add timestamp to avoid cache issues
   const timestamp = new Date().getTime();
   
-  logDebug('Print', `Druckeinstellungen - Vorschau überspringen: ${useSkipPreview}`);
+  logDebug('Print', `Print settings - Skip preview: ${useSkipPreview}`);
   
   if (useSkipPreview) {
-    // Wenn Vorschau übersprungen werden soll, direkt drucken
-    logDebug('Print', `Vorschau wird übersprungen und Badge wird direkt für Besucher ${visitor.visitorNumber} gedruckt`);
+    // If preview should be skipped, print directly
+    logDebug('Print', `Skipping preview and printing badge directly for visitor ${visitor.visitorNumber}`);
     
-    // Druckseite in neuem Fenster öffnen
+    // Open print page in new window with direct=true parameter to trigger immediate printing
     const printWindow = window.open(`/print-badge/${visitor.id}?direct=true&t=${timestamp}`, '_blank');
     
-    // Neues Fenster sofort fokussieren, wenn es geöffnet wurde
+    // Focus new window if opened
     if (printWindow) {
       printWindow.focus();
     }
   } else {
-    // Zur Druckvorschau navigieren, mit Parameter, dass wir vom Check-in-Flow kommen
-    logDebug('Print', `Navigation zur Druckvorschau für Besucher ${visitor.visitorNumber}`);
+    // Navigate to print preview with parameter indicating we're coming from check-in flow
+    logDebug('Print', `Navigating to print preview for visitor ${visitor.visitorNumber}`);
     navigate(`/print-badge/${visitor.id}?flow=checkin&t=${timestamp}`);
   }
 };
@@ -112,33 +123,53 @@ export const isElectron = (): boolean => {
  * Helper function to prevent print loops by tracking print state
  */
 export const createPrintController = () => {
-  // Closure erstellen, um Druckstatus zu tracken
+  // Create closure to track print status
   let isPrinting = false;
   let printAttempts = 0;
-  const MAX_PRINT_ATTEMPTS = 1; // Nur 1 Druckversuch zulassen (reduziert von 2)
+  const MAX_PRINT_ATTEMPTS = 1; // Only allow 1 print attempt (reduced from 2)
+  const PRINT_RESET_TIMEOUT = 5000; // Reset print controller after 5 seconds
+  let resetTimer: number | null = null;
   
   return {
-    // Versuchen, den Druck zu starten, wenn nicht bereits im Gang
+    // Try to start printing if not already in progress
     print: (): boolean => {
       if (isPrinting || printAttempts >= MAX_PRINT_ATTEMPTS) {
-        logDebug('Print', `Druck blockiert - läuft bereits oder maximale Versuche erreicht (${printAttempts})`);
+        logDebug('Print', `Print blocked - already running or max attempts reached (${printAttempts})`);
         return false;
       }
       
       isPrinting = true;
       printAttempts++;
-      logDebug('Print', `Druck gestartet - Versuch ${printAttempts}`);
+      logDebug('Print', `Print started - Attempt ${printAttempts}`);
+      
+      // Auto-reset after timeout to prevent stuck state
+      if (resetTimer) {
+        window.clearTimeout(resetTimer);
+      }
+      
+      resetTimer = window.setTimeout(() => {
+        isPrinting = false;
+        printAttempts = 0;
+        logDebug('Print', 'Print controller auto-reset after timeout');
+        resetTimer = null;
+      }, PRINT_RESET_TIMEOUT);
+      
       return true;
     },
     
-    // Druckstatus zurücksetzen
+    // Reset print status
     reset: (): void => {
       isPrinting = false;
       printAttempts = 0;
-      logDebug('Print', 'Druck-Controller zurückgesetzt');
+      logDebug('Print', 'Print controller manually reset');
+      
+      if (resetTimer) {
+        window.clearTimeout(resetTimer);
+        resetTimer = null;
+      }
     },
     
-    // Aktuellen Status abrufen
+    // Get current status
     getState: () => ({ isPrinting, printAttempts })
   };
 };

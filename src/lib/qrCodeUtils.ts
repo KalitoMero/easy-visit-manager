@@ -10,15 +10,24 @@ export function generateCheckoutEmailUrl(visitorNumber: number): string {
   return `mailto:${recipient}?subject=${subject}&body=${body}`;
 }
 
+// Cache for QR codes to prevent regenerating the same codes
+const qrCodeCache: Record<string, string> = {};
+
 /**
  * Generates a QR code as a data URL using the qrcode library
  */
 export async function generateQRCodeDataUrl(data: string, size: number = 140): Promise<string> {
+  // Return from cache if available
+  const cacheKey = `${data}-${size}`;
+  if (qrCodeCache[cacheKey]) {
+    return qrCodeCache[cacheKey];
+  }
+  
   try {
-    // Dynamisch die QRCode-Bibliothek importieren
+    // Dynamically import QRCode library
     const QRCode = await import('qrcode');
     
-    // QR-Code als Data-URL generieren mit optimierten Einstellungen
+    // Generate QR code as data URL with optimized settings
     const dataUrl = await QRCode.toDataURL(data, {
       width: size,
       margin: 1,
@@ -26,20 +35,23 @@ export async function generateQRCodeDataUrl(data: string, size: number = 140): P
         dark: '#000000',
         light: '#FFFFFF'
       },
-      errorCorrectionLevel: 'H' // Höhere Fehlerkorrektur für besseres Scannen
+      errorCorrectionLevel: 'H' // Higher error correction for better scanning
     });
+    
+    // Cache the result
+    qrCodeCache[cacheKey] = dataUrl;
     
     return dataUrl;
   } catch (error) {
-    console.error("Fehler beim Generieren des QR-Codes:", error);
+    console.error("Error generating QR code:", error);
     return '';
   }
 }
 
 /**
- * Callback sofort ausführen ohne zu blockieren
+ * Callback executed immediately without blocking
  */
 export function ensureQRCodesLoaded(callback: () => void): void {
-  // Callback direkt aufrufen
+  // Call callback directly
   if (callback) callback();
 }

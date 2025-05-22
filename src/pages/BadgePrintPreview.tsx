@@ -11,7 +11,7 @@ import { Printer, Home } from 'lucide-react';
 import { logDebug } from '@/lib/debugUtils';
 import { isElectron, createPrintController, resetPrintStatus } from '@/lib/htmlBadgePrinter';
 
-// Erstellen eines Print-Controllers für diese Komponente
+// Create a print controller for this component
 const printController = createPrintController();
 
 const BadgePrintPreview = () => {
@@ -24,7 +24,7 @@ const BadgePrintPreview = () => {
   const visitors = useVisitorStore(state => state.visitors);
   const { toast } = useToast();
   
-  // Druckereinstellungen
+  // Printer settings
   const { 
     enableAutomaticPrinting, 
     badgeRotation,
@@ -37,48 +37,48 @@ const BadgePrintPreview = () => {
     bottomMargin
   } = usePrinterSettings();
   
-  // Status-Tracking
+  // Status tracking
   const printTimestamp = useRef(new Date()).current;
   const [printingCompleted, setPrintingCompleted] = useState(false);
-  const [printHandled, setPrintHandled] = useState(false);
+  const printInitiatedRef = useRef(false);
   
-  // Besucher finden
+  // Find visitor
   const visitor = visitors.find(v => v.id === id);
   const hasAdditionalVisitors = visitor?.additionalVisitors && visitor.additionalVisitors.length > 0;
 
-  // Druckstile hinzufügen
+  // Add print styles
   useEffect(() => {
-    // Neues Stilelement für Druckstile erstellen
+    // Create style element for print styles
     const styleEl = document.createElement('style');
     styleEl.setAttribute('type', 'text/css');
     styleEl.textContent = `
       @media print {
-        /* UI-Elemente beim Drucken ausblenden */
+        /* Hide UI elements when printing */
         body * {
           visibility: hidden;
         }
         
-        /* Nur den Badge-Container und seinen Inhalt anzeigen */
+        /* Show only the badge container and its contents */
         .visitor-badge-container, .visitor-badge-container * {
           visibility: visible;
         }
 
-        /* Container für A6-Papier positionieren */
+        /* Position container for A6 paper */
         .visitor-badge-container {
           position: absolute !important;
           top: 0 !important;
           left: 0 !important;
-          width: 105mm !important; /* A6-Breite */
-          height: 148mm !important; /* A6-Höhe */
+          width: 105mm !important; /* A6 width */
+          height: 148mm !important; /* A6 height */
           padding: 0 !important;
           margin: 0 !important;
-          padding-bottom: ${bottomMargin}mm !important; /* Unterer Rand anwenden */
+          padding-bottom: ${bottomMargin}mm !important; /* Apply bottom margin */
           box-sizing: border-box !important;
           overflow: hidden !important;
           page-break-after: always !important;
         }
         
-        /* Sicherstellen, dass beide Badges sichtbar und korrekt positioniert sind */
+        /* Ensure both badges are visible and correctly positioned */
         .visitor-badge-page {
           position: relative !important;
           width: 105mm !important;
@@ -86,7 +86,7 @@ const BadgePrintPreview = () => {
           page-break-after: always !important;
         }
         
-        /* Das erste Badge oben positionieren */
+        /* Position top badge */
         .visitor-badge-top {
           position: absolute !important;
           top: 5mm !important;
@@ -97,7 +97,7 @@ const BadgePrintPreview = () => {
           overflow: visible !important;
         }
         
-        /* Das zweite Badge unten positionieren */
+        /* Position bottom badge */
         .visitor-badge-bottom {
           position: absolute !important;
           top: 74mm !important;
@@ -108,7 +108,7 @@ const BadgePrintPreview = () => {
           overflow: visible !important;
         }
         
-        /* Trennlinie hinzufügen */
+        /* Add divider line */
         .badge-divider {
           border-top: 1px dashed #999 !important;
           width: 100% !important;
@@ -118,7 +118,7 @@ const BadgePrintPreview = () => {
           visibility: visible !important;
         }
         
-        /* Badge-Abmessungen: genau 60mm x 69mm */
+        /* Badge dimensions: exactly 60mm x 69mm */
         .print-badge {
           width: 60mm !important;
           height: 69mm !important;
@@ -130,14 +130,14 @@ const BadgePrintPreview = () => {
           box-shadow: none !important;
         }
 
-        /* Badge-Inhalts-Layout */
+        /* Badge content layout */
         .badge-content {
           flex: 1 !important;
           display: flex !important;
           justify-content: space-between !important;
         }
 
-        /* Lovable-Branding ausblenden */
+        /* Hide Lovable branding */
         .lovable-badge, 
         [data-lovable-badge="true"],
         #lovable-badge-root,
@@ -148,7 +148,7 @@ const BadgePrintPreview = () => {
           visibility: hidden !important;
         }
 
-        /* A6-Seiteneinstellungen */
+        /* A6 page settings */
         @page {
           size: 105mm 148mm !important;
           margin: 0 !important;
@@ -156,116 +156,120 @@ const BadgePrintPreview = () => {
       }
     `;
     
-    // Stile zum Kopf hinzufügen
+    // Add styles to head
     document.head.appendChild(styleEl);
     
-    // Aufräumen
+    // Cleanup
     return () => {
       document.head.removeChild(styleEl);
-      // Druckstatus zurücksetzen beim Unmount der Komponente
+      // Reset print status when component unmounts
       resetPrintStatus();
+      printController.reset();
     };
   }, [bottomMargin]);
   
-  // Automatisches Drucken behandeln - Nach dem Laden sofort drucken
+  // Handle automatic printing - Execute once after loading
   useEffect(() => {
-    // Überspringen, wenn bereits behandelt oder kein Besucher
-    if (printHandled || !visitor) return;
+    // Skip if already initiated, completed, or no visitor
+    if (printInitiatedRef.current || printingCompleted || !visitor) return;
     
-    // Wenn automatisches Drucken aktiviert ist oder es eine direkte Druckanforderung ist
-    if ((enableAutomaticPrinting || isDirect) && !printingCompleted) {
-      setPrintHandled(true);
+    // Only trigger automatic printing if enabled or direct parameter is present
+    if ((enableAutomaticPrinting || isDirect)) {
+      logDebug('Print', "Starting automatic print process");
       
-      logDebug('Print', "Automatischen Druckprozess starten");
+      // Mark as initiated to prevent duplicate calls
+      printInitiatedRef.current = true;
       
-      try {
-        // Nur drucken, wenn der printController zustimmt
-        if (printController.print()) {
-          // Verzögerung hinzufügen, um sicherzustellen, dass die UI fertig gerendert ist
-          setTimeout(() => {
+      // Use print controller to prevent multiple prints
+      if (printController.print()) {
+        try {
+          // Add short delay to ensure UI is fully rendered
+          const printTimer = setTimeout(() => {
             if (isElectron()) {
-              // Über Electron-API drucken
+              // Print via Electron API
               window.electronAPI.printBadge({
                 id: visitor.id,
                 name: visitor.name,
               }).then(() => {
                 setPrintingCompleted(true);
-                // Druckstatus zurücksetzen
+                // Reset print status
                 resetPrintStatus();
               }).catch((err) => {
-                console.error("Electron-Druckfehler:", err);
+                console.error("Electron print error:", err);
                 setPrintingCompleted(true);
                 resetPrintStatus();
               });
             } else {
-              // Direktes Drucken ohne Verzögerung
+              // Direct print with browser
               window.print();
               
-              // Verzögert als abgeschlossen markieren, um Zeit für den Druckdialog zu geben
+              // Mark as completed after delay for print dialog
               setTimeout(() => {
                 setPrintingCompleted(true);
-                // Druckstatus zurücksetzen
                 resetPrintStatus();
               }, 1000);
             }
-          }, 300);
+          }, 500);
+          
+          return () => clearTimeout(printTimer);
+        } catch (error) {
+          console.error("Print error:", error);
+          setPrintingCompleted(true);
+          resetPrintStatus();
+          printController.reset();
         }
-      } catch (error) {
-        console.error("Druckfehler:", error);
-        setPrintingCompleted(true);
-        resetPrintStatus();
       }
     }
-  }, [visitor, enableAutomaticPrinting, isDirect, printingCompleted, printHandled]);
+  }, [visitor, enableAutomaticPrinting, isDirect, printingCompleted]);
   
-  // Nach dem Drucken weiterleiten
+  // Navigate after printing
   useEffect(() => {
     if (printingCompleted && visitor) {
-      logDebug('Print', "Weiterleitung nach dem Drucken");
+      logDebug('Print', "Redirecting after printing");
       
-      // Setzen Sie einen Timeout, um sicherzustellen, dass der Druck vollständig ist
+      // Set timeout to ensure print is complete
       const redirectTimeout = setTimeout(() => {
-        printController.reset(); // Controller zurücksetzen
-        resetPrintStatus(); // Globalen Druckstatus zurücksetzen
+        printController.reset(); // Reset controller
+        resetPrintStatus(); // Reset global print status
         
-        // Wenn dies direkt geöffnet wurde, das Fenster schließen, anstatt zu navigieren
+        // If opened directly, close window instead of navigating
         if (isDirect) {
           window.close();
         } else if (fromCheckin) {
-          // Zurück zur Checkout-Erfolgsseite, wenn vom Checkin-Flow
+          // Back to checkin success page if from checkin flow
           navigate(`/checkin/step3/${visitor.id}`);
         } else {
-          // Zurück zur vorherigen Seite oder Startseite
+          // Back to previous page or home
           navigate(-1);
         }
       }, 1000);
       
-      // Timeout aufräumen, wenn die Komponente unmountet wird
+      // Clean up timeout when component unmounts
       return () => clearTimeout(redirectTimeout);
     }
   }, [printingCompleted, visitor, navigate, isDirect, fromCheckin]);
   
-  // Verhindert Druckschleifen nach dem ersten Druckversuch
+  // Prevent print loops after first print attempt
   useEffect(() => {
-    // Handler für das afterprint-Event hinzufügen
+    // Add handler for afterprint event
     const handleAfterPrint = () => {
       logDebug('Print', 'afterprint event fired - Print dialog closed');
       setPrintingCompleted(true);
-      resetPrintStatus(); // Druckstatus zurücksetzen
+      resetPrintStatus(); // Reset print status
     };
     
     window.addEventListener('afterprint', handleAfterPrint);
     
-    // Handler entfernen, wenn die Komponente unmountet wird
+    // Remove handler when component unmounts
     return () => {
       window.removeEventListener('afterprint', handleAfterPrint);
     };
   }, []);
   
-  // Manuelles Drucken behandeln
+  // Handle manual print
   const handleManualPrint = () => {
-    if (printHandled || printingCompleted) {
-      logDebug('Print', "Druck bereits ausgelöst, Anforderung wird ignoriert");
+    if (printInitiatedRef.current || printingCompleted) {
+      logDebug('Print', "Print already triggered, ignoring request");
       return;
     }
     
@@ -274,20 +278,20 @@ const BadgePrintPreview = () => {
       description: "Das Druckfenster wird geöffnet...",
     });
     
-    // Nur drucken, wenn der printController zustimmt
+    // Only print if print controller allows
     if (printController.print()) {
-      setPrintHandled(true);
+      printInitiatedRef.current = true;
       window.print();
       
-      // Kurze Verzögerung vor dem Setzen als abgeschlossen
+      // Short delay before marking as complete
       setTimeout(() => {
         setPrintingCompleted(true);
-        resetPrintStatus(); // Druckstatus zurücksetzen
+        resetPrintStatus(); // Reset print status
       }, 1000);
     }
   };
   
-  // Zurück zur Erfolgsseite
+  // Return to success page
   const handleReturn = () => {
     if (visitor) {
       if (fromCheckin) {
@@ -309,7 +313,7 @@ const BadgePrintPreview = () => {
     );
   }
   
-  // Array aller zu druckenden Besucher vorbereiten (Hauptbesucher + zusätzliche)
+  // Prepare array of all visitors to display (main visitor + additional)
   const allVisitorsToDisplay = [
     { 
       ...visitor,
@@ -326,7 +330,7 @@ const BadgePrintPreview = () => {
   
   return (
     <div className="p-4 flex flex-col gap-4 print:p-0">
-      {/* UI-Steuerelemente - nur auf dem Bildschirm sichtbar */}
+      {/* UI controls - only visible on screen */}
       <div className="print:hidden">
         <HomeButton />
         
@@ -338,7 +342,7 @@ const BadgePrintPreview = () => {
               onClick={handleManualPrint}
               variant="outline"
               className="flex items-center gap-2"
-              disabled={printHandled || printingCompleted}
+              disabled={printInitiatedRef.current || printingCompleted}
             >
               <Printer className="h-4 w-4" />
               Drucken
@@ -356,14 +360,14 @@ const BadgePrintPreview = () => {
         </div>
       </div>
       
-      {/* Badge-Container für den Druck - auf dem Bildschirm ausgeblendet, beim Drucken sichtbar */}
+      {/* Badge container for printing - hidden on screen, visible when printing */}
       <div className="visitor-badge-container print:block hidden">
         {allVisitorsToDisplay.map((visitorItem, index) => (
           <div
             key={`print-${visitorItem.id || index}`}
             className="visitor-badge-page"
           >
-            {/* Oberes Badge */}
+            {/* Top badge */}
             <div className="visitor-badge-top">
               <VisitorBadge
                 visitor={visitorItem.isMain ? visitor : {
@@ -381,10 +385,10 @@ const BadgePrintPreview = () => {
               />
             </div>
             
-            {/* Trennlinie zwischen den Badges */}
+            {/* Divider line between badges */}
             <div className="badge-divider"></div>
             
-            {/* Unteres Badge (Duplikat) */}
+            {/* Bottom badge (duplicate) */}
             <div className="visitor-badge-bottom">
               <VisitorBadge
                 visitor={visitorItem.isMain ? visitor : {
@@ -405,9 +409,9 @@ const BadgePrintPreview = () => {
         ))}
       </div>
       
-      {/* Bildschirmvorschau - nur auf dem Bildschirm sichtbar */}
+      {/* Screen preview - only visible on screen */}
       <div className="print:hidden">
-        {/* Vorschau des Hauptbesucher-Badges */}
+        {/* Main visitor badge preview */}
         <div className="mb-8">
           <h2 className="text-lg font-medium mb-2">Druckvorschau (A6-Format)</h2>
           <div className="border border-gray-300 rounded-md p-4 bg-white" style={{ 
@@ -418,7 +422,7 @@ const BadgePrintPreview = () => {
             overflow: 'hidden',
             boxSizing: 'border-box'
           }}>
-            {/* Vorschau des oberen Badges */}
+            {/* Top badge preview */}
             <div style={{
               position: 'absolute',
               top: '0',
@@ -448,7 +452,7 @@ const BadgePrintPreview = () => {
               </div>
             </div>
             
-            {/* Mittlere Trennlinie */}
+            {/* Middle divider */}
             <div style={{
               position: 'absolute',
               top: '50%',
@@ -457,7 +461,7 @@ const BadgePrintPreview = () => {
               borderTop: '1px dashed #ccc'
             }}></div>
             
-            {/* Vorschau des unteren Badges */}
+            {/* Bottom badge preview */}
             <div style={{
               position: 'absolute',
               top: '50%',
@@ -489,7 +493,7 @@ const BadgePrintPreview = () => {
           </div>
         </div>
         
-        {/* Abschnitt für zusätzliche Besucher */}
+        {/* Additional visitors section */}
         {hasAdditionalVisitors && (
           <div className="mt-8 mb-4">
             <h2 className="text-lg font-medium mb-4">Zusätzliche Besucher</h2>

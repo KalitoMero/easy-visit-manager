@@ -58,7 +58,7 @@ const CheckInStep2 = () => {
     }
   }, [visitor]);
   
-  // Druckstatus zurücksetzen, wenn Komponente gemountet wird
+  // Reset print status when component is mounted
   useEffect(() => {
     resetPrintStatus();
   }, []);
@@ -107,13 +107,13 @@ const CheckInStep2 = () => {
         console.log("Accepting policy for visitor:", visitor.visitorNumber);
         acceptPolicy(id, signature);
         
-        // Vor der Navigation den Druckstatus zurücksetzen
+        // Reset print status before navigation
         resetPrintStatus();
         
         // If automatic printing is enabled, redirect to print preview or print directly
         if (enableAutomaticPrinting) {
           console.log("Automatic printing enabled, initiating print flow");
-          // Route parameter hinzufügen, um zu kennzeichnen, dass wir vom Checkin-Flow kommen
+          // Add route parameter to indicate we're coming from check-in flow
           navigateToPrintPreview(visitor, navigate, skipPrintPreview);
         } else {
           console.log("Automatic printing disabled, navigating to success page");
