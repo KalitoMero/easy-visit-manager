@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +13,7 @@ import useTranslation from '@/locale/translations';
 import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import { ArrowLeft, ArrowDown } from 'lucide-react';
 import SignaturePad from '@/components/SignaturePad';
+import { navigateToPrintPreview } from '@/lib/htmlBadgePrinter';
 
 const CheckInStep2 = () => {
   const { id } = useParams<{ id: string }>();
@@ -26,6 +26,7 @@ const CheckInStep2 = () => {
   
   // Get printer settings for automatic printing
   const enableAutomaticPrinting = usePrinterSettings(state => state.enableAutomaticPrinting);
+  const skipPrintPreview = usePrinterSettings(state => state.skipPrintPreview);
   
   // Use separate selectors to prevent re-renders
   const acceptPolicy = useVisitorStore(state => state.acceptPolicy);
@@ -35,7 +36,7 @@ const CheckInStep2 = () => {
   const t = useTranslation(language);
   
   const policyText = usePolicyStore(state => state.getPolicyText(language));
-  const policyImageUrl = usePolicyStore(state => state.policyImageUrl);
+  const policyImageUrl = usePrinterSettings(state => state.policyImageUrl);
   
   // Memoize the visitor lookup to prevent unnecessary re-renders
   const visitor = React.useMemo(() => {
@@ -100,14 +101,10 @@ const CheckInStep2 = () => {
         console.log("Accepting policy for visitor:", visitor.visitorNumber);
         acceptPolicy(id, signature);
         
-        // Log the visitor object after policy acceptance
-        const updatedVisitor = useVisitorStore.getState().getVisitor(id);
-        console.log("Visitor after policy acceptance:", updatedVisitor);
-        
-        // If automatic printing is enabled, create a parameter to trigger printing on the success page
+        // If automatic printing is enabled, redirect to print preview or print directly
         if (enableAutomaticPrinting) {
-          console.log("Automatic printing enabled, navigating with print parameter");
-          navigate(`/checkin/step3/${id}?print=true`);
+          console.log("Automatic printing enabled, initiating print flow");
+          navigateToPrintPreview(visitor, navigate, skipPrintPreview);
         } else {
           console.log("Automatic printing disabled, navigating to success page");
           navigate(`/checkin/step3/${id}`);

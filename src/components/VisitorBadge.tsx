@@ -1,10 +1,10 @@
-import React, { useEffect, useState, useRef } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { Visitor } from '@/hooks/useVisitorStore';
 import { generateCheckoutEmailUrl, generateQRCodeDataUrl } from '@/lib/qrCodeUtils';
-import { QrCode, Mail, Calendar, Clock } from 'lucide-react';
+import { QrCode, Calendar, Clock } from 'lucide-react';
 import { formatInTimeZone } from 'date-fns-tz';
 import { usePrinterSettings } from '@/hooks/usePrinterSettings';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { cn } from '@/lib/utils';
 
 interface VisitorBadgeProps {
@@ -24,8 +24,8 @@ const VisitorBadge = ({
   firstName,
   visitorNumber, 
   className = '',
-  printTimestamp = new Date(), // Default to current time if not provided
-  qrPosition = 'right', // Default to right-aligned QR code
+  printTimestamp = new Date(),
+  qrPosition = 'right',
   onQRCodeLoaded
 }: VisitorBadgeProps) => {
   // Use the provided name (for group visitors) or the primary visitor name
@@ -35,10 +35,6 @@ const VisitorBadge = ({
   // Use the provided visitor number override or the primary visitor number
   const displayVisitorNumber = visitorNumber || visitor.visitorNumber;
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [qrCodeLoaded, setQrCodeLoaded] = useState(false);
-  const [loadAttempt, setLoadAttempt] = useState(0);
-  const qrImgRef = useRef<HTMLImageElement>(null);
   
   // Get badge layout settings
   const badgeLayout = usePrinterSettings(state => state.badgeLayout);
@@ -50,111 +46,56 @@ const VisitorBadge = ({
   const formattedDate = formatInTimeZone(printTimestamp, 'Europe/Berlin', 'dd.MM.yyyy');
   const formattedTime = formatInTimeZone(printTimestamp, 'Europe/Berlin', 'HH:mm');
   
-  // Load the QR code immediately to ensure it's ready for printing
+  // Load the QR code just once without retries or complex state management
   useEffect(() => {
     let isMounted = true;
     
-    const loadQrCode = async () => {
-      if (!isMounted) return;
-      
-      setIsLoading(true);
-      try {
-        console.log(`Loading QR code for visitor ${displayVisitorNumber}, attempt ${loadAttempt + 1}`);
-        const dataUrl = await generateQRCodeDataUrl(checkoutEmailUrl, badgeLayout.qrCodeSize);
-        if (isMounted) {
-          if (dataUrl) {
-            console.log(`QR code loaded successfully for visitor ${displayVisitorNumber}`);
-            setQrCodeUrl(dataUrl);
-            setIsLoading(false);
-          } else {
-            console.error(`Failed to generate QR code for visitor ${displayVisitorNumber}`);
-            
-            // If loading fails and we haven't exceeded max attempts, try again
-            if (loadAttempt < 5) { // Increased max attempts
-              setTimeout(() => {
-                if (isMounted) {
-                  setLoadAttempt(prev => prev + 1);
-                }
-              }, 500);
-            } else {
-              setIsLoading(false);
-            }
+    // Generate QR code without any retries or complicated logic
+    generateQRCodeDataUrl(checkoutEmailUrl, badgeLayout.qrCodeSize)
+      .then((dataUrl) => {
+        if (isMounted && dataUrl) {
+          setQrCodeUrl(dataUrl);
+          if (onQRCodeLoaded) {
+            onQRCodeLoaded();
           }
         }
-      } catch (error) {
-        console.error(`Failed to generate QR code for visitor ${displayVisitorNumber}:`, error);
-        setIsLoading(false);
-        
-        // Retry on error
-        if (loadAttempt < 5) { // Increased max attempts
-          setTimeout(() => {
-            if (isMounted) {
-              setLoadAttempt(prev => prev + 1);
-            }
-          }, 800);
-        }
-      }
-    };
-    
-    loadQrCode();
+      })
+      .catch((error) => {
+        console.error("QR code generation error:", error);
+      });
     
     return () => {
       isMounted = false;
     };
-  }, [checkoutEmailUrl, badgeLayout.qrCodeSize, displayVisitorNumber, loadAttempt]);
+  }, [checkoutEmailUrl, badgeLayout.qrCodeSize, onQRCodeLoaded]);
 
-  // Handle QR code image load event
-  const handleQrCodeLoaded = () => {
-    console.log(`QR code for visitor ${displayVisitorNumber} loaded successfully`);
-    setQrCodeLoaded(true);
-    if (onQRCodeLoaded) {
-      onQRCodeLoaded();
-    }
-  };
-
-  // Font size utility function
-  const getFontSize = (size: 'small' | 'medium' | 'large') => {
-    switch (size) {
-      case 'small': 
-        return 'text-sm';
-      case 'medium': 
-        return 'text-base';
-      case 'large': 
-        return 'text-lg';
-      default: 
-        return 'text-base';
-    }
-  };
-
-  // Title font size class
-  const titleFontClass = (() => {
+  // Font size utility based on settings
+  const getTitleFontClass = () => {
     switch (badgeLayout.fontSizeTitle) {
       case 'small': return 'text-lg';
       case 'medium': return 'text-xl';
       case 'large': return 'text-2xl';
       default: return 'text-xl';
     }
-  })();
+  };
 
-  // Name font size class
-  const nameFontClass = (() => {
+  const getNameFontClass = () => {
     switch (badgeLayout.fontSizeName) {
       case 'small': return 'text-xl';
       case 'medium': return 'text-2xl';
       case 'large': return 'text-3xl';
       default: return 'text-2xl';
     }
-  })();
+  };
 
-  // Company font size class
-  const companyFontClass = (() => {
+  const getCompanyFontClass = () => {
     switch (badgeLayout.fontSizeCompany) {
       case 'small': return 'text-sm';
       case 'medium': return 'text-base';
       case 'large': return 'text-lg';
       default: return 'text-base';
     }
-  })();
+  };
 
   return (
     <div className={cn(
@@ -165,9 +106,9 @@ const VisitorBadge = ({
       "print:p-1", // Reduce padding when printing
       className
     )}>
-      {/* Badge Header - Reduced padding */}
+      {/* Badge Header */}
       <div className="badge-header border-b pb-1 pt-0 text-center">
-        <div className={`font-bold ${titleFontClass}`}>VISITOR</div>
+        <div className={`font-bold ${getTitleFontClass()}`}>VISITOR</div>
       </div>
       
       {/* Badge Content - Main area with visitor info and QR code */}
@@ -187,49 +128,41 @@ const VisitorBadge = ({
             Herr / Frau / Div
           </div>
           {displayFirstName && (
-            <div className={`first-name font-medium ${nameFontClass} truncate max-w-full text-center`}>
+            <div className={`first-name font-medium ${getNameFontClass()} truncate max-w-full text-center`}>
               {displayFirstName}
             </div>
           )}
-          <div className={`name font-bold ${nameFontClass} truncate max-w-full text-center`}>
+          <div className={`name font-bold ${getNameFontClass()} truncate max-w-full text-center`}>
             {displayName}
           </div>
-          <div className={`company ${companyFontClass} truncate max-w-full text-center`}>
+          <div className={`company ${getCompanyFontClass()} truncate max-w-full text-center`}>
             {visitor.company}
           </div>
         </div>
         
-        {/* QR code section */}
+        {/* QR code section - simplified without loading states */}
         <div className={cn(
           "qr-code-section flex flex-col items-center",
           qrPosition === 'center' ? "w-full" : "ml-2" // Reduced margin
         )}>
           <div className="qr-code-container flex items-center justify-center p-1 border border-gray-200 rounded-lg print:border-0 bg-white">
-            {isLoading ? (
-              <div className="flex flex-col items-center justify-center w-24 h-24 bg-gray-100 rounded animate-pulse print:hidden">
-                <QrCode className="w-10 h-10 text-gray-300" />
-              </div>
-            ) : qrCodeUrl ? (
+            {qrCodeUrl ? (
               <a 
                 href={checkoutEmailUrl} 
                 className="flex flex-col items-center"
                 title="Scan to open email for checkout"
               >
                 <img 
-                  ref={qrImgRef}
                   src={qrCodeUrl} 
                   alt={`QR Code for visitor ${displayVisitorNumber}`} 
                   className="object-contain"
                   style={{ width: `${badgeLayout.qrCodeSize}px`, height: `${badgeLayout.qrCodeSize}px` }}
-                  onLoad={handleQrCodeLoaded}
                 />
               </a>
             ) : (
-              <div className="flex flex-col items-center justify-center w-24 h-24 bg-gray-100 rounded print:bg-transparent">
+              <div className="flex flex-col items-center justify-center" 
+                style={{ width: `${badgeLayout.qrCodeSize}px`, height: `${badgeLayout.qrCodeSize}px` }}>
                 <QrCode className="w-10 h-10 text-gray-400" />
-                <div className="text-xs text-center mt-1 text-gray-500">
-                  QR code unavailable
-                </div>
               </div>
             )}
           </div>

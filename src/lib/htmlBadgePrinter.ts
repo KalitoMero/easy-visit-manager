@@ -1,7 +1,6 @@
 
 import { Visitor } from '@/hooks/useVisitorStore';
 import { logDebug } from './debugUtils';
-import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 
 /**
  * Prints the current page containing the visitor badge(s)
@@ -11,10 +10,7 @@ export const printVisitorBadge = async (): Promise<void> => {
   try {
     logDebug('Print', 'Starting print process');
     
-    // Add a small delay to ensure UI is fully rendered
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    // Call the browser's print function
+    // Call the browser's print function directly
     window.print();
     
     logDebug('Print', 'Print dialog opened');
@@ -47,7 +43,7 @@ export const navigateToPrintPreview = (
   
   // Use provided skipPreview or get it from settings  
   const useSkipPreview = skipPreview ?? 
-    (printerSettings?.state?.skipPrintPreview);
+    (printerSettings?.skipPrintPreview);
   
   logDebug('Print', `Print settings - Skip preview: ${useSkipPreview}`);
   
@@ -55,22 +51,26 @@ export const navigateToPrintPreview = (
     // If skip preview is enabled, print directly
     logDebug('Print', `Skipping preview and printing badge directly for visitor ${visitor.visitorNumber}`);
     
-    // Open the print page in a new window for direct printing
-     const printWindow = window.open(`/print-badge/${visitor.id}?direct=true`, '_blank');
+    // Add timestamp to prevent caching issues
+    const timestamp = new Date().getTime();
     
+    // Open the print page in a new window for direct printing
+    const printWindow = window.open(`/print-badge/${visitor.id}?direct=true&t=${timestamp}`, '_blank');
     
     // After a short delay, focus and print the new window
     if (printWindow) {
       setTimeout(() => {
         printWindow.focus();
-         printWindow.print();
-        // Print is handled in the BadgePrintPreview component when direct=true
-      }, 1000);
+        printWindow.print();
+      }, 500);
     }
   } else {
+    // Add timestamp to prevent caching issues
+    const timestamp = new Date().getTime();
+    
     // Navigate to print preview as usual
     logDebug('Print', `Navigating to print badge preview for visitor ${visitor.visitorNumber}`);
-    navigate(`/print-badge/${visitor.id}`);
+    navigate(`/print-badge/${visitor.id}?t=${timestamp}`);
   }
 };
 

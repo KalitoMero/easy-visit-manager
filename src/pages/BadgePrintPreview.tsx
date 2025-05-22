@@ -6,9 +6,8 @@ import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import VisitorBadge from '@/components/VisitorBadge';
 import { useToast } from "@/hooks/use-toast";
 import HomeButton from "@/components/HomeButton";
-import { ensureQRCodesLoaded } from '@/lib/qrCodeUtils';
 import { Button } from '@/components/ui/button';
-import { Printer, QrCode } from 'lucide-react';
+import { Printer, Home } from 'lucide-react';
 import { logDebug } from '@/lib/debugUtils';
 import { isElectron } from '@/lib/htmlBadgePrinter';
 
@@ -24,7 +23,6 @@ const BadgePrintPreview = () => {
   // Printer settings
   const { 
     enableAutomaticPrinting, 
-    printDelay,
     badgeRotation,
     badgeOffsetX,
     badgeOffsetY,
@@ -36,93 +34,14 @@ const BadgePrintPreview = () => {
   } = usePrinterSettings();
   
   // Status tracking
-  const printAttemptedRef = useRef(false);
-  const printInProgressRef = useRef(false);
   const printTimestamp = useRef(new Date()).current;
-  const redirectAttemptedRef = useRef(false);
-  
-  const [qrCodesLoaded, setQrCodesLoaded] = useState(false);
-  const [qrLoadingAttempts, setQrLoadingAttempts] = useState(0);
+  const autoPrintTriggered = useRef(false);
   const [printingCompleted, setPrintingCompleted] = useState(false);
-  const [manualPrintEnabled, setManualPrintEnabled] = useState(false);
-  const [mainQrLoaded, setMainQrLoaded] = useState(false);
-  const [additionalQrsLoaded, setAdditionalQrsLoaded] = useState({});
   
   // Find the visitor
   const visitor = visitors.find(v => v.id === id);
   const hasAdditionalVisitors = visitor?.additionalVisitors && visitor.additionalVisitors.length > 0;
 
-  // QR code load handler for main visitor
-  const handleMainQRCodeLoaded = () => {
-    logDebug('Print', "Main visitor QR code loaded successfully");
-    setMainQrLoaded(true);
-    checkAllQrCodesLoaded();
-  };
-  
-  // QR code load handler for additional visitors
-  const handleAdditionalQRCodeLoaded = (visitorId) => {
-    logDebug('Print', `Additional visitor QR code loaded for ${visitorId}`);
-    setAdditionalQrsLoaded(prev => ({...prev, [visitorId]: true}));
-    checkAllQrCodesLoaded();
-  };
-  
-  // Check if all QR codes are loaded
-  const checkAllQrCodesLoaded = () => {
-    if (!visitor) return;
-    
-    // Check main visitor QR code
-    if (!mainQrLoaded) return;
-    
-    // If there are additional visitors, check their QR codes too
-    if (hasAdditionalVisitors) {
-      const allAdditionalLoaded = visitor.additionalVisitors.every(
-        av => additionalQrsLoaded[av.id]
-      );
-      if (!allAdditionalLoaded) return;
-    }
-    
-    // All QR codes are loaded
-    setQrCodesLoaded(true);
-    logDebug('Print', "All QR codes loaded successfully");
-  };
-  
-  // Retry QR code loading
-  useEffect(() => {
-    if (!qrCodesLoaded && qrLoadingAttempts < 5 && visitor) {
-      const timer = setTimeout(() => {
-        logDebug('Print', `QR code loading attempt ${qrLoadingAttempts + 1}`);
-        setQrLoadingAttempts(prev => prev + 1);
-      }, 1000);
-      
-      return () => clearTimeout(timer);
-    }
-    
-    // Enable manual print after a few attempts
-    if (qrLoadingAttempts >= 3 && !manualPrintEnabled) {
-      setManualPrintEnabled(true);
-    }
-  }, [qrCodesLoaded, qrLoadingAttempts, visitor, manualPrintEnabled]);
-
-  // Redirect after printing is completed
-  useEffect(() => {
-    if (printingCompleted && visitor && !redirectAttemptedRef.current) {
-      redirectAttemptedRef.current = true;
-      
-      // Set a timer to redirect back to the success page
-      const redirectTimer = setTimeout(() => {
-        logDebug('Print', "Redirecting to success page after printing");
-        // If this was opened directly, close the window instead of navigating
-        if (isDirect) {
-          window.close();
-        } else {
-          navigate(`/checkin/step3/${visitor.id}`);
-        }
-      }, 1000); // Give time to ensure print dialog has processed
-      
-      return () => clearTimeout(redirectTimer);
-    }
-  }, [printingCompleted, visitor, navigate, isDirect]);
-  
   // Add print styles
   useEffect(() => {
     // Create style element for print styles
@@ -202,60 +121,70 @@ const BadgePrintPreview = () => {
     };
   }, [bottomMargin]);
   
-  // Handle automatic printing
+  // Handle automatic printing - simplified
   useEffect(() => {
-  if (
-    !visitor ||
-    printAttemptedRef.current ||
-    !enableAutomaticPrinting ||
-    printInProgressRef.current ||
-    printingCompleted
-  ) return;
-
-  if (!qrCodesLoaded) return;
-
-  printAttemptedRef.current = true;
-
-  const printBadge = async () => {
-    printInProgressRef.current = true;
-    try {
-      await new Promise(resolve => setTimeout(resolve, Math.max(printDelay, 1000)));
-      if (isElectron()) {
-        const result = await window.electronAPI.printBadge({
-          id: visitor.id,
-          name: visitor.name,
-        });
-        setPrintingCompleted(true);
-      } else {
-        window.print();
-        setPrintingCompleted(true);
-      }
-    } catch {
-      setPrintingCompleted(true);
-    } finally {
-      printInProgressRef.current = false;
+    // Skip if already completed or not a direct print request
+    if (printingCompleted || autoPrintTriggered.current || !visitor) return;
+    
+    // If automaticPrinting is enabled, or this is a direct print request
+    if (enableAutomaticPrinting || isDirect) {
+      autoPrintTriggered.current = true;
+      
+      // Small delay to ensure UI renders
+      setTimeout(() => {
+        logDebug('Print', "Starting automatic print process");
+        
+        try {
+          if (isElectron()) {
+            window.electronAPI.printBadge({
+              id: visitor.id,
+              name: visitor.name,
+            }).then(() => {
+              setPrintingCompleted(true);
+            }).catch(() => {
+              setPrintingCompleted(true);
+            });
+          } else {
+            window.print();
+            setPrintingCompleted(true);
+          }
+        } catch (error) {
+          console.error("Print error:", error);
+          setPrintingCompleted(true);
+        }
+      }, 500);
     }
-  };
-
-  printBadge();
-}, [visitor, enableAutomaticPrinting, printDelay, qrCodesLoaded]);
+  }, [visitor, enableAutomaticPrinting, isDirect, printingCompleted]);
+  
+  // Redirect after printing is completed
+  useEffect(() => {
+    if (printingCompleted && visitor) {
+      // Set a timer to redirect back
+      const redirectTimer = setTimeout(() => {
+        logDebug('Print', "Redirecting after printing");
+        // If this was opened directly, close the window instead of navigating
+        if (isDirect) {
+          window.close();
+        } else {
+          navigate(`/checkin/step3/${visitor.id}`);
+        }
+      }, 300);
+      
+      return () => clearTimeout(redirectTimer);
+    }
+  }, [printingCompleted, visitor, navigate, isDirect]);
   
   // Handle manual print
   const handleManualPrint = () => {
-    if (printInProgressRef.current) return;
-    
     toast({
       title: "Druckvorgang gestartet",
       description: "Das Druckfenster wird geöffnet...",
     });
     
-    // Set status and print
-    printInProgressRef.current = true;
     setTimeout(() => {
       window.print();
       setPrintingCompleted(true);
-      printInProgressRef.current = false;
-    }, 500);
+    }, 100);
   };
   
   // Return to success page
@@ -301,74 +230,59 @@ const BadgePrintPreview = () => {
           <h2 className="text-xl font-semibold">Besucherausweis Druckvorschau</h2>
           
           <div className="flex gap-2">
-            {manualPrintEnabled && (
-              <Button 
-                onClick={handleManualPrint}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <Printer className="h-4 w-4" />
-                Manuell drucken
-              </Button>
-            )}
+            <Button 
+              onClick={handleManualPrint}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Printer className="h-4 w-4" />
+              Drucken
+            </Button>
             
             <Button 
               onClick={handleReturn}
               variant="ghost"
+              className="flex items-center gap-2"
             >
+              <Home className="h-4 w-4" />
               Zurück
             </Button>
           </div>
         </div>
-        
-        {!qrCodesLoaded && qrLoadingAttempts > 0 && (
-          <div className="bg-amber-50 border border-amber-200 p-3 rounded-md mb-4 flex items-center gap-2">
-            <QrCode className="h-5 w-5 text-amber-600" />
-            <div>
-              <p className="font-medium text-amber-800">QR-Codes werden geladen...</p>
-              <p className="text-sm text-amber-700">Bitte warten Sie, bis alle QR-Codes vollständig geladen sind ({qrLoadingAttempts}/5 Versuche)</p>
-            </div>
-          </div>
-        )}
       </div>
       
       {/* Badge containers for printing - hidden on screen, visible when printing */}
-<div className="visitor-badge-container print:block hidden">
-  {allVisitorsToDisplay.map((visitorItem, index) => (
-    <div
-      key={`print-${visitorItem.id || index}`}
-      className="visitor-page-container"
-      style={{
-        width: '105mm',
-        height: '148mm',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        pageBreakAfter: 'always'
-      }}
-    >
-      <VisitorBadge
-        visitor={visitorItem.isMain ? visitor : {
-          ...visitor,
-          name: visitorItem.name,
-          firstName: visitorItem.firstName,
-          visitorNumber: visitorItem.visitorNumber
-        }}
-        name={!visitorItem.isMain ? visitorItem.name : undefined}
-        firstName={!visitorItem.isMain ? visitorItem.firstName : undefined}
-        visitorNumber={!visitorItem.isMain ? visitorItem.visitorNumber : undefined}
-        printTimestamp={printTimestamp}
-        qrPosition={badgeLayout.qrCodePosition || 'right'}
-        className="print-badge"
-        onQRCodeLoaded={
-          visitorItem.isMain
-            ? handleMainQRCodeLoaded
-            : () => handleAdditionalQRCodeLoaded(visitorItem.id)
-        }
-      />
-    </div>
-  ))}
-</div>
+      <div className="visitor-badge-container print:block hidden">
+        {allVisitorsToDisplay.map((visitorItem, index) => (
+          <div
+            key={`print-${visitorItem.id || index}`}
+            className="visitor-page-container"
+            style={{
+              width: '105mm',
+              height: '148mm',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              pageBreakAfter: 'always'
+            }}
+          >
+            <VisitorBadge
+              visitor={visitorItem.isMain ? visitor : {
+                ...visitor,
+                name: visitorItem.name,
+                firstName: visitorItem.firstName,
+                visitorNumber: visitorItem.visitorNumber
+              }}
+              name={!visitorItem.isMain ? visitorItem.name : undefined}
+              firstName={!visitorItem.isMain ? visitorItem.firstName : undefined}
+              visitorNumber={!visitorItem.isMain ? visitorItem.visitorNumber : undefined}
+              printTimestamp={printTimestamp}
+              qrPosition={badgeLayout.qrCodePosition || 'right'}
+              className="print-badge"
+            />
+          </div>
+        ))}
+      </div>
       
       {/* Screen preview - visible only on screen */}
       <div className="print:hidden">
@@ -409,7 +323,6 @@ const BadgePrintPreview = () => {
                   printTimestamp={printTimestamp}
                   qrPosition={badgeLayout.qrCodePosition || 'right'}
                   className="w-full h-full"
-                  onQRCodeLoaded={handleMainQRCodeLoaded}
                 />
               </div>
             </div>
@@ -449,7 +362,6 @@ const BadgePrintPreview = () => {
                   printTimestamp={printTimestamp}
                   qrPosition={badgeLayout.qrCodePosition || 'right'}
                   className="w-full h-full"
-                  onQRCodeLoaded={handleMainQRCodeLoaded}
                 />
               </div>
             </div>
@@ -477,7 +389,6 @@ const BadgePrintPreview = () => {
                     visitorNumber={additionalVisitor.visitorNumber}
                     printTimestamp={printTimestamp}
                     qrPosition={badgeLayout.qrCodePosition || 'right'}
-                    onQRCodeLoaded={() => handleAdditionalQRCodeLoaded(additionalVisitor.id)}
                   />
                 </div>
               ))}
