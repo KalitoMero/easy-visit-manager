@@ -23,25 +23,30 @@ const CheckInStep3 = () => {
   
   const { language } = useLanguageStore();
   const t = useTranslation(language);
-  const { enableAutomaticPrinting } = usePrinterSettings();
+  const { enableAutomaticPrinting, skipPrintPreview } = usePrinterSettings();
   
   // Get visitor from store using the id
   const visitor = useVisitorStore(state => {
     return id ? state.getVisitor(id) : undefined;
   });
   
+  // Flag to track if print was already initiated
+  const printInitiated = React.useRef(false);
+  
   // Handle automatic printing
   useEffect(() => {
-    if (visitor && enableAutomaticPrinting) {
-      // Add a small delay to ensure the store is updated
-      const timer = setTimeout(() => {
-        console.log("[AutoPrint] Initiating automatic print for visitor:", visitor.visitorNumber);
-        navigateToPrintPreview(visitor, navigate);
-      }, 500);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [visitor, enableAutomaticPrinting, navigate]);
+    // Skip if print was already initiated or visitor is missing
+    if (printInitiated.current || !visitor || !enableAutomaticPrinting) return;
+    
+    // Add a small delay to ensure the store is updated
+    const timer = setTimeout(() => {
+      console.log("[AutoPrint] Initiating automatic print for visitor:", visitor.visitorNumber);
+      printInitiated.current = true;
+      navigateToPrintPreview(visitor, navigate, skipPrintPreview);
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [visitor, enableAutomaticPrinting, navigate, skipPrintPreview]);
   
   // Log visitor status for debugging
   useEffect(() => {
@@ -80,7 +85,8 @@ const CheckInStep3 = () => {
   };
   
   const handlePrintBadge = () => {
-    if (visitor) {
+    if (visitor && !printInitiated.current) {
+      printInitiated.current = true;
       navigateToPrintPreview(visitor, navigate);
     }
   };
@@ -136,7 +142,7 @@ const CheckInStep3 = () => {
                 {t('backToHome')}
               </Button>
               
-              {!enableAutomaticPrinting && (
+              {!printInitiated.current && !enableAutomaticPrinting && (
                 <Button
                   onClick={handlePrintBadge}
                   className="flex items-center gap-2"

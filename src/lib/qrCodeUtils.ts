@@ -37,15 +37,10 @@ export async function generateQRCodeDataUrl(data: string, size: number = 140): P
 }
 
 /**
- * Helper function to ensure QR codes are loaded - simplified version
- * We've removed the complex loading chain as requested by the user
+ * Simplified helper function for QR code loading - non-blocking
+ * No longer waits or blocks, just calls the callback immediately
  */
-export function ensureQRCodesLoaded(callback: () => void, timeout: number = 1000): Promise<void> {
-  return new Promise<void>((resolve) => {
-    // Simple timeout to allow for DOM rendering
-    setTimeout(() => {
-      if (callback) callback();
-      resolve();
-    }, timeout);
-  });
+export function ensureQRCodesLoaded(callback: () => void): void {
+  // Execute callback immediately without waiting
+  if (callback) callback();
 }

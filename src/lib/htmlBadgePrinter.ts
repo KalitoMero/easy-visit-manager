@@ -10,7 +10,7 @@ export const printVisitorBadge = async (): Promise<void> => {
   try {
     logDebug('Print', 'Starting print process');
     
-    // Call the browser's print function directly
+    // Call the browser's print function directly without any delay
     window.print();
     
     logDebug('Print', 'Print dialog opened');
@@ -45,29 +45,23 @@ export const navigateToPrintPreview = (
   const useSkipPreview = skipPreview ?? 
     (printerSettings?.skipPrintPreview);
   
+  // Add timestamp to prevent caching issues
+  const timestamp = new Date().getTime();
+  
   logDebug('Print', `Print settings - Skip preview: ${useSkipPreview}`);
   
   if (useSkipPreview) {
     // If skip preview is enabled, print directly
     logDebug('Print', `Skipping preview and printing badge directly for visitor ${visitor.visitorNumber}`);
     
-    // Add timestamp to prevent caching issues
-    const timestamp = new Date().getTime();
-    
     // Open the print page in a new window for direct printing
     const printWindow = window.open(`/print-badge/${visitor.id}?direct=true&t=${timestamp}`, '_blank');
     
-    // After a short delay, focus and print the new window
+    // Print the new window immediately
     if (printWindow) {
-      setTimeout(() => {
-        printWindow.focus();
-        printWindow.print();
-      }, 500);
+      printWindow.focus();
     }
   } else {
-    // Add timestamp to prevent caching issues
-    const timestamp = new Date().getTime();
-    
     // Navigate to print preview as usual
     logDebug('Print', `Navigating to print badge preview for visitor ${visitor.visitorNumber}`);
     navigate(`/print-badge/${visitor.id}?t=${timestamp}`);

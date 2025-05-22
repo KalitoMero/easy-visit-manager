@@ -61,17 +61,45 @@ const BadgePrintPreview = () => {
 
         /* Position container for A6 paper */
         .visitor-badge-container {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 105mm; /* A6 width */
-          height: 148mm; /* A6 height */
-          padding: 0;
-          margin: 0;
-          padding-bottom: ${bottomMargin}mm; /* Apply bottom margin */
-          box-sizing: border-box;
-          overflow: hidden;
-          page-break-after: always;
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 105mm !important; /* A6 width */
+          height: 148mm !important; /* A6 height */
+          padding: 0 !important;
+          margin: 0 !important;
+          padding-bottom: ${bottomMargin}mm !important; /* Apply bottom margin */
+          box-sizing: border-box !important;
+          overflow: hidden !important;
+          page-break-after: always !important;
+        }
+        
+        /* Ensure both badges are visible and correctly positioned */
+        .visitor-badge-page {
+          position: relative !important;
+          width: 105mm !important;
+          height: 148mm !important;
+          page-break-after: always !important;
+        }
+        
+        /* Position the first badge at the top */
+        .visitor-badge-top {
+          position: absolute !important;
+          top: 5mm !important;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
+          width: 60mm !important;
+          height: 60mm !important;
+        }
+        
+        /* Position the second badge at the bottom */
+        .visitor-badge-bottom {
+          position: absolute !important;
+          top: 78mm !important;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
+          width: 60mm !important;
+          height: 60mm !important;
         }
         
         /* Badge dimensions: exactly 60mm x 90mm */
@@ -106,8 +134,8 @@ const BadgePrintPreview = () => {
 
         /* A6 page settings */
         @page {
-          size: 105mm 148mm;
-          margin: 0;
+          size: 105mm 148mm !important;
+          margin: 0 !important;
         }
       }
     `;
@@ -121,70 +149,68 @@ const BadgePrintPreview = () => {
     };
   }, [bottomMargin]);
   
-  // Handle automatic printing - simplified
+  // Handle automatic printing - immediately trigger printing on load
   useEffect(() => {
-    // Skip if already completed or not a direct print request
-    if (printingCompleted || autoPrintTriggered.current || !visitor) return;
+    // Skip if already triggered
+    if (autoPrintTriggered.current || !visitor) return;
     
     // If automaticPrinting is enabled, or this is a direct print request
     if (enableAutomaticPrinting || isDirect) {
       autoPrintTriggered.current = true;
       
-      // Small delay to ensure UI renders
-      setTimeout(() => {
-        logDebug('Print', "Starting automatic print process");
-        
-        try {
-          if (isElectron()) {
-            window.electronAPI.printBadge({
-              id: visitor.id,
-              name: visitor.name,
-            }).then(() => {
-              setPrintingCompleted(true);
-            }).catch(() => {
-              setPrintingCompleted(true);
-            });
-          } else {
-            window.print();
+      logDebug('Print', "Starting automatic print process");
+      
+      try {
+        if (isElectron()) {
+          window.electronAPI.printBadge({
+            id: visitor.id,
+            name: visitor.name,
+          }).then(() => {
             setPrintingCompleted(true);
-          }
-        } catch (error) {
-          console.error("Print error:", error);
+          }).catch(() => {
+            setPrintingCompleted(true);
+          });
+        } else {
+          // Directly print without delay
+          window.print();
           setPrintingCompleted(true);
         }
-      }, 500);
+      } catch (error) {
+        console.error("Print error:", error);
+        setPrintingCompleted(true);
+      }
     }
-  }, [visitor, enableAutomaticPrinting, isDirect, printingCompleted]);
+  }, [visitor, enableAutomaticPrinting, isDirect]);
   
   // Redirect after printing is completed
   useEffect(() => {
     if (printingCompleted && visitor) {
-      // Set a timer to redirect back
-      const redirectTimer = setTimeout(() => {
-        logDebug('Print', "Redirecting after printing");
-        // If this was opened directly, close the window instead of navigating
-        if (isDirect) {
-          window.close();
-        } else {
-          navigate(`/checkin/step3/${visitor.id}`);
-        }
-      }, 300);
+      logDebug('Print', "Redirecting after printing");
       
-      return () => clearTimeout(redirectTimer);
+      // If this was opened directly, close the window instead of navigating
+      if (isDirect) {
+        window.close();
+      } else {
+        navigate(`/checkin/step3/${visitor.id}`);
+      }
     }
   }, [printingCompleted, visitor, navigate, isDirect]);
   
   // Handle manual print
   const handleManualPrint = () => {
+    if (autoPrintTriggered.current) {
+      logDebug('Print', "Print already triggered, ignoring request");
+      return;
+    }
+    
     toast({
       title: "Druckvorgang gestartet",
       description: "Das Druckfenster wird geöffnet...",
     });
     
-    setTimeout(() => {
-      window.print();
-      setPrintingCompleted(true);
-    }, 100);
+    autoPrintTriggered.current = true;
+    window.print();
+    setPrintingCompleted(true);
   };
   
   // Return to success page
@@ -234,6 +260,7 @@ const BadgePrintPreview = () => {
               onClick={handleManualPrint}
               variant="outline"
               className="flex items-center gap-2"
+              disabled={autoPrintTriggered.current}
             >
               <Printer className="h-4 w-4" />
               Drucken
@@ -256,30 +283,43 @@ const BadgePrintPreview = () => {
         {allVisitorsToDisplay.map((visitorItem, index) => (
           <div
             key={`print-${visitorItem.id || index}`}
-            className="visitor-page-container"
-            style={{
-              width: '105mm',
-              height: '148mm',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              pageBreakAfter: 'always'
-            }}
+            className="visitor-badge-page"
           >
-            <VisitorBadge
-              visitor={visitorItem.isMain ? visitor : {
-                ...visitor,
-                name: visitorItem.name,
-                firstName: visitorItem.firstName,
-                visitorNumber: visitorItem.visitorNumber
-              }}
-              name={!visitorItem.isMain ? visitorItem.name : undefined}
-              firstName={!visitorItem.isMain ? visitorItem.firstName : undefined}
-              visitorNumber={!visitorItem.isMain ? visitorItem.visitorNumber : undefined}
-              printTimestamp={printTimestamp}
-              qrPosition={badgeLayout.qrCodePosition || 'right'}
-              className="print-badge"
-            />
+            {/* Top badge */}
+            <div className="visitor-badge-top">
+              <VisitorBadge
+                visitor={visitorItem.isMain ? visitor : {
+                  ...visitor,
+                  name: visitorItem.name,
+                  firstName: visitorItem.firstName,
+                  visitorNumber: visitorItem.visitorNumber
+                }}
+                name={!visitorItem.isMain ? visitorItem.name : undefined}
+                firstName={!visitorItem.isMain ? visitorItem.firstName : undefined}
+                visitorNumber={!visitorItem.isMain ? visitorItem.visitorNumber : undefined}
+                printTimestamp={printTimestamp}
+                qrPosition={badgeLayout.qrCodePosition || 'right'}
+                className="print-badge"
+              />
+            </div>
+            
+            {/* Bottom badge (duplicate) */}
+            <div className="visitor-badge-bottom">
+              <VisitorBadge
+                visitor={visitorItem.isMain ? visitor : {
+                  ...visitor,
+                  name: visitorItem.name,
+                  firstName: visitorItem.firstName,
+                  visitorNumber: visitorItem.visitorNumber
+                }}
+                name={!visitorItem.isMain ? visitorItem.name : undefined}
+                firstName={!visitorItem.isMain ? visitorItem.firstName : undefined}
+                visitorNumber={!visitorItem.isMain ? visitorItem.visitorNumber : undefined}
+                printTimestamp={printTimestamp}
+                qrPosition={badgeLayout.qrCodePosition || 'right'}
+                className="print-badge"
+              />
+            </div>
           </div>
         ))}
       </div>

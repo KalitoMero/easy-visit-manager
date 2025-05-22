@@ -6,7 +6,6 @@ import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 import VisitorBadge from '@/components/VisitorBadge';
 import { useToast } from "@/hooks/use-toast";
 import HomeButton from "@/components/HomeButton";
-import { ensureQRCodesLoaded } from '@/lib/qrCodeUtils';
 import { Button } from '@/components/ui/button';
 import { Printer, QrCode } from 'lucide-react';
 import { logDebug } from '@/lib/debugUtils';
@@ -59,17 +58,17 @@ const BadgePrintPreview = () => {
 
         /* Position container for A6 paper */
         .visitor-badge-container {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 105mm; /* A6 width */
-          height: 148mm; /* A6 height */
-          padding: 0;
-          margin: 0;
-          padding-bottom: ${bottomMargin}mm; /* Apply bottom margin */
-          box-sizing: border-box;
-          overflow: hidden;
-          page-break-after: always;
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 105mm !important; /* A6 width */
+          height: 148mm !important; /* A6 height */
+          padding: 0 !important;
+          margin: 0 !important;
+          padding-bottom: ${bottomMargin}mm !important; /* Apply bottom margin */
+          box-sizing: border-box !important;
+          overflow: hidden !important;
+          page-break-after: always !important;
         }
         
         /* Badge dimensions: exactly 60mm x 90mm */
@@ -104,8 +103,8 @@ const BadgePrintPreview = () => {
 
         /* A6 page settings */
         @page {
-          size: 105mm 148mm;
-          margin: 0;
+          size: 105mm 148mm !important;
+          margin: 0 !important;
         }
       }
     `;
@@ -128,33 +127,31 @@ const BadgePrintPreview = () => {
     if (enableAutomaticPrinting) {
       autoPrintTriggered.current = true;
       
-      // Small delay to ensure all elements render
-      setTimeout(() => {
-        logDebug('Print', "Starting automatic print process");
-        
-        try {
-          // Print via Electron API or window.print()
-          if (isElectron()) {
-            window.electronAPI.printBadge({
-              id: visitor.id,
-              name: visitor.name,
-            }).then(() => {
-              setPrintingCompleted(true);
-              navigateToSuccess();
-            }).catch(() => {
-              setPrintingCompleted(true);
-              navigateToSuccess();
-            });
-          } else {
-            window.print();
+      // Print directly without delay
+      logDebug('Print', "Starting automatic print process");
+      
+      try {
+        // Print via Electron API or window.print()
+        if (isElectron()) {
+          window.electronAPI.printBadge({
+            id: visitor.id,
+            name: visitor.name,
+          }).then(() => {
             setPrintingCompleted(true);
             navigateToSuccess();
-          }
-        } catch (error) {
-          console.error("Print error:", error);
+          }).catch(() => {
+            setPrintingCompleted(true);
+            navigateToSuccess();
+          });
+        } else {
+          window.print();
           setPrintingCompleted(true);
+          navigateToSuccess();
         }
-      }, 500);
+      } catch (error) {
+        console.error("Print error:", error);
+        setPrintingCompleted(true);
+      }
     }
   }, [visitor, enableAutomaticPrinting, printingCompleted]);
   
@@ -178,11 +175,9 @@ const BadgePrintPreview = () => {
     
     // Set status and print
     autoPrintTriggered.current = true;
-    setTimeout(() => {
-      window.print();
-      setPrintingCompleted(true);
-      navigateToSuccess();
-    }, 500);
+    window.print();
+    setPrintingCompleted(true);
+    navigateToSuccess();
   };
   
   // Return to success page
@@ -217,6 +212,7 @@ const BadgePrintPreview = () => {
               onClick={handleManualPrint}
               variant="outline"
               className="flex items-center gap-2"
+              disabled={autoPrintTriggered.current}
             >
               <Printer className="h-4 w-4" />
               Manuell drucken
@@ -261,7 +257,7 @@ const BadgePrintPreview = () => {
             <div style={{
               transform: `translate(${badgeOffsetX}mm, ${badgeOffsetY}mm) rotate(${badgeRotation}deg)`,
               width: '60mm', /* 6cm */
-              height: '72mm', /* 9cm */
+              height: '90mm', /* 9cm */
               boxSizing: 'border-box'
             }}>
               <VisitorBadge 
@@ -291,7 +287,7 @@ const BadgePrintPreview = () => {
             <div style={{
               transform: `translate(${secondBadgeOffsetX}mm, ${secondBadgeOffsetY}mm) rotate(${secondBadgeRotation}deg)`,
               width: '60mm', /* 6cm */
-              height: '72mm', /* 9cm */
+              height: '90mm', /* 9cm */
               boxSizing: 'border-box'
             }}>
               <VisitorBadge 
@@ -335,7 +331,7 @@ const BadgePrintPreview = () => {
                 transition: 'transform 0.2s ease-in-out',
                 scale: '0.7',
                 width: '60mm',
-                height: '72mm',
+                height: '90mm',
                 boxSizing: 'border-box'
               }}>
                 <VisitorBadge 
@@ -374,7 +370,7 @@ const BadgePrintPreview = () => {
                 transition: 'transform 0.2s ease-in-out',
                 scale: '0.7',
                 width: '60mm',
-                height: '72mm',
+                height: '90mm',
                 boxSizing: 'border-box'
               }}>
                 <VisitorBadge 

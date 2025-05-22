@@ -46,11 +46,11 @@ const VisitorBadge = ({
   const formattedDate = formatInTimeZone(printTimestamp, 'Europe/Berlin', 'dd.MM.yyyy');
   const formattedTime = formatInTimeZone(printTimestamp, 'Europe/Berlin', 'HH:mm');
   
-  // Load the QR code just once without retries or complex state management
+  // Load the QR code just once without any delays or waiting
   useEffect(() => {
     let isMounted = true;
     
-    // Generate QR code without any retries or complicated logic
+    // Generate QR code without any complex logic
     generateQRCodeDataUrl(checkoutEmailUrl, badgeLayout.qrCodeSize)
       .then((dataUrl) => {
         if (isMounted && dataUrl) {
@@ -62,6 +62,7 @@ const VisitorBadge = ({
       })
       .catch((error) => {
         console.error("QR code generation error:", error);
+        // Continue even if QR code fails
       });
     
     return () => {
