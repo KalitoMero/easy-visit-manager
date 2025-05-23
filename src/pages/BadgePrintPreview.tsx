@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
@@ -6,7 +7,7 @@ import VisitorBadge from '@/components/VisitorBadge';
 import { useToast } from "@/hooks/use-toast";
 import HomeButton from "@/components/HomeButton";
 import { Button } from '@/components/ui/button';
-import { Printer, Home } from 'lucide-react';
+import { Printer, Home, ChevronLeft, ChevronRight } from 'lucide-react';
 import { logDebug } from '@/lib/debugUtils';
 import { isElectron, createPrintController, resetPrintStatus } from '@/lib/htmlBadgePrinter';
 import { preloadQRCodes } from '@/lib/qrCodeUtils';
@@ -45,10 +46,35 @@ const BadgePrintPreview = () => {
   const printInitiatedRef = useRef(false);
   const redirectedRef = useRef(false);
   
+  // State to track which visitor badge is currently being previewed
+  const [currentVisitorIndex, setCurrentVisitorIndex] = useState(0);
+  
   // Find visitor
   const visitor = visitors.find(v => v.id === id);
   const hasAdditionalVisitors = visitor?.additionalVisitors && visitor.additionalVisitors.length > 0;
 
+  // Prepare all visitors for display and printing
+  const allVisitorsToDisplay = React.useMemo(() => {
+    if (!visitor) return [];
+    
+    return [
+      { 
+        ...visitor,
+        isMain: true 
+      },
+      ...(visitor.additionalVisitors?.map(av => ({
+        ...av,
+        company: visitor.company,
+        contact: visitor.contact,
+        checkInTime: visitor.checkInTime,
+        isMain: false
+      })) || [])
+    ];
+  }, [visitor]);
+  
+  // Get current visitor for preview
+  const currentVisitor = allVisitorsToDisplay[currentVisitorIndex] || allVisitorsToDisplay[0];
+  
   // Prepare visitorNumbers array for QR code preloading
   const allVisitorNumbers = React.useMemo(() => {
     if (!visitor) return [];
@@ -373,6 +399,20 @@ const BadgePrintPreview = () => {
     }
   };
   
+  // Navigate to previous visitor badge
+  const showPreviousBadge = () => {
+    if (currentVisitorIndex > 0) {
+      setCurrentVisitorIndex(currentVisitorIndex - 1);
+    }
+  };
+  
+  // Navigate to next visitor badge
+  const showNextBadge = () => {
+    if (currentVisitorIndex < allVisitorsToDisplay.length - 1) {
+      setCurrentVisitorIndex(currentVisitorIndex + 1);
+    }
+  };
+  
   if (!visitor) {
     return (
       <div className="p-8 text-center">
@@ -382,21 +422,6 @@ const BadgePrintPreview = () => {
     );
   }
   
-  // Prepare array of all visitors to display (main visitor + additional)
-  const allVisitorsToDisplay = [
-    { 
-      ...visitor,
-      isMain: true 
-    },
-    ...(visitor.additionalVisitors?.map(av => ({
-      ...av,
-      company: visitor.company,
-      contact: visitor.contact,
-      checkInTime: visitor.checkInTime,
-      isMain: false
-    })) || [])
-  ];
-  
   return (
     <div className="p-4 flex flex-col gap-4 print:p-0">
       {/* UI controls - only visible on screen */}
@@ -404,7 +429,14 @@ const BadgePrintPreview = () => {
         <HomeButton />
         
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">Besucherausweis Druckvorschau</h2>
+          <h2 className="text-xl font-semibold">
+            Besucherausweis Druckvorschau
+            {allVisitorsToDisplay.length > 1 && (
+              <span className="ml-2 text-sm text-muted-foreground">
+                ({currentVisitorIndex + 1} von {allVisitorsToDisplay.length})
+              </span>
+            )}
+          </h2>
           
           <div className="flex gap-2">
             <Button 
@@ -482,7 +514,46 @@ const BadgePrintPreview = () => {
       <div className="print:hidden">
         {/* Screen preview layout */}
         <div className="mb-8">
-          <h2 className="text-lg font-medium mb-2">Druckvorschau (A6-Format)</h2>
+          <h2 className="text-lg font-medium mb-2">
+            Druckvorschau (A6-Format)
+            {allVisitorsToDisplay.length > 1 && (
+              <span className="ml-2 text-sm text-muted-foreground">
+                - Ausweis {currentVisitorIndex + 1} von {allVisitorsToDisplay.length}
+              </span>
+            )}
+          </h2>
+          
+          {/* Badge preview navigation buttons */}
+          {allVisitorsToDisplay.length > 1 && (
+            <div className="flex justify-center items-center gap-2 mb-4">
+              <Button
+                onClick={showPreviousBadge}
+                variant="outline"
+                size="sm"
+                disabled={currentVisitorIndex <= 0}
+                className="flex items-center"
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Vorheriger
+              </Button>
+              
+              <span className="text-sm">
+                {currentVisitorIndex + 1} / {allVisitorsToDisplay.length}
+              </span>
+              
+              <Button
+                onClick={showNextBadge}
+                variant="outline"
+                size="sm"
+                disabled={currentVisitorIndex >= allVisitorsToDisplay.length - 1}
+                className="flex items-center"
+              >
+                Nächster
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          )}
+          
           <div className="border border-gray-300 rounded-md p-4 bg-white" style={{ 
             width: '105mm', 
             height: '148mm',
@@ -513,7 +584,15 @@ const BadgePrintPreview = () => {
                 boxSizing: 'border-box'
               }}>
                 <VisitorBadge 
-                  visitor={visitor} 
+                  visitor={currentVisitor.isMain ? visitor : {
+                    ...visitor,
+                    name: currentVisitor.name,
+                    firstName: currentVisitor.firstName,
+                    visitorNumber: currentVisitor.visitorNumber
+                  }}
+                  name={!currentVisitor.isMain ? currentVisitor.name : undefined}
+                  firstName={!currentVisitor.isMain ? currentVisitor.firstName : undefined}
+                  visitorNumber={!currentVisitor.isMain ? currentVisitor.visitorNumber : undefined}
                   printTimestamp={printTimestamp}
                   qrPosition={badgeLayout.qrCodePosition || 'right'}
                   className="w-full h-full"
@@ -521,14 +600,15 @@ const BadgePrintPreview = () => {
               </div>
             </div>
             
-            {/* Middle divider */}
+            {/* Middle divider - only visible in preview */}
             <div style={{
               position: 'absolute',
               top: '70mm',
               left: '0',
-              height: '0',        // von ganz oben bis ganz unten
+              height: '0',
               width: '100%',  
-              borderTop: '1px dashed #ccc'
+              borderTop: '1px dashed #ccc',
+              className: 'badge-divider'
             }}></div>
             
             {/* Bottom badge preview */}
@@ -553,7 +633,15 @@ const BadgePrintPreview = () => {
                 boxSizing: 'border-box'
               }}>
                 <VisitorBadge 
-                  visitor={visitor} 
+                  visitor={currentVisitor.isMain ? visitor : {
+                    ...visitor,
+                    name: currentVisitor.name,
+                    firstName: currentVisitor.firstName,
+                    visitorNumber: currentVisitor.visitorNumber
+                  }}
+                  name={!currentVisitor.isMain ? currentVisitor.name : undefined}
+                  firstName={!currentVisitor.isMain ? currentVisitor.firstName : undefined}
+                  visitorNumber={!currentVisitor.isMain ? currentVisitor.visitorNumber : undefined}
                   printTimestamp={printTimestamp}
                   qrPosition={badgeLayout.qrCodePosition || 'right'}
                   className="w-full h-full"
@@ -563,28 +651,41 @@ const BadgePrintPreview = () => {
           </div>
         </div>
         
-        {/* Additional visitors section */}
+        {/* Additional visitors thumbnails section */}
         {hasAdditionalVisitors && (
           <div className="mt-8 mb-4">
-            <h2 className="text-lg font-medium mb-4">Zusätzliche Besucher</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {visitor.additionalVisitors.map((additionalVisitor) => (
-                <div key={additionalVisitor.id} className="border border-gray-200 rounded-md p-4 bg-white">
-                  <h3 className="text-md font-medium mb-2">{additionalVisitor.name}</h3>
-                  <p className="text-sm text-gray-500 mb-2">Besuchernummer: {additionalVisitor.visitorNumber}</p>
-                  <VisitorBadge 
-                    visitor={{
-                      ...visitor,
-                      name: additionalVisitor.name,
-                      firstName: additionalVisitor.firstName,
-                      visitorNumber: additionalVisitor.visitorNumber
-                    }}
-                    name={additionalVisitor.name}
-                    firstName={additionalVisitor.firstName}
-                    visitorNumber={additionalVisitor.visitorNumber}
-                    printTimestamp={printTimestamp}
-                    qrPosition={badgeLayout.qrCodePosition || 'right'}
-                  />
+            <h2 className="text-lg font-medium mb-4">Alle Besucherausweise</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {allVisitorsToDisplay.map((visitorItem, index) => (
+                <div 
+                  key={`thumb-${index}`}
+                  className={`cursor-pointer border rounded-md p-3 ${currentVisitorIndex === index ? 'border-primary bg-primary/5' : 'border-gray-200'}`}
+                  onClick={() => setCurrentVisitorIndex(index)}
+                >
+                  <div className="text-sm font-medium mb-1">
+                    {visitorItem.isMain ? visitor.name : visitorItem.name}
+                  </div>
+                  <div className="text-xs text-muted-foreground mb-2">
+                    #{visitorItem.isMain ? visitor.visitorNumber : visitorItem.visitorNumber}
+                  </div>
+                  <div className="flex justify-center">
+                    <div className="transform scale-50 origin-top">
+                      <VisitorBadge 
+                        visitor={visitorItem.isMain ? visitor : {
+                          ...visitor,
+                          name: visitorItem.name,
+                          firstName: visitorItem.firstName,
+                          visitorNumber: visitorItem.visitorNumber
+                        }}
+                        name={!visitorItem.isMain ? visitorItem.name : undefined}
+                        firstName={!visitorItem.isMain ? visitorItem.firstName : undefined}
+                        visitorNumber={!visitorItem.isMain ? visitorItem.visitorNumber : undefined}
+                        printTimestamp={printTimestamp}
+                        qrPosition={badgeLayout.qrCodePosition || 'right'}
+                        className="transform scale-50"
+                      />
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
