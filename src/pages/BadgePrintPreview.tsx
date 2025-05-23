@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
@@ -607,8 +606,7 @@ const BadgePrintPreview = () => {
               left: '0',
               height: '0',
               width: '100%',  
-              borderTop: '1px dashed #ccc',
-              className: 'badge-divider'
+              borderTop: '1px dashed #ccc'
             }}></div>
             
             {/* Bottom badge preview */}
