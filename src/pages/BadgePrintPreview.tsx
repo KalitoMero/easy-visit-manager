@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
@@ -208,14 +207,10 @@ const BadgePrintPreview = () => {
           overflow: visible !important;
         }
         
-        /* Add divider line */
+        /* Hide divider line when printing */
         .badge-divider {
-          border-top: 1px dashed #999 !important;
-          width: 100% !important;
-          position: absolute !important;
-          top: 74mm !important;
-          left: 0 !important;
-          visibility: visible !important;
+          display: none !important;
+          visibility: hidden !important;
         }
         
         /* Badge dimensions: exactly 60mm x 69mm */
