@@ -529,10 +529,10 @@ const BadgePrintPreview = () => {
             {/* Middle divider */}
             <div style={{
               position: 'absolute',
-              top: '50%',
-              left: '52.5mm',
+              top: '74mm',
+              left: '0',
               height: '100%',        // von ganz oben bis ganz unten
-              width: '1px', 
+              width: '100%',  
               borderTop: '1px dashed #ccc'
             }}></div>
             
