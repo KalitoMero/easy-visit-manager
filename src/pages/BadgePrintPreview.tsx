@@ -531,7 +531,7 @@ const BadgePrintPreview = () => {
               position: 'absolute',
               top: '50%',
               left: '0',
-              width: '100%',
+              width: '90%',
               borderTop: '1px dashed #ccc'
             }}></div>
             
