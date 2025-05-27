@@ -1,17 +1,19 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { apiClient } from '@/lib/apiClient';
 
 export type AdditionalVisitor = {
   id: string;
   name: string;
-  firstName?: string; // Add firstName field
+  firstName?: string;
   visitorNumber: number;
 };
 
 export type Visitor = {
   id: string;
   name: string;
-  firstName?: string; // Add firstName field
+  firstName?: string;
   company: string;
   contact: string;
   visitorNumber: number;
@@ -21,7 +23,7 @@ export type Visitor = {
   additionalVisitorCount: number;
   notes?: string;
   policyAccepted?: boolean;
-  signature?: string | null; // Signature as Base64 string
+  signature?: string | null;
 };
 
 type DeletionSchedule = {
@@ -42,59 +44,37 @@ type AutoCheckoutSchedule = {
 type VisitorStore = {
   visitors: Visitor[];
   visitorCounter: number;
+  isLoading: boolean;
   deletionSchedule: DeletionSchedule;
   autoCheckoutSchedule: AutoCheckoutSchedule;
-  addVisitor: (firstName: string, name: string, company: string, contact: string) => Visitor;
-  addGroupVisitor: (visitors: Array<{ name: string, firstName?: string }>, company: string, contact: string) => Visitor;
-  checkOutVisitor: (id: string) => void;
+  
+  // API methods
+  loadVisitors: () => Promise<void>;
+  addVisitor: (firstName: string, name: string, company: string, contact: string) => Promise<Visitor>;
+  addGroupVisitor: (visitors: Array<{ name: string, firstName?: string }>, company: string, contact: string) => Promise<Visitor>;
+  checkOutVisitor: (id: string) => Promise<void>;
   getVisitor: (id: string) => Visitor | undefined;
   getVisitorByNumber: (visitorNumber: number) => Visitor | undefined;
-  updateVisitor: (id: string, updates: Partial<Omit<Visitor, 'id'>>) => void;
-  deleteVisitor: (id: string) => void;
-  clearVisitors: () => void;
+  updateVisitor: (id: string, updates: Partial<Omit<Visitor, 'id'>>) => Promise<void>;
+  deleteVisitor: (id: string) => Promise<void>;
+  clearVisitors: () => Promise<void>;
   searchVisitors: (query: string) => Visitor[];
-  acceptPolicy: (id: string, signature?: string | null) => void;
+  acceptPolicy: (id: string, signature?: string | null) => Promise<void>;
   updateDeletionSchedule: (enabled: boolean, dayOfWeek: number, hour: number, minute: number) => void;
   updateAutoCheckoutSchedule: (enabled: boolean, hour: number, minute: number) => void;
-  deleteOldVisitors: () => number;
-  checkOutAllVisitors: () => number;
+  deleteOldVisitors: () => Promise<number>;
+  checkOutAllVisitors: () => Promise<number>;
   performScheduledCheckout: () => void;
   performScheduledAutoCheckout: () => void;
-  resetVisitorCounter: (newCounter?: number) => void;
+  resetVisitorCounter: (newCounter?: number) => Promise<void>;
   getActiveVisitors: () => Visitor[];
   getInactiveVisitors: () => Visitor[];
   downloadSignature: (id: string) => void;
+  
+  // Utility methods
+  loadVisitorCounter: () => Promise<void>;
 };
 
-// Helper function for auto checkout initialization
-export const initializeAutoCheckout = () => {
-  // Check for auto-checkout schedule every 5 minutes
-  const checkTime = () => {
-    const now = new Date();
-    const state = useVisitorStore.getState();
-    
-    // Check if we need to perform automated checkout based on schedule
-    if (state.autoCheckoutSchedule.enabled) {
-      const { hour, minute } = state.autoCheckoutSchedule;
-      if (now.getHours() === hour && Math.floor(now.getMinutes() / 5) === Math.floor(minute / 5)) {
-        state.performScheduledAutoCheckout();
-      }
-    }
-    
-    // Legacy 8 PM checkout (can now be removed or replaced)
-    if (now.getHours() === 20) { // 8 PM
-      state.performScheduledCheckout();
-    }
-  };
-  
-  // Run check every 5 minutes
-  const timer = setInterval(checkTime, 5 * 60 * 1000);
-  
-  // Return cleanup function
-  return () => clearInterval(timer);
-};
-
-// Default values
 const DEFAULT_VISITOR_COUNTER = 100;
 
 export const useVisitorStore = create<VisitorStore>()(
@@ -102,121 +82,111 @@ export const useVisitorStore = create<VisitorStore>()(
     (set, get) => ({
       visitors: [],
       visitorCounter: DEFAULT_VISITOR_COUNTER,
+      isLoading: false,
       deletionSchedule: {
         enabled: false,
-        dayOfWeek: 0, // Sunday
-        hour: 3, // 3 AM
+        dayOfWeek: 0,
+        hour: 3,
         minute: 0,
       },
       autoCheckoutSchedule: {
         enabled: false,
-        hour: 17, // 5 PM default
+        hour: 17,
         minute: 0,
         lastRun: undefined
       },
       
-      addVisitor: (firstName, name, company, contact) => {
-        const { visitors, visitorCounter } = get();
-        const newVisitor: Visitor = {
-          id: crypto.randomUUID ? crypto.randomUUID() : `visitor-${Date.now()}`,
-          name,
-          firstName,
-          company,
-          contact,
-          visitorNumber: visitorCounter,
-          checkInTime: new Date().toISOString(),
-          additionalVisitorCount: 0,
-          checkOutTime: null, // Explicitly set to null to mark visitor as active
-        };
-        
-        console.log("Adding new visitor:", newVisitor);
-        
-        set({ 
-          visitors: [newVisitor, ...visitors],
-          visitorCounter: visitorCounter + 1 
-        });
-        
-        return newVisitor;
-      },
-      
-      addGroupVisitor: (visitorList, company, contact) => {
-        const { visitors, visitorCounter } = get();
-        let currentVisitorNumber = visitorCounter;
-        
-        // Create the main visitor from the first person in the list
-        const mainVisitor = visitorList[0];
-        const additionalVisitors = visitorList.slice(1).map((visitor, index) => {
-          currentVisitorNumber++;
-          return {
-            id: crypto.randomUUID ? crypto.randomUUID() : `visitor-add-${Date.now()}-${index}`,
-            name: visitor.name,
-            firstName: visitor.firstName,
-            visitorNumber: currentVisitorNumber
-          };
-        });
-        
-        const newVisitor: Visitor = {
-          id: crypto.randomUUID ? crypto.randomUUID() : `visitor-${Date.now()}`,
-          name: mainVisitor.name,
-          firstName: mainVisitor.firstName,
-          company,
-          contact,
-          visitorNumber: visitorCounter,
-          checkInTime: new Date().toISOString(),
-          additionalVisitors,
-          additionalVisitorCount: additionalVisitors.length,
-          checkOutTime: null, // Explicitly set to null to mark visitor as active
-        };
-        
-        console.log("Adding new group visitor:", newVisitor);
-        
-        set({ 
-          visitors: [newVisitor, ...visitors],
-          visitorCounter: currentVisitorNumber + 1
-        });
-        
-        return newVisitor;
-      },
-      
-      checkOutVisitor: (id) => {
-        set((state) => {
-          // Find the visitor to check out
-          const visitorToCheckOut = state.visitors.find(v => v.id === id);
-          if (visitorToCheckOut) {
-            console.log(`Checking out visitor ${visitorToCheckOut.visitorNumber}`);
+      loadVisitors: async () => {
+        set({ isLoading: true });
+        try {
+          const response = await apiClient.getVisitors();
+          if (response.data) {
+            set({ visitors: response.data });
           }
-          
-          return {
-            visitors: state.visitors.map((visitor) =>
-              visitor.id === id ? { ...visitor, checkOutTime: new Date().toISOString() } : visitor
-            ),
-          };
-        });
+        } catch (error) {
+          console.error('Error loading visitors:', error);
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      loadVisitorCounter: async () => {
+        try {
+          const response = await apiClient.getVisitorCounter();
+          if (response.data) {
+            set({ visitorCounter: response.data.value });
+          }
+        } catch (error) {
+          console.error('Error loading visitor counter:', error);
+        }
       },
       
-      acceptPolicy: (id, signature = null) => {
-        console.log(`Accepting policy for visitor ID: ${id} with signature: ${signature ? 'provided' : 'none'}`);
+      addVisitor: async (firstName, name, company, contact) => {
+        const visitorData = {
+          firstName,
+          name,
+          company,
+          contact,
+          additionalVisitors: []
+        };
         
-        set((state) => {
-          // Update only policyAccepted and signature fields, preserving all other fields including checkOutTime
-          const updatedVisitors = state.visitors.map((visitor) => {
-            if (visitor.id === id) {
-              // Keep all existing fields, only update policyAccepted and signature
-              return {
-                ...visitor,
-                policyAccepted: true,
-                signature
-              };
-            }
-            return visitor;
-          });
-          
-          // Get the updated visitor for logging
-          const updatedVisitor = updatedVisitors.find(v => v.id === id);
-          console.log("Visitor after policy acceptance:", updatedVisitor);
-          
-          return { visitors: updatedVisitors };
-        });
+        const response = await apiClient.createVisitor(visitorData);
+        if (response.data) {
+          set(state => ({ 
+            visitors: [response.data, ...state.visitors],
+            visitorCounter: response.data.visitorNumber + 1
+          }));
+          return response.data;
+        }
+        throw new Error(response.error || 'Failed to create visitor');
+      },
+      
+      addGroupVisitor: async (visitorList, company, contact) => {
+        const mainVisitor = visitorList[0];
+        const additionalVisitors = visitorList.slice(1);
+        
+        const visitorData = {
+          firstName: mainVisitor.firstName,
+          name: mainVisitor.name,
+          company,
+          contact,
+          additionalVisitors
+        };
+        
+        const response = await apiClient.createVisitor(visitorData);
+        if (response.data) {
+          set(state => ({ 
+            visitors: [response.data, ...state.visitors]
+          }));
+          return response.data;
+        }
+        throw new Error(response.error || 'Failed to create group visitor');
+      },
+      
+      checkOutVisitor: async (id) => {
+        const updates = { checkOutTime: new Date().toISOString() };
+        const response = await apiClient.updateVisitor(id, updates);
+        
+        if (!response.error) {
+          set(state => ({
+            visitors: state.visitors.map(visitor =>
+              visitor.id === id ? { ...visitor, checkOutTime: updates.checkOutTime } : visitor
+            )
+          }));
+        }
+      },
+      
+      acceptPolicy: async (id, signature = null) => {
+        const updates = { policyAccepted: true, signature };
+        const response = await apiClient.updateVisitor(id, updates);
+        
+        if (!response.error) {
+          set(state => ({
+            visitors: state.visitors.map(visitor =>
+              visitor.id === id ? { ...visitor, ...updates } : visitor
+            )
+          }));
+        }
       },
       
       getVisitor: (id) => {
@@ -229,22 +199,37 @@ export const useVisitorStore = create<VisitorStore>()(
         return visitors.find((visitor) => visitor.visitorNumber === visitorNumber);
       },
       
-      updateVisitor: (id, updates) => {
-        console.log(`Updating visitor ${id} with:`, updates);
-        set((state) => ({
-          visitors: state.visitors.map((visitor) =>
-            visitor.id === id ? { ...visitor, ...updates } : visitor
-          ),
-        }));
+      updateVisitor: async (id, updates) => {
+        const response = await apiClient.updateVisitor(id, updates);
+        
+        if (!response.error) {
+          set(state => ({
+            visitors: state.visitors.map(visitor =>
+              visitor.id === id ? { ...visitor, ...updates } : visitor
+            )
+          }));
+        }
       },
       
-      deleteVisitor: (id) => {
-        set((state) => ({
-          visitors: state.visitors.filter((visitor) => visitor.id !== id),
-        }));
+      deleteVisitor: async (id) => {
+        const response = await apiClient.deleteVisitor(id);
+        
+        if (!response.error) {
+          set(state => ({
+            visitors: state.visitors.filter(visitor => visitor.id !== id)
+          }));
+        }
       },
       
-      clearVisitors: () => {
+      clearVisitors: async () => {
+        // For now, we'll delete all visitors one by one
+        // In a real implementation, you might want to add a bulk delete endpoint
+        const { visitors } = get();
+        for (const visitor of visitors) {
+          await apiClient.deleteVisitor(visitor.id);
+        }
+        
+        await apiClient.updateVisitorCounter(DEFAULT_VISITOR_COUNTER);
         set({ visitors: [], visitorCounter: DEFAULT_VISITOR_COUNTER });
       },
       
@@ -262,7 +247,7 @@ export const useVisitorStore = create<VisitorStore>()(
       },
       
       updateDeletionSchedule: (enabled, dayOfWeek, hour, minute) => {
-        set((state) => ({
+        set(state => ({
           deletionSchedule: {
             ...state.deletionSchedule,
             enabled,
@@ -274,18 +259,18 @@ export const useVisitorStore = create<VisitorStore>()(
       },
 
       updateAutoCheckoutSchedule: (enabled, hour, minute) => {
-        set((state) => ({
+        set(state => ({
           autoCheckoutSchedule: {
             ...state.autoCheckoutSchedule,
             enabled,
             hour,
             minute,
-            lastRun: new Date().toISOString() // Update the last run time
+            lastRun: new Date().toISOString()
           }
         }));
       },
       
-      deleteOldVisitors: () => {
+      deleteOldVisitors: async () => {
         const { visitors } = get();
         const inactiveVisitors = visitors.filter(v => v.checkOutTime !== null);
         
@@ -293,8 +278,13 @@ export const useVisitorStore = create<VisitorStore>()(
           return 0;
         }
 
-        set((state) => ({
-          visitors: state.visitors.filter((visitor) => visitor.checkOutTime === null),
+        // Delete inactive visitors from API
+        for (const visitor of inactiveVisitors) {
+          await apiClient.deleteVisitor(visitor.id);
+        }
+
+        set(state => ({
+          visitors: state.visitors.filter(visitor => visitor.checkOutTime === null),
           deletionSchedule: {
             ...state.deletionSchedule,
             lastRun: new Date().toISOString()
@@ -304,7 +294,7 @@ export const useVisitorStore = create<VisitorStore>()(
         return inactiveVisitors.length;
       },
       
-      checkOutAllVisitors: () => {
+      checkOutAllVisitors: async () => {
         const { visitors } = get();
         const activeVisitors = visitors.filter(v => v.checkOutTime === null);
         
@@ -314,8 +304,13 @@ export const useVisitorStore = create<VisitorStore>()(
 
         const now = new Date().toISOString();
         
-        set((state) => ({
-          visitors: state.visitors.map((visitor) => 
+        // Update all active visitors
+        for (const visitor of activeVisitors) {
+          await apiClient.updateVisitor(visitor.id, { checkOutTime: now });
+        }
+
+        set(state => ({
+          visitors: state.visitors.map(visitor => 
             visitor.checkOutTime === null 
               ? { ...visitor, checkOutTime: now } 
               : visitor
@@ -329,48 +324,23 @@ export const useVisitorStore = create<VisitorStore>()(
         const today = new Date();
         const hour = today.getHours();
         
-        // Auto check out remaining visitors at 8 PM
         if (hour === 20) {
           console.log("Performing scheduled checkout at", today.toLocaleTimeString());
-          
-          set((state) => ({
-            visitors: state.visitors.map((visitor) =>
-              visitor.checkOutTime === null 
-                ? { ...visitor, checkOutTime: new Date().toISOString() } 
-                : visitor
-            ),
-          }));
+          get().checkOutAllVisitors();
         }
       },
       
       performScheduledAutoCheckout: () => {
         const now = new Date();
         console.log("Performing auto checkout at", now.toLocaleTimeString());
-        
-        set((state) => {
-          // Check out all active visitors
-          const updatedVisitors = state.visitors.map((visitor) =>
-            visitor.checkOutTime === null 
-              ? { ...visitor, checkOutTime: now.toISOString() } 
-              : visitor
-          );
-          
-          // Update the last run time
-          return {
-            visitors: updatedVisitors,
-            autoCheckoutSchedule: {
-              ...state.autoCheckoutSchedule,
-              lastRun: now.toISOString()
-            }
-          };
-        });
+        get().checkOutAllVisitors();
       },
       
-      resetVisitorCounter: (newCounter = DEFAULT_VISITOR_COUNTER) => {
+      resetVisitorCounter: async (newCounter = DEFAULT_VISITOR_COUNTER) => {
+        await apiClient.updateVisitorCounter(newCounter);
         set({ visitorCounter: newCounter });
       },
 
-      // Functions for better separation of active and inactive visitors
       getActiveVisitors: () => {
         return get().visitors.filter(visitor => visitor.checkOutTime === null);
       },
@@ -379,15 +349,12 @@ export const useVisitorStore = create<VisitorStore>()(
         return get().visitors.filter(visitor => visitor.checkOutTime !== null);
       },
       
-      // Function to download the signature
       downloadSignature: (id) => {
         const visitor = get().visitors.find(v => v.id === id);
         if (!visitor || !visitor.signature) return;
         
-        // Generate filename
         const fileName = `signature_${visitor.name.replace(/\s+/g, '_')}_${visitor.visitorNumber}.png`;
         
-        // Create link and trigger download
         const link = document.createElement('a');
         link.href = visitor.signature;
         link.download = fileName;
@@ -398,15 +365,32 @@ export const useVisitorStore = create<VisitorStore>()(
     }),
     {
       name: 'visitor-storage',
-      onRehydrateStorage: (state) => {
-        // Ensure visitor counter starts at least at the default value during initialization
-        return (rehydratedState, error) => {
-          if (!error && rehydratedState && rehydratedState.visitorCounter < DEFAULT_VISITOR_COUNTER) {
-            console.log(`Correcting visitor counter from ${rehydratedState.visitorCounter} to ${DEFAULT_VISITOR_COUNTER}`);
-            rehydratedState.visitorCounter = DEFAULT_VISITOR_COUNTER;
-          }
-        };
-      }
+      partialize: (state) => ({
+        deletionSchedule: state.deletionSchedule,
+        autoCheckoutSchedule: state.autoCheckoutSchedule,
+      })
     }
   )
 );
+
+// Initialize auto checkout
+export const initializeAutoCheckout = () => {
+  const checkTime = () => {
+    const now = new Date();
+    const state = useVisitorStore.getState();
+    
+    if (state.autoCheckoutSchedule.enabled) {
+      const { hour, minute } = state.autoCheckoutSchedule;
+      if (now.getHours() === hour && Math.floor(now.getMinutes() / 5) === Math.floor(minute / 5)) {
+        state.performScheduledAutoCheckout();
+      }
+    }
+    
+    if (now.getHours() === 20) {
+      state.performScheduledCheckout();
+    }
+  };
+  
+  const timer = setInterval(checkTime, 5 * 60 * 1000);
+  return () => clearInterval(timer);
+};

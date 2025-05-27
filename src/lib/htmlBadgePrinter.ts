@@ -258,10 +258,10 @@ export const navigateToPrintPreview = (
 };
 
 /**
- * Helper function to check if we're running in Electron
+ * Helper function to check if we're running in Electron - always returns false now
  */
 export const isElectron = (): boolean => {
-  return window && window.electronAPI && window.electronAPI.isElectron === true;
+  return false; // No more Electron support
 };
 
 /**

@@ -8,7 +8,7 @@ import HomeButton from "@/components/HomeButton";
 import { Button } from '@/components/ui/button';
 import { Printer, Home, ChevronLeft, ChevronRight } from 'lucide-react';
 import { logDebug } from '@/lib/debugUtils';
-import { isElectron, createPrintController, resetPrintStatus } from '@/lib/htmlBadgePrinter';
+import { createPrintController, resetPrintStatus } from '@/lib/htmlBadgePrinter';
 import { preloadQRCodes } from '@/lib/qrCodeUtils';
 
 // Create a print controller for this component
@@ -304,7 +304,7 @@ const BadgePrintPreview = () => {
     };
   }, [visitor]);
 
-  // Simplified print function - no delays
+  // Simplified print function - no delays, no Electron
   const handlePrintProcess = () => {
     // Skip if already initiated or no visitor
     if (printInitiatedRef.current || !visitor) {
@@ -315,29 +315,15 @@ const BadgePrintPreview = () => {
     printInitiatedRef.current = true;
     
     try {
-      // If using Electron
-      if (isElectron()) {
-        window.electronAPI.printBadge({
-          id: visitor.id,
-          name: visitor.name,
-        }).then(() => {
-          logDebug('Print', "✅ Electron print completed");
-          safeNavigateAfterPrint(); // Navigate immediately after print
-        }).catch((err) => {
-          console.error("❌ Electron print error:", err);
-          safeNavigateAfterPrint(); // Still navigate on error
-        });
-      } else {
-        // Direct browser printing
-        window.print();
-        logDebug('Print', "✅ Browser print dialog shown");
-        
-        // For direct windows, navigate immediately
-        if (isDirect) {
-          safeNavigateAfterPrint();
-        }
-        // Regular print page relies on afterprint event
+      // Direct browser printing only
+      window.print();
+      logDebug('Print', "✅ Browser print dialog shown");
+      
+      // For direct windows, navigate immediately
+      if (isDirect) {
+        safeNavigateAfterPrint();
       }
+      // Regular print page relies on afterprint event
     } catch (error) {
       console.error("❌ Print error:", error);
       safeNavigateAfterPrint(); // Always navigate even if error
