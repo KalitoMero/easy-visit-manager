@@ -51,8 +51,8 @@ const AutoCheckoutSettings = () => {
     });
   };
 
-  const handleCheckoutAllVisitors = () => {
-    const count = checkOutAllVisitors();
+  const handleCheckoutAllVisitors = async () => {
+    const count = await checkOutAllVisitors();
     
     if (count > 0) {
       toast({

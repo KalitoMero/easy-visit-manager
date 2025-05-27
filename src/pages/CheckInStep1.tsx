@@ -1,248 +1,245 @@
+
 import React, { useState } from 'react';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
-import NavButton from '@/components/NavButton';
-import HomeButton from '@/components/HomeButton';
+import { useToast } from "@/hooks/use-toast";
+import HomeButton from "@/components/HomeButton";
+import { Plus, Minus, UserPlus } from 'lucide-react';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
-import useTranslation from '@/locale/translations';
-import { UserPlus, X, Plus } from 'lucide-react';
+import { translations } from '@/locale/translations';
 
-// Define form schema
-const visitorFormSchema = z.object({
-  firstName: z.string().min(1, {
-    message: "First name is required."
-  }),
-  name: z.string().min(1, {
-    message: "Last name is required."
-  }),
-  company: z.string().min(1, {
-    message: "Company is required."
-  }),
-  contact: z.string().min(1, {
-    message: "Contact is required."
-  })
-});
-
-// Schema für zusätzliche Besucher
-const additionalVisitorSchema = z.object({
-  firstName: z.string().min(1, {
-    message: "First name is required."
-  }),
-  name: z.string().min(1, {
-    message: "Last name is required."
-  })
-});
-type VisitorFormValues = z.infer<typeof visitorFormSchema>;
-
-// Erweiterte Formularwerte mit zusätzlichen Besuchern
-interface ExtendedVisitorFormValues extends VisitorFormValues {
-  additionalVisitors: {
-    firstName: string;
-    name: string;
-  }[];
+interface VisitorEntry {
+  id: string;
+  name: string;
+  firstName: string;
 }
-const CheckInStep1: React.FC = () => {
+
+const CheckInStep1 = () => {
   const navigate = useNavigate();
-  const addGroupVisitor = useVisitorStore(state => state.addGroupVisitor);
+  const { toast } = useToast();
+  const { language } = useLanguageStore();
+  const t = translations[language];
+  
+  const addVisitor = useVisitorStore((state) => state.addVisitor);
+  const addGroupVisitor = useVisitorStore((state) => state.addGroupVisitor);
+  
+  const [visitors, setVisitors] = useState<VisitorEntry[]>([
+    { id: crypto.randomUUID(), name: '', firstName: '' }
+  ]);
+  const [company, setCompany] = useState('');
+  const [contact, setContact] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const {
-    language
-  } = useLanguageStore();
-  const t = useTranslation(language);
-
-  // Zustand für zusätzliche Besucher
-  const [additionalVisitors, setAdditionalVisitors] = useState<{
-    firstName: string;
-    name: string;
-  }[]>([]);
-
-  // Initialize form with react-hook-form and zod validation
-  const form = useForm<VisitorFormValues>({
-    resolver: zodResolver(visitorFormSchema),
-    defaultValues: {
-      firstName: "",
-      name: "",
-      company: "",
-      contact: ""
+  
+  const updateVisitor = (id: string, field: 'name' | 'firstName', value: string) => {
+    setVisitors(prev => prev.map(visitor => 
+      visitor.id === id ? { ...visitor, [field]: value } : visitor
+    ));
+  };
+  
+  const addVisitorEntry = () => {
+    setVisitors(prev => [...prev, { id: crypto.randomUUID(), name: '', firstName: '' }]);
+  };
+  
+  const removeVisitor = (id: string) => {
+    if (visitors.length > 1) {
+      setVisitors(prev => prev.filter(visitor => visitor.id !== id));
     }
-  });
-
-  // Funktion zum Hinzufügen eines zusätzlichen Besuchers
-  const addAdditionalVisitor = () => {
-    setAdditionalVisitors([...additionalVisitors, {
-      firstName: "",
-      name: ""
-    }]);
   };
-
-  // Funktion zum Entfernen eines zusätzlichen Besuchers
-  const removeAdditionalVisitor = (index: number) => {
-    const updatedVisitors = [...additionalVisitors];
-    updatedVisitors.splice(index, 1);
-    setAdditionalVisitors(updatedVisitors);
-  };
-
-  // Funktion zum Aktualisieren des Namens eines zusätzlichen Besuchers
-  const updateAdditionalVisitorName = (index: number, name: string) => {
-    const updatedVisitors = [...additionalVisitors];
-    updatedVisitors[index].name = name;
-    setAdditionalVisitors(updatedVisitors);
-  };
-
-  // Funktion zum Aktualisieren des Vornamens eines zusätzlichen Besuchers
-  const updateAdditionalVisitorFirstName = (index: number, firstName: string) => {
-    const updatedVisitors = [...additionalVisitors];
-    updatedVisitors[index].firstName = firstName;
-    setAdditionalVisitors(updatedVisitors);
-  };
-
-  // Handle form submission
-  const onSubmit = (values: VisitorFormValues) => {
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsSubmitting(true);
+    
     try {
-      // Überprüfe, ob alle zusätzlichen Besucher gültige Namen haben
-      const validAdditionalVisitors = additionalVisitors.filter(visitor => visitor.name.trim() !== "" && visitor.firstName.trim() !== "");
-
-      // Erstelle die Liste aller Besucher (Hauptbesucher + zusätzliche)
-      const allVisitors = [{
-        firstName: values.firstName,
-        name: values.name
-      }, ...validAdditionalVisitors];
-
-      // Verwende die bestehende Funktion addGroupVisitor für die Gruppenfunktionalität
-      const visitor = addGroupVisitor(allVisitors, values.company, values.contact);
-
-      // Navigate to next step
-      navigate(`/checkin/step2/${visitor.id}`);
+      // Validate that at least the first visitor has required data
+      const validVisitors = visitors.filter(v => v.name.trim() && v.firstName.trim());
+      
+      if (validVisitors.length === 0) {
+        toast({
+          title: t.error || "Fehler",
+          description: "Bitte geben Sie mindestens einen Namen ein.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (!company.trim()) {
+        toast({
+          title: t.error || "Fehler", 
+          description: "Bitte geben Sie eine Firma ein.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (!contact.trim()) {
+        toast({
+          title: t.error || "Fehler",
+          description: "Bitte geben Sie einen Ansprechpartner ein.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      let newVisitor;
+      
+      if (validVisitors.length === 1) {
+        // Single visitor
+        const visitor = validVisitors[0];
+        newVisitor = await addVisitor(visitor.firstName, visitor.name, company, contact);
+      } else {
+        // Group visitor
+        const visitorData = validVisitors.map(v => ({
+          name: v.name,
+          firstName: v.firstName
+        }));
+        newVisitor = await addGroupVisitor(visitorData, company, contact);
+      }
+      
+      toast({
+        title: t.success || "Erfolg",
+        description: `${t.visitor || "Besucher"} erfolgreich angemeldet.`,
+      });
+      
+      navigate(`/checkin/step2/${newVisitor.id}`);
+      
     } catch (error) {
-      console.error("Error during check-in:", error);
+      console.error('Error creating visitor:', error);
+      toast({
+        title: t.error || "Fehler",
+        description: "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
+        variant: "destructive",
+      });
+    } finally {
       setIsSubmitting(false);
     }
   };
-  return <div className="app-container">
+  
+  return (
+    <div className="app-container">
       <HomeButton />
+      <LanguageSwitcher />
       
-      <div className="page-container">
-        {/* Make form 20% wider with w-[120%] class */}
-        <Card className="mx-auto max-w-3xl w-[120%]">
+      <div className="page-container max-w-2xl">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-center text-2xl">
-              {t('selfCheckInTitle')}
-            </CardTitle>
+            <CardTitle className="text-2xl">{t.checkIn || "Anmeldung"}</CardTitle>
+            <CardDescription>
+              {t.checkInDescription || "Bitte geben Sie Ihre Daten für die Anmeldung ein"}
+            </CardDescription>
           </CardHeader>
-          
           <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {/* Add Additional Visitor Button */}
-                <div className="flex justify-end mb-2">
-                  
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <Label className="text-lg font-semibold">
+                    {t.visitors || "Besucher"} ({visitors.length})
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addVisitorEntry}
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    {t.addVisitor || "Besucher hinzufügen"}
+                  </Button>
                 </div>
                 
-                {/* Two column layout for first name and last name */}
-                <div className="flex flex-col md:flex-row gap-4">
-                  {/* First name field - half width */}
-                  <div className="md:w-1/2">
-                    <FormField control={form.control} name="firstName" render={({
-                    field
-                  }) => <FormItem>
-                          <FormLabel className="text-lg">{t('firstName')}</FormLabel>
-                          <FormControl>
-                            <Input autoFocus placeholder={t('firstName')} {...field} className="text-lg h-12" autoComplete="off" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>} />
-                  </div>
-
-                  {/* Last name field - half width */}
-                  <div className="md:w-1/2">
-                    <FormField control={form.control} name="name" render={({
-                    field
-                  }) => <FormItem>
-                          <FormLabel className="text-lg">
-                            {t('lastName')} 
-                            <span className="text-sm text-muted-foreground ml-2">
-                              ({language === 'de' ? 'Herr / Frau / Div' : 'Mr. / Mrs. / Div'})
-                            </span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input placeholder={t('lastName')} {...field} className="text-lg h-12" autoComplete="off" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>} />
-                  </div>
-                </div>
-                
-                {/* Company field - full width */}
-                <div>
-                  <FormField control={form.control} name="company" render={({
-                  field
-                }) => <FormItem>
-                        <FormLabel className="text-lg">{t('company')}</FormLabel>
-                        <FormControl>
-                          <Input placeholder={t('company')} {...field} className="text-lg h-12" autoComplete="off" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>} />
-                </div>
-                
-                {/* Zusätzliche Besucher */}
-                {additionalVisitors.map((visitor, index) => <div key={index} className="flex flex-col gap-2">
+                {visitors.map((visitor, index) => (
+                  <div key={visitor.id} className="border rounded-lg p-4 space-y-4">
                     <div className="flex justify-between items-center">
-                      <FormLabel className="text-lg mb-0">
-                        {t('additionalVisitor')} {index + 1}
-                      </FormLabel>
-                      <Button type="button" variant="outline" size="sm" onClick={() => removeAdditionalVisitor(index)} className="h-8">
-                        <X className="h-4 w-4 mr-1" /> {t('remove')}
-                      </Button>
+                      <h3 className="font-medium">
+                        {t.visitor || "Besucher"} {index + 1}
+                        {index === 0 && <span className="text-sm text-muted-foreground ml-2">({t.mainVisitor || "Hauptbesucher"})</span>}
+                      </h3>
+                      {visitors.length > 1 && index > 0 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeVisitor(visitor.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
-
-                    <div className="flex flex-col md:flex-row gap-4">
-                      {/* First name field for additional visitor */}
-                      <div className="md:w-1/2">
-                        <Input placeholder={t('firstName')} value={visitor.firstName} onChange={e => updateAdditionalVisitorFirstName(index, e.target.value)} className="text-lg h-12" autoComplete="off" />
+                    
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor={`firstName-${visitor.id}`}>
+                          {t.firstName || "Vorname"} *
+                        </Label>
+                        <Input
+                          id={`firstName-${visitor.id}`}
+                          value={visitor.firstName}
+                          onChange={(e) => updateVisitor(visitor.id, 'firstName', e.target.value)}
+                          placeholder={t.enterFirstName || "Vorname eingeben"}
+                          required={index === 0}
+                        />
                       </div>
                       
-                      {/* Last name field for additional visitor */}
-                      <div className="md:w-1/2">
-                        <Input placeholder={t('lastName')} value={visitor.name} onChange={e => updateAdditionalVisitorName(index, e.target.value)} className="text-lg h-12" autoComplete="off" />
+                      <div className="space-y-2">
+                        <Label htmlFor={`name-${visitor.id}`}>
+                          {t.lastName || "Nachname"} *
+                        </Label>
+                        <Input
+                          id={`name-${visitor.id}`}
+                          value={visitor.name}
+                          onChange={(e) => updateVisitor(visitor.id, 'name', e.target.value)}
+                          placeholder={t.enterLastName || "Nachname eingeben"}
+                          required={index === 0}
+                        />
                       </div>
                     </div>
-                  </div>)}
-                
-                {/* Contact person field */}
-                <FormField control={form.control} name="contact" render={({
-                field
-              }) => <FormItem>
-                      <FormLabel className="text-lg">{t('contact')}</FormLabel>
-                      <FormControl>
-                        <Input placeholder={t('contact')} {...field} className="text-lg h-12" autoComplete="off" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>} />
-                
-                <Button type="submit" className="w-full py-6 text-xl mt-6" disabled={isSubmitting}>
-                  <UserPlus className="mr-2 h-5 w-5" />
-                  {t('continueToPolicy')}
-                </Button>
-              </form>
-            </Form>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="company">{t.company || "Firma"} *</Label>
+                <Input
+                  id="company"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  placeholder={t.enterCompany || "Firma eingeben"}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="contact">{t.contact || "Ansprechpartner"} *</Label>
+                <Input
+                  id="contact"
+                  value={contact}
+                  onChange={(e) => setContact(e.target.value)}
+                  placeholder={t.enterContact || "Name des Ansprechpartners"}
+                  required
+                />
+              </div>
+              
+              <Button 
+                type="submit" 
+                className="w-full" 
+                size="lg"
+                disabled={isSubmitting}
+              >
+                <UserPlus className="mr-2 h-5 w-5" />
+                {isSubmitting ? (t.processing || "Wird verarbeitet...") : (t.continue || "Weiter")}
+              </Button>
+            </form>
           </CardContent>
-          
-          <CardFooter className="flex justify-center">
-            <NavButton to="/" variant="outline">
-              {t('backToHome')}
-            </NavButton>
-          </CardFooter>
         </Card>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default CheckInStep1;
