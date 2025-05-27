@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +11,7 @@ import { Plus, Minus, UserPlus } from 'lucide-react';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
 import { translations } from '@/locale/translations';
+import { generateUUID } from '@/utils/uuid';
 
 interface VisitorEntry {
   id: string;
@@ -29,7 +29,7 @@ const CheckInStep1 = () => {
   const addGroupVisitor = useVisitorStore((state) => state.addGroupVisitor);
   
   const [visitors, setVisitors] = useState<VisitorEntry[]>([
-    { id: crypto.randomUUID(), name: '', firstName: '' }
+    { id: generateUUID(), name: '', firstName: '' }
   ]);
   const [company, setCompany] = useState('');
   const [contact, setContact] = useState('');
@@ -42,7 +42,7 @@ const CheckInStep1 = () => {
   };
   
   const addVisitorEntry = () => {
-    setVisitors(prev => [...prev, { id: crypto.randomUUID(), name: '', firstName: '' }]);
+    setVisitors(prev => [...prev, { id: generateUUID(), name: '', firstName: '' }]);
   };
   
   const removeVisitor = (id: string) => {

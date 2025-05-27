@@ -11,8 +11,7 @@ export default defineConfig(async ({ mode }) => {
   if (mode === 'development') {
     try {
       const { componentTagger } = await import("lovable-tagger");
-      const taggerPlugin = componentTagger();
-      plugins.push(taggerPlugin);
+      plugins.push(componentTagger());
     } catch (error) {
       console.warn('Failed to load lovable-tagger:', error);
     }
