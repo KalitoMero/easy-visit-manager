@@ -37,7 +37,27 @@ export const translations = {
     enterCompany: "Firma eingeben",
     enterContact: "Name des Ansprechpartners",
     processing: "Wird verarbeitet...",
-    continue: "Weiter"
+    continue: "Weiter",
+    
+    // Additional keys from other components
+    pageNotFound: "Seite nicht gefunden",
+    backToHomeButton: "Zurück zur Startseite",
+    successfullyCheckedOut: "Erfolgreich abgemeldet",
+    thankYou: "Vielen Dank für Ihren Besuch!",
+    safeJourney: "Wir wünschen Ihnen eine sichere Heimreise",
+    visitorCheckOut: "Besucher-Abmeldung",
+    enterVisitorNumber: "Bitte geben Sie Ihre Besuchernummer ein, um sich abzumelden.",
+    visitorNumberLabel: "Besuchernummer",
+    checkOutButton: "Abmelden",
+    numberRequired: "Nummer erforderlich",
+    invalidNumber: "Ungültige Nummer",
+    visitorNotFound: "Besucher nicht gefunden",
+    visitorPolicy: "Besucherrichtlinien",
+    scrollToBottom: "Bitte scrollen Sie nach unten",
+    scrollComplete: "Scrollen abgeschlossen",
+    acceptAndContinue: "Akzeptieren und fortfahren",
+    back: "Zurück",
+    registrationSuccessful: "Anmeldung erfolgreich"
   },
   en: {
     // Navigation
@@ -76,8 +96,37 @@ export const translations = {
     enterCompany: "Enter company",
     enterContact: "Contact person name", 
     processing: "Processing...",
-    continue: "Continue"
+    continue: "Continue",
+    
+    // Additional keys from other components
+    pageNotFound: "Page not found",
+    backToHomeButton: "Back to Home",
+    successfullyCheckedOut: "Successfully checked out",
+    thankYou: "Thank you for your visit!",
+    safeJourney: "We wish you a safe journey home",
+    visitorCheckOut: "Visitor Check-Out",
+    enterVisitorNumber: "Please enter your visitor number to check out.",
+    visitorNumberLabel: "Visitor Number",
+    checkOutButton: "Check Out",
+    numberRequired: "Number required",
+    invalidNumber: "Invalid number",
+    visitorNotFound: "Visitor not found",
+    visitorPolicy: "Visitor Policy",
+    scrollToBottom: "Please scroll to the bottom",
+    scrollComplete: "Scroll complete",
+    acceptAndContinue: "Accept and Continue",
+    back: "Back",
+    registrationSuccessful: "Registration Successful"
   }
 };
 
 export type Language = 'de' | 'en';
+
+// Default export: useTranslation hook
+const useTranslation = (language: Language) => {
+  return (key: keyof typeof translations.en) => {
+    return translations[language][key] || key;
+  };
+};
+
+export default useTranslation;
