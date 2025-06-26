@@ -145,7 +145,7 @@ const CheckInStep1 = () => {
                     variant="outline"
                     size="sm"
                     onClick={addVisitorEntry}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 hidden"
                   >
                     <Plus className="h-4 w-4" />
                     {t.addVisitor || "Besucher hinzufügen"}
