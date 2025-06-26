@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -139,7 +140,8 @@ const CheckInStep1 = () => {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <Label className="text-lg font-semibold">
-                    {t.visitors || "Besucher"} 
+                    {t.visitors || "Besucher"}
+                  </Label>
                   <Button
                     type="button"
                     variant="outline"
