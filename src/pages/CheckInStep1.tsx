@@ -29,7 +29,8 @@ const CheckInStep1 = () => {
   const addGroupVisitor = useVisitorStore((state) => state.addGroupVisitor);
   
   const [visitors, setVisitors] = useState<VisitorEntry[]>([
-    { id: generateUUID(), name: '', firstName: '' }
+     { id: generateUUID(), name: '', firstName: '' },
+   { id: generateUUID(), name: '', firstName: '' }
   ]);
   const [company, setCompany] = useState('');
   const [contact, setContact] = useState('');
