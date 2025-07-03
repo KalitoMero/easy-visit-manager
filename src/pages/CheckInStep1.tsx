@@ -125,8 +125,11 @@ const CheckInStep1 = () => {
   return (
     <div className="app-container">
       <HomeButton />
-      <LanguageSwitcher />
       
+      {/* Language switcher positioned at top right */}
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher />
+      </div>
       <div className="page-container max-w-2xl">
         <Card>
           <CardHeader>
