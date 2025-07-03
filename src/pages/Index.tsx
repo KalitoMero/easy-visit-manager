@@ -96,13 +96,13 @@ const Index = () => {
         
         {/* Welcome section */}
         <div className="flex-1 flex flex-col items-center justify-center pt-12">
-          <h1 className="text-4xl font-bold mb-6 tracking-tight">
+          <h1 className="text-5xl font-bold mb-6 tracking-tight">
             {language === 'de' ? 'Willkommen bei Leuka' : 'Welcome to Leuka'}
           </h1>
           
           <Card className="w-full max-w-2xl bg-white/50 backdrop-blur-sm mb-8">
             <CardContent className="p-8">
-              <p className="text-xl leading-relaxed">
+              <p className="text-2xl leading-relaxed">
                 {language === 'de' 
                   ? 'Wir freuen uns über Ihren Besuch. Sie können sich entweder hier über Touch selbst anmelden oder auf den Empfang zugehen. Viel Erfolg bei Ihrem Besuch!'
                   : 'We are glad about your visit. You can either register yourself here on the tablet or approach the reception. We wish you success during your visit!'}
