@@ -12,7 +12,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useLanguageStore } from '@/hooks/useLanguageStore';
 import useTranslation from '@/locale/translations';
 import { usePrinterSettings } from '@/hooks/usePrinterSettings';
-import { ArrowLeft, ArrowDown } from 'lucide-react';
+import { ArrowLeft, ArrowDown, Hand } from 'lucide-react';
 import SignaturePad from '@/components/SignaturePad';
 import { navigateToPrintPreview, resetPrintStatus } from '@/lib/htmlBadgePrinter';
 
@@ -21,6 +21,7 @@ const CheckInStep2 = () => {
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const [signature, setSignature] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showHandAnimation, setShowHandAnimation] = useState(true);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -61,6 +62,15 @@ const CheckInStep2 = () => {
   // Reset print status when component is mounted
   useEffect(() => {
     resetPrintStatus();
+  }, []);
+  
+  // Hide hand animation after 3 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowHandAnimation(false);
+    }, 3000);
+    
+    return () => clearTimeout(timer);
   }, []);
   
   const handleScrollToBottom = React.useCallback(() => {
@@ -190,10 +200,23 @@ const CheckInStep2 = () => {
             </div>
             
             {!hasScrolledToBottom && (
-              <div className="mt-4 text-center text-muted-foreground animate-pulse flex items-center justify-center gap-2">
-                <ArrowDown size={18} />
-                {t('scrollToBottom')}
-                <ArrowDown size={18} />
+              <div className="mt-6 text-center flex flex-col items-center justify-center gap-4">
+                {/* Hand animation for first 3 seconds */}
+                {showHandAnimation && (
+                  <div className="relative">
+                    <Hand 
+                      size={48} 
+                      className="text-primary animate-swipe-down"
+                    />
+                  </div>
+                )}
+                
+                {/* Text with larger font */}
+                <div className="text-xl font-semibold text-muted-foreground animate-pulse flex items-center justify-center gap-3">
+                  <ArrowDown size={24} />
+                  <span className="text-2xl">{t('scrollToBottom')}</span>
+                  <ArrowDown size={24} />
+                </div>
               </div>
             )}
             

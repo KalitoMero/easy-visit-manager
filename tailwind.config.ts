@@ -94,6 +94,11 @@ export default {
 					from: { transform: 'translateX(0)' },
 					to: { transform: 'translateX(-100%)' },
 				},
+				'swipe-down': {
+					'0%': { transform: 'translateY(-20px)', opacity: '0.7' },
+					'50%': { transform: 'translateY(20px)', opacity: '1' },
+					'100%': { transform: 'translateY(-20px)', opacity: '0.7' },
+				},
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
@@ -102,6 +107,7 @@ export default {
 				'fade-out': 'fade-out 0.3s ease-out',
 				'slide-in-right': 'slide-in-right 0.4s ease-out',
 				'slide-out-left': 'slide-out-left 0.4s ease-out',
+				'swipe-down': 'swipe-down 2s ease-in-out infinite',
 			},
 			backdropFilter: {
 				'none': 'none',
