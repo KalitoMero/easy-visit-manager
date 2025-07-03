@@ -158,7 +158,7 @@ const CheckInStep1 = () => {
                 </div>
                 
                 {visitors.map((visitor, index) => (
-                  <div key={visitor.id} className="rounded-lg p-4 space-y-2">
+                  <div key={visitor.id} className="rounded-lg p-4 space-y-1">
                     <div className="flex justify-between items-center">
                       {visitors.length > 1 && index > 0 && (
                         <Button
