@@ -1,26 +1,18 @@
 
 import { useVisitorStore } from '@/hooks/useVisitorStore';
-import { usePrinterSettings } from '@/hooks/usePrinterSettings';
 
 /**
- * Initialize the application by loading data from the API
+ * Initialize the application - now works completely offline with localStorage
  */
 export const initializeApp = async () => {
   try {
-    console.log('Initializing application...');
+    console.log('Initializing application (offline mode)...');
     
-    // Load visitors from API
-    const visitorStore = useVisitorStore.getState();
-    await visitorStore.loadVisitors();
-    await visitorStore.loadVisitorCounter();
-    
-    // Load printer settings from API
-    const printerStore = usePrinterSettings.getState();
-    await printerStore.loadSettings();
+    // Data is automatically loaded from localStorage via Zustand persist
+    // No need to load from API anymore
     
     console.log('Application initialized successfully');
   } catch (error) {
     console.error('Failed to initialize application:', error);
-    // App should still work with localStorage fallbacks
   }
 };

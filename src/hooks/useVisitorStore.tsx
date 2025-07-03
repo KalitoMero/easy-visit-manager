@@ -1,7 +1,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { apiClient } from '@/lib/apiClient';
+import { generateUUID } from '@/utils/uuid';
 
 export type AdditionalVisitor = {
   id: string;
@@ -97,96 +97,87 @@ export const useVisitorStore = create<VisitorStore>()(
       },
       
       loadVisitors: async () => {
-        set({ isLoading: true });
-        try {
-          const response = await apiClient.getVisitors();
-          if (response.data) {
-            set({ visitors: response.data });
-          }
-        } catch (error) {
-          console.error('Error loading visitors:', error);
-        } finally {
-          set({ isLoading: false });
-        }
+        // No need to load from API, data is already in state from persist
+        set({ isLoading: false });
       },
 
       loadVisitorCounter: async () => {
-        try {
-          const response = await apiClient.getVisitorCounter();
-          if (response.data) {
-            set({ visitorCounter: response.data.value });
-          }
-        } catch (error) {
-          console.error('Error loading visitor counter:', error);
-        }
+        // No need to load from API, counter is already in state from persist
       },
       
       addVisitor: async (firstName, name, company, contact) => {
-        const visitorData = {
+        const state = get();
+        const newVisitor: Visitor = {
+          id: generateUUID(),
           firstName,
           name,
           company,
           contact,
-          additionalVisitors: []
+          visitorNumber: state.visitorCounter,
+          checkInTime: new Date().toISOString(),
+          checkOutTime: null,
+          additionalVisitors: [],
+          additionalVisitorCount: 0,
+          policyAccepted: false,
+          signature: null
         };
         
-        const response = await apiClient.createVisitor(visitorData);
-        if (response.data) {
-          set(state => ({ 
-            visitors: [response.data, ...state.visitors],
-            visitorCounter: response.data.visitorNumber + 1
-          }));
-          return response.data;
-        }
-        throw new Error(response.error || 'Failed to create visitor');
+        set(state => ({ 
+          visitors: [newVisitor, ...state.visitors],
+          visitorCounter: state.visitorCounter + 1
+        }));
+        
+        return newVisitor;
       },
       
       addGroupVisitor: async (visitorList, company, contact) => {
+        const state = get();
         const mainVisitor = visitorList[0];
-        const additionalVisitors = visitorList.slice(1);
+        const additionalVisitors = visitorList.slice(1).map((visitor, index) => ({
+          id: generateUUID(),
+          name: visitor.name,
+          firstName: visitor.firstName,
+          visitorNumber: state.visitorCounter + index + 1
+        }));
         
-        const visitorData = {
+        const newVisitor: Visitor = {
+          id: generateUUID(),
           firstName: mainVisitor.firstName,
           name: mainVisitor.name,
           company,
           contact,
-          additionalVisitors
+          visitorNumber: state.visitorCounter,
+          checkInTime: new Date().toISOString(),
+          checkOutTime: null,
+          additionalVisitors,
+          additionalVisitorCount: additionalVisitors.length,
+          policyAccepted: false,
+          signature: null
         };
         
-        const response = await apiClient.createVisitor(visitorData);
-        if (response.data) {
-          set(state => ({ 
-            visitors: [response.data, ...state.visitors]
-          }));
-          return response.data;
-        }
-        throw new Error(response.error || 'Failed to create group visitor');
+        set(state => ({ 
+          visitors: [newVisitor, ...state.visitors],
+          visitorCounter: state.visitorCounter + additionalVisitors.length + 1
+        }));
+        
+        return newVisitor;
       },
       
       checkOutVisitor: async (id) => {
-        const updates = { checkOutTime: new Date().toISOString() };
-        const response = await apiClient.updateVisitor(id, updates);
-        
-        if (!response.error) {
-          set(state => ({
-            visitors: state.visitors.map(visitor =>
-              visitor.id === id ? { ...visitor, checkOutTime: updates.checkOutTime } : visitor
-            )
-          }));
-        }
+        const checkOutTime = new Date().toISOString();
+        set(state => ({
+          visitors: state.visitors.map(visitor =>
+            visitor.id === id ? { ...visitor, checkOutTime } : visitor
+          )
+        }));
       },
       
       acceptPolicy: async (id, signature = null) => {
-        const updates = { policyAccepted: true, signature };
-        const response = await apiClient.updateVisitor(id, updates);
-        
-        if (!response.error) {
-          set(state => ({
-            visitors: state.visitors.map(visitor =>
-              visitor.id === id ? { ...visitor, ...updates } : visitor
-            )
-          }));
-        }
+        set(state => ({
+          visitors: state.visitors.map(visitor =>
+            visitor.id === id ? { ...visitor, policyAccepted: true, signature } : visitor
+          )
+        }));
       },
       
       getVisitor: (id) => {
@@ -200,36 +191,20 @@ export const useVisitorStore = create<VisitorStore>()(
       },
       
       updateVisitor: async (id, updates) => {
-        const response = await apiClient.updateVisitor(id, updates);
-        
-        if (!response.error) {
-          set(state => ({
-            visitors: state.visitors.map(visitor =>
-              visitor.id === id ? { ...visitor, ...updates } : visitor
-            )
-          }));
-        }
+        set(state => ({
+          visitors: state.visitors.map(visitor =>
+            visitor.id === id ? { ...visitor, ...updates } : visitor
+          )
+        }));
       },
       
       deleteVisitor: async (id) => {
-        const response = await apiClient.deleteVisitor(id);
-        
-        if (!response.error) {
-          set(state => ({
-            visitors: state.visitors.filter(visitor => visitor.id !== id)
-          }));
-        }
+        set(state => ({
+          visitors: state.visitors.filter(visitor => visitor.id !== id)
+        }));
       },
       
       clearVisitors: async () => {
-        // For now, we'll delete all visitors one by one
-        // In a real implementation, you might want to add a bulk delete endpoint
-        const { visitors } = get();
-        for (const visitor of visitors) {
-          await apiClient.deleteVisitor(visitor.id);
-        }
-        
-        await apiClient.updateVisitorCounter(DEFAULT_VISITOR_COUNTER);
         set({ visitors: [], visitorCounter: DEFAULT_VISITOR_COUNTER });
       },
       
@@ -278,10 +253,7 @@ export const useVisitorStore = create<VisitorStore>()(
           return 0;
         }
 
-        // Delete inactive visitors from API
-        for (const visitor of inactiveVisitors) {
-          await apiClient.deleteVisitor(visitor.id);
-        }
+        // Remove inactive visitors locally
 
         set(state => ({
           visitors: state.visitors.filter(visitor => visitor.checkOutTime === null),
@@ -304,10 +276,7 @@ export const useVisitorStore = create<VisitorStore>()(
 
         const now = new Date().toISOString();
         
-        // Update all active visitors
-        for (const visitor of activeVisitors) {
-          await apiClient.updateVisitor(visitor.id, { checkOutTime: now });
-        }
+        // Update all active visitors locally
 
         set(state => ({
           visitors: state.visitors.map(visitor => 
@@ -337,7 +306,6 @@ export const useVisitorStore = create<VisitorStore>()(
       },
       
       resetVisitorCounter: async (newCounter = DEFAULT_VISITOR_COUNTER) => {
-        await apiClient.updateVisitorCounter(newCounter);
         set({ visitorCounter: newCounter });
       },
 
@@ -366,6 +334,8 @@ export const useVisitorStore = create<VisitorStore>()(
     {
       name: 'visitor-storage',
       partialize: (state) => ({
+        visitors: state.visitors,
+        visitorCounter: state.visitorCounter,
         deletionSchedule: state.deletionSchedule,
         autoCheckoutSchedule: state.autoCheckoutSchedule,
       })
