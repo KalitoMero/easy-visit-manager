@@ -160,16 +160,13 @@ const CheckInStep1 = () => {
                 {visitors.map((visitor, index) => (
                   <div key={visitor.id} className="border rounded-lg p-4 space-y-4">
                     <div className="flex justify-between items-center">
-                      <h3 className="font-medium">
-                        {t.visitor || "Besucher"}
-                      </h3>
                       {visitors.length > 1 && index > 0 && (
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
                           onClick={() => removeVisitor(visitor.id)}
-                          className="text-red-600 hover:text-red-700"
+                          className="text-red-600 hover:text-red-700 ml-auto"
                         >
                           <Minus className="h-4 w-4" />
                         </Button>
