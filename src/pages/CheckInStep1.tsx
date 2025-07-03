@@ -161,8 +161,7 @@ const CheckInStep1 = () => {
                   <div key={visitor.id} className="border rounded-lg p-4 space-y-4">
                     <div className="flex justify-between items-center">
                       <h3 className="font-medium">
-                        {t.visitor || "Besucher"} 
-                       {index === 0 && <span className="text-sm text-muted-foreground ml-2">({t.mainVisitor || "Hauptbesucher"})</span>}
+                        {t.visitor || "Besucher"}
                       </h3>
                       {visitors.length > 1 && index > 0 && (
                         <Button
