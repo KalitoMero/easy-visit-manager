@@ -176,6 +176,11 @@ const CheckInStep2 = () => {
               </NavButton>
             </div>
             <CardTitle className="text-3xl font-bold">{t('visitorPolicy')}</CardTitle>
+            <p className="text-lg text-muted-foreground mt-3">
+              {language === 'de' 
+                ? 'Bitte lesen Sie die folgenden Richtlinien aufmerksam durch und scrollen Sie bis zum Ende.'
+                : 'Please read the following guidelines carefully and scroll to the bottom.'}
+            </p>
           </CardHeader>
           <CardContent>
             <div ref={scrollAreaRef} className="relative">
