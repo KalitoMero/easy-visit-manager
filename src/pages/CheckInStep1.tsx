@@ -166,9 +166,11 @@ const CheckInStep1 = () => {
                   </div>)}
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="company">{t.company || "Firma"} *</Label>
-                <Input id="company" value={company} onChange={e => setCompany(e.target.value)} placeholder={t.enterCompany || "Firma eingeben"} required />
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="company">{t.company || "Firma"} *</Label>
+                  <Input id="company" value={company} onChange={e => setCompany(e.target.value)} placeholder={t.enterCompany || "Firma eingeben"} required />
+                </div>
               </div>
               
               <div className="space-y-2">
