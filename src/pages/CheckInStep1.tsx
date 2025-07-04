@@ -171,11 +171,11 @@ const CheckInStep1 = () => {
                   <Label htmlFor="company">{t.company || "Firma"} *</Label>
                   <Input id="company" value={company} onChange={e => setCompany(e.target.value)} placeholder={t.enterCompany || "Firma eingeben"} required />
                 </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="contact">{t.contact || "Ansprechpartner"} *</Label>
-                <Input id="contact" value={contact} onChange={e => setContact(e.target.value)} placeholder={t.enterContact || "Name des Ansprechpartners"} required />
+                
+                <div className="space-y-2">
+                  <Label htmlFor="contact">{t.contact || "Ansprechpartner"} *</Label>
+                  <Input id="contact" value={contact} onChange={e => setContact(e.target.value)} placeholder={t.enterContact || "Name des Ansprechpartners"} required />
+                </div>
               </div>
               
               <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
